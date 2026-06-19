@@ -19,7 +19,7 @@ const statusOptions = [
 interface Props {
   open: boolean;
   onToggle: () => void;
-  filterRef: RefObject<HTMLDivElement>;
+  filterRef: RefObject<HTMLDivElement | null>;
   users: User[];
   selectedStatuses: string[];
   selectedUsers: string[]; // UUID strings
@@ -53,7 +53,7 @@ export function ListFilterPanel({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-[500px] overflow-y-auto">
+        <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-125 overflow-y-auto">
           <div className="p-4">
             <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 border-b border-gray-100">
               <h3 className="font-semibold text-sm text-gray-800">Filter Tasks</h3>

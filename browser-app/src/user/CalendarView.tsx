@@ -12,12 +12,12 @@ import MiniCalendar from "../calendar/MiniCalendar";
 import ItemsDetail from "../calendar/ItemDetail";
 import Calendar from "../calendar/Calendar";
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 export default function CalendarView() {
   const today = new Date();
 
-  // ── State ───────────────────────────────────────────────────────────────────
+  // State 
   const [events, setEvents] = useState<CalendarEvent[]>(INITIAL_EVENTS);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -267,10 +267,10 @@ export default function CalendarView() {
         />
       </main>
 
-      {/* ── Create Event Modal ────────────────────────────────────────────────── */}
+      {/* Create Event Modal  */}
       {showCreateModal && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          className="fixed inset-0 z-200 flex items-center justify-center bg-black/30 backdrop-blur-sm"
           onClick={() => setShowCreateModal(false)}
         >
           <div

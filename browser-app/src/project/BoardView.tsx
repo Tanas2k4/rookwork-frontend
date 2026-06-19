@@ -1,3 +1,9 @@
+/**
+ * @file BoardView.tsx
+ * @description Component hiển thị bảng Kanban (Kanban Board View), là màn hình tương tác chính để theo dõi, lọc, kéo thả và quản lý chi tiết các công việc trong dự án.
+ * @author Warmdrobe
+ */
+
 import { useState, useEffect } from "react";
 import { IoSearchSharp } from "react-icons/io5";
 import { useBoard } from "../hooks/useBoard";
@@ -9,6 +15,10 @@ import { TaskPanel } from "./board/TaskPanel";
 import type { Priority, TaskType } from "../types/project";
 import { statuses } from "../types/project";
 
+/**
+ * Component BoardView hiển thị giao diện bảng phân cột các công việc theo trạng thái.
+ * Cho phép lọc danh sách theo tên, mức ưu tiên, loại công việc và mở panel chỉnh sửa chi tiết của từng sự vụ.
+ */
 export default function BoardView() {
   const { projectId, setReloadIssues } = useProject();
   const board = useBoard(projectId);
@@ -16,7 +26,7 @@ export default function BoardView() {
   // Register board.reload vào context để ProjectHeader có thể trigger
   useEffect(() => {
     setReloadIssues(board.reload);
-  }, [board.reload]);
+  }, [board.reload, setReloadIssues]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState<Priority | "">("");

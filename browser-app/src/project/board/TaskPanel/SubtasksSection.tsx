@@ -1,6 +1,14 @@
+/**
+ * @file SubtasksSection.tsx
+ * @description Component hiển thị và quản lý các công việc con (Subtasks) của một sự vụ (Issue).
+ * @author Warmdrobe
+ */
+
 import { useState } from "react";
 import { MdAdd, MdClose } from "react-icons/md";
 import type { Subtask } from "../../../types/project";
+import { Button } from "../../../components/common/Button";
+import { Input } from "../../../components/common/Input";
 
 interface Props {
   subtasks: Subtask[];
@@ -9,6 +17,10 @@ interface Props {
   onDelete: (id: number) => void;
 }
 
+/**
+ * Component hiển thị danh sách các công việc con (Subtasks).
+ * Hỗ trợ các hành động check hoàn thành (toggle), thêm mới qua ô nhập liệu nhanh, và xóa bỏ công việc con.
+ */
 export function SubtasksSection({
   subtasks,
   onToggle,
@@ -84,10 +96,10 @@ export function SubtasksSection({
       </div>
 
       <div
-        className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${showForm ? "opacity-100 max-h-40 mt-2" : "opacity-0 max-h-0 mt-0"}`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? "opacity-100 max-h-40 mt-2" : "opacity-0 max-h-0 mt-0"}`}
       >
         <div className="flex flex-col gap-2 bg-gray-100 rounded-md border border-purple-600 px-3 py-2">
-          <input
+          <Input
             autoFocus={showForm}
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -96,21 +108,24 @@ export function SubtasksSection({
               if (e.key === "Escape") setShowForm(false);
             }}
             placeholder="Subtask title..."
-            className="flex-1 text-sm text-gray-700 bg-transparent outline-none"
+            className="flex-1 text-sm text-gray-700 bg-transparent border-none focus:ring-0 px-0 py-0"
           />
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               onClick={() => setShowForm(false)}
-              className="text-[10px] text-gray-500 border border-gray-500 p-1 rounded-md hover:bg-gray-200 transition"
+              variant="secondary"
+              size="xs"
+              className="text-[10px] p-1"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={submit}
-              className="text-xs bg-purple-800 text-white rounded px-2.5 py-1 hover:bg-purple-700 transition"
+              variant="primary"
+              size="sm"
             >
               Add
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -15,18 +15,12 @@ import {
   typeIconMap,
   typeColorMap,
 } from "../types/project";
+import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
+import { avatarUrl } from "../utils/avatar";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
-function apiStatusToUI(s: IssueResponse["status"]): Status {
-  if (s === "IN_PROGRESS") return "in_progress";
-  if (s === "DONE") return "done";
-  return "to_do";
-}
 
-function apiPriorityToUI(p: IssueResponse["priority"]): Priority {
-  return (p?.toLowerCase() ?? "medium") as Priority;
-}
 
 function PriorityBars({ priority }: { priority: Priority }) {
   const idx = priorities.indexOf(priority);
@@ -81,8 +75,7 @@ export default function MyIssuesPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const myAvatar = myPicture
-    ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(myName || "Me")}&background=7c3aed&color=fff`;
+  const myAvatar = avatarUrl(myName || "Me", myPicture);
 
   // Filter + sort
   const filtered = issues
@@ -113,7 +106,7 @@ export default function MyIssuesPage() {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-100 space-y-4">
+      <div className="shrink-0 px-6 pt-6 pb-4 border-b border-gray-100 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold text-gray-800">My Issues</h1>
@@ -129,7 +122,7 @@ export default function MyIssuesPage() {
 
         {/* Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-1 min-w-[180px] border border-gray-500 rounded-lg px-3 py-1.5 bg-white">
+          <div className="flex items-center gap-2 flex-1 min-w-45 border border-gray-500 rounded-lg px-3 py-1.5 bg-white">
             <MdSearch size={15} className="text-gray-500 shrink-0" />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search issues..."
@@ -170,7 +163,7 @@ export default function MyIssuesPage() {
                     </button>
                   ))}
                 </div>
-                <div className="fixed inset-0 z-[29]" onClick={() => setShowSortDd(false)} />
+                <div className="fixed inset-0 z-29" onClick={() => setShowSortDd(false)} />
               </>
             )}
           </div>
@@ -228,8 +221,7 @@ export default function MyIssuesPage() {
 
                         {issue.assignedTo && (
                           <img
-                            src={issue.assignedTo.picture ??
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(issue.assignedTo.profileName)}&background=7c3aed&color=fff`}
+                            src={avatarUrl(issue.assignedTo.profileName, issue.assignedTo.picture)}
                             className="w-5 h-5 rounded-full shrink-0"
                             title={issue.assignedTo.profileName}
                             alt=""

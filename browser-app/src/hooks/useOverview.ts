@@ -1,16 +1,33 @@
+/**
+ * @file useOverview.ts
+ * @description Hook quản lý dữ liệu tổng quan dự án (Overview), xử lý tính toán tiến độ, công việc quá hạn, phân bổ tải công việc của thành viên và các hoạt động gần đây.
+ * @author Warmdrobe
+ */
+
 import { useState, useEffect, useContext } from "react";
 import { ProjectContext } from "../context/ProjectContext";
 import { issueApi } from "../api/services/issueApi";
 import { activityApi } from "../api/services/activityApi";
 import type { IssueResponse } from "../api/contracts/issue";
 import type { ActivityResponse } from "../api/contracts/activity";
+import { apiStatusToUI } from "../utils/issueMapper";
+import { avatarUrl } from "../utils/avatar";
 
 //  Helpers 
 
+/**
+ * Tính số ngày còn lại đến hạn chéo (deadline).
+ * @param deadline Chuỗi ngày đến hạn
+ * @returns Số ngày còn lại (dương nếu chưa tới hạn, âm nếu quá hạn)
+ */
 export function getDaysLeft(deadline: string): number {
   return Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
 }
 
+/**
+ * Định dạng ngày hạn hiển thị rút gọn (ví dụ: "Jun 19").
+ * @param deadline Chuỗi ngày cần định dạng
+ */
 export function fmtDeadline(deadline: string): string {
   return new Date(deadline).toLocaleDateString("en-US", {
     month: "short",
@@ -18,6 +35,10 @@ export function fmtDeadline(deadline: string): string {
   });
 }
 
+/**
+ * Tính toán thời gian tương đối so với hiện tại (ví dụ: "2 hours ago", "Yesterday").
+ * @param iso Chuỗi định dạng ISO của thời điểm cần so sánh
+ */
 function fmtRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -88,18 +109,18 @@ export interface OverviewData {
   activities: ActivityItem[];
 }
 
-function apiStatusToUI(s: IssueResponse["status"]): "to_do" | "in_progress" | "done" {
-  if (s === "IN_PROGRESS") return "in_progress";
-  if (s === "DONE") return "done";
-  return "to_do";
-}
-
+/**
+ * Tính toán tỷ lệ phần trăm hoàn thành cơ bản của một issue.
+ */
 function computeProgress(issue: IssueResponse): number {
   if (issue.status === "DONE") return 100;
   if (issue.status === "IN_PROGRESS") return 40;
   return 0;
 }
 
+/**
+ * Xử lý chuỗi nhãn hành động hiển thị cho nhật ký hoạt động.
+ */
 function actionLabel(a: ActivityResponse): string {
   const type = a.actionType?.toLowerCase() ?? "";
   const entity = a.entityName ?? "";
@@ -112,6 +133,9 @@ function actionLabel(a: ActivityResponse): string {
   return `${a.actionType ?? "acted on"} "${entity}"`;
 }
 
+/**
+ * Hàm phân tích và tổng hợp dữ liệu tổng quan (Overview) từ danh sách công việc và lịch sử hoạt động.
+ */
 function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[]): OverviewData {
   const total = issues.length;
   const done = issues.filter((i) => i.status === "DONE").length;
@@ -176,9 +200,7 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
       workloadMap.set(id, {
         id,
         name: profileName,
-        picture:
-          picture ??
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(profileName)}&background=7c3aed&color=fff`,
+        picture: avatarUrl(profileName, picture),
         email: "",
         count: 0,
       });
@@ -192,9 +214,7 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
   const activityItems: ActivityItem[] = activities.map((a) => ({
     id: a.id,
     actorName: a.actorName,
-    actorPicture:
-      a.actorPicture ??
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(a.actorName)}&background=7c3aed&color=fff`,
+    actorPicture: avatarUrl(a.actorName, a.actorPicture),
     action: actionLabel(a),
     time: fmtRelative(a.createdAt),
   }));
@@ -229,6 +249,10 @@ const EMPTY: OverviewData = {
   workload: [], maxWorkload: 1, activities: [],
 };
 
+/**
+ * Hook useOverview tải thông tin tóm tắt dự án, bao gồm số liệu công việc hoàn thành,
+ * quá hạn, sắp tới hạn, biểu đồ tải công việc thành viên và luồng hoạt động gần đây.
+ */
 export function useOverview(): UseOverviewReturn {
   const { projectId } = useContext(ProjectContext);
   const [data, setData] = useState<OverviewData | null>(null);

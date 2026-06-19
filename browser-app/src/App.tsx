@@ -23,9 +23,13 @@ import { userApi } from "./api/services/userApi";
 import { tokenStorage } from "./api/tokenStorage";
 import { toProjectUI, type ProjectUI } from "./api/contracts/projectUI";
 import type { ProjectResponse } from "./api/contracts";
+import { useAutoRefreshToken } from "./hooks/useAutoRefreshToken";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => !!tokenStorage.getAccess());
+
+  // Tự động refresh token trước khi hết hạn
+  useAutoRefreshToken();
   const [sidebar, setSidebar] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [projects, setProjects] = useState<ProjectUI[]>([]);
@@ -42,19 +46,6 @@ function App() {
 
   useEffect(() => {
     if (!loggedIn) return;
-    Promise.all([userApi.getMe(), projectApi.getAll()])
-      .then(([user, projectsRes]) => {
-        setProfileName(user.profileName);
-        setAvatarUrl(user.picture ?? undefined);
-        setProjects(
-          projectsRes.map((p: ProjectResponse, i: number) => toProjectUI(p, i)),
-        );
-      })
-      .catch(console.error);
-  }, [loggedIn]);
-  useEffect(() => {
-    if (!loggedIn) return;
-
     Promise.all([userApi.getMe(), projectApi.getAll()])
       .then(([user, projectsRes]) => {
         setProfileName(user.profileName);

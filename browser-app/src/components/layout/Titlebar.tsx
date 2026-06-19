@@ -17,7 +17,7 @@ function Titlebar() {
       <div className="flex [-webkit-app-region:no-drag]">
         <button
           onClick={() => window.electron.minimize()}
-          className="h-full w-[40px] flex items-center justify-center
+          className="h-full w-10 flex items-center justify-center
              text-gray-400 hover:text-white hover:bg-white/10"
         >
           <FiMinus size={14} />
@@ -25,7 +25,7 @@ function Titlebar() {
 
         <button
           onClick={() => window.electron.maximize()}
-          className="h-full w-[40px] flex items-center justify-center
+          className="h-full w-10 flex items-center justify-center
              text-gray-400 hover:text-white hover:bg-white/10"
         >
           <BiCopy size={14} />
@@ -33,7 +33,7 @@ function Titlebar() {
 
         <button
           onClick={() => window.electron.close()}
-          className="h-full w-[40px] flex items-center justify-center
+          className="h-full w-10 flex items-center justify-center
              text-gray-400 hover:text-white hover:bg-red-600"
         >
           <IoCloseSharp size={16} />
