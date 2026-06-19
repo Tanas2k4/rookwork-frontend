@@ -1,7 +1,15 @@
+/**
+ * @file AddTaskForm.tsx
+ * @description Component form và nút nhấn để thêm nhanh một công việc (Task) mới trên bảng Kanban.
+ * @author Warmdrobe
+ */
+
 import { useState } from "react";
 import { MdAdd } from "react-icons/md";
 import type { TaskType, Priority } from "../../types/project";
 import { typeLabelMap, priorities, priorityLabelMap } from "../../types/project";
+import { Button } from "../../components/common/Button";
+import { Input } from "../../components/common/Input";
 
 interface Props {
   onSubmit: (title: string, type: TaskType, priority: Priority) => void;
@@ -9,6 +17,10 @@ interface Props {
   submitting?: boolean;
 }
 
+/**
+ * Component AddTaskForm hiển thị giao diện nhập thông tin và nút điều khiển
+ * để thêm một công việc mới, có hỗ trợ lựa chọn loại công việc (Type) và độ ưu tiên (Priority).
+ */
 export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<TaskType>("task");
@@ -21,7 +33,7 @@ export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
 
   return (
     <div className="bg-white rounded-lg p-3 border border-purple-300 shadow-sm space-y-2">
-      <input
+      <Input
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -31,7 +43,7 @@ export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
         }}
         placeholder="Task title..."
         disabled={submitting}
-        className="w-full text-sm text-gray-800 outline-none disabled:opacity-50"
+        className="w-full border-none focus:ring-0 px-0 py-0"
       />
       <div className="flex gap-2">
         <select
@@ -56,20 +68,23 @@ export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
         </select>
       </div>
       <div className="flex gap-2 justify-end">
-        <button
+        <Button
           onClick={onCancel}
           disabled={submitting}
-          className="text-xs text-gray-500 border border-gray-500 rounded-md hover:text-gray-700 px-2 py-1 disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleSubmit}
           disabled={submitting}
-          className="text-xs bg-purple-800 text-white rounded px-3 py-1 hover:bg-purple-700 disabled:opacity-60"
+          loading={submitting}
+          variant="primary"
+          size="sm"
         >
-          {submitting ? "Adding..." : "Add"}
-        </button>
+          Add
+        </Button>
       </div>
     </div>
   );
@@ -79,6 +94,9 @@ interface AddButtonProps {
   onClick: () => void;
 }
 
+/**
+ * Component nút bấm "Add task" tối giản để mở biểu mẫu thêm mới công việc.
+ */
 export function AddTaskButton({ onClick }: AddButtonProps) {
   return (
     <button

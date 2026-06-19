@@ -208,7 +208,7 @@ export default function TimelineView() {
                 <div
                   key={i}
                   style={{ width: col.days * colWidth, minWidth: col.days * colWidth }}
-                  className="flex items-end pb-2 pl-2 border-r border-gray-200 flex-shrink-0"
+                  className="flex items-end pb-2 pl-2 border-r border-gray-200 shrink-0"
                 >
                   <span className="text-[11px] font-medium text-gray-400 truncate leading-none">
                     {col.label}
@@ -316,7 +316,7 @@ export default function TimelineView() {
         <div className="border-t border-gray-200 bg-white px-6 py-3 flex items-center gap-8 animate-slide-up">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: selectedTaskData.color }}
             />
             <div className="min-w-0">
@@ -338,7 +338,7 @@ export default function TimelineView() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6 flex-shrink-0">
+          <div className="flex items-center gap-6 shrink-0">
             {/* Progress */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] text-gray-400 uppercase tracking-wider">Progress</span>

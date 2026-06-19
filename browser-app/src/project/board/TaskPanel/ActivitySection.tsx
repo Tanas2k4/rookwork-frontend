@@ -1,3 +1,9 @@
+/**
+ * @file ActivitySection.tsx
+ * @description Component hiển thị lịch sử hoạt động và quản lý phần bình luận của sự vụ (Issue). Tích hợp thời gian thực qua WebSocket.
+ * @author Warmdrobe
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import type { CommentResponse } from "../../../api/contracts/comment";
 import { commentApi } from "../../../api/services/commentApi";
@@ -5,6 +11,8 @@ import { apiClient } from "../../../api/apiClient";
 import { useProject } from "../../../hooks/useProject";
 import { useWebSocket, type WsCommentPayload } from "../../../hooks/useWebSocket";
 import { tokenStorage } from "../../../api/tokenStorage";
+import { avatarUrl } from "../../../utils/avatar";
+import { Button } from "../../../components/common/Button";
 
 //  Types 
 
@@ -32,9 +40,6 @@ function formatDateTime(iso: string): string {
   );
 }
 
-function avatarUrl(name: string, pic: string | null | undefined): string {
-  return pic ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7c3aed&color=fff`;
-}
 
 function actionLabel(a: ActivityResponse): string {
   const meta = a.metadata
@@ -54,6 +59,11 @@ function actionLabel(a: ActivityResponse): string {
 
 //  Comment Item 
 
+/**
+ * Component hiển thị một bình luận đơn lẻ trong phần thảo luận.
+ * Hỗ trợ hiển thị phân cấp (reply lồng nhau), sửa bình luận, xóa bình luận,
+ * và hiển thị hộp thoại trả lời nhanh cho bình luận cấp 0.
+ */
 function CommentItem({
   comment, depth = 0, currentUserId, onEdit, onDelete, onReply,
 }: {
@@ -99,19 +109,19 @@ function CommentItem({
                 className={`w-full text-gray-700 border border-purple-300 rounded-md p-2 resize-none outline-none bg-white ${isReply ? "text-xs" : "text-sm"}`}
               />
               <div className="flex gap-2">
-                <button onClick={() => { onEdit(comment.id, editValue); setEditingId(null); }}
-                  className="text-xs bg-purple-800 text-white rounded px-2.5 py-1 hover:bg-purple-700 transition">
+                <Button onClick={() => { onEdit(comment.id, editValue); setEditingId(null); }}
+                  variant="primary" size="sm">
                   Save
-                </button>
-                <button onClick={() => setEditingId(null)}
-                  className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1">
+                </Button>
+                <Button onClick={() => setEditingId(null)}
+                  variant="ghost" size="sm" className="px-2">
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <>
-              <div className={`bg-white rounded-xl rounded-tl-sm px-3 py-1 ${isReply ? "text-xs" : "text-sm"} text-gray-700 break-words leading-relaxed`}>
+              <div className={`bg-white rounded-xl rounded-tl-sm px-3 py-1 ${isReply ? "text-xs" : "text-sm"} text-gray-700 wrap-break-word leading-relaxed`}>
                 {comment.content}
               </div>
               <div className="flex gap-3 mt-1 items-center">
@@ -152,14 +162,14 @@ function CommentItem({
                       className="w-full text-xs text-gray-700 border border-gray-300 rounded-md p-2 resize-none outline-none bg-white focus:ring-1 focus:ring-purple-400 transition"
                     />
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => { setReplyValue(""); setShowReplyBox(false); }}
-                        className="text-[11px] text-gray-500 border border-gray-300 rounded-md hover:text-gray-700 px-2 py-0.5">
+                      <Button onClick={() => { setReplyValue(""); setShowReplyBox(false); }}
+                        variant="secondary" size="xs">
                         Cancel
-                      </button>
-                      <button onClick={() => { if (replyValue.trim()) { onReply(comment.id, replyValue); setReplyValue(""); setShowReplyBox(false); } }}
-                        className="text-[11px] bg-purple-800 text-white rounded px-2.5 py-0.5 hover:bg-purple-700 transition">
+                      </Button>
+                      <Button onClick={() => { if (replyValue.trim()) { onReply(comment.id, replyValue); setReplyValue(""); setShowReplyBox(false); } }}
+                        variant="primary" size="xs">
                         Reply
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -183,6 +193,9 @@ function CommentItem({
 
 //  Activity Log Item 
 
+/**
+ * Component hiển thị một dòng hoạt động ghi log lịch sử thay đổi của công việc.
+ */
 function ActivityLogItem({ log }: { log: ActivityResponse }) {
   return (
     <div className="flex gap-2.5 items-start">
@@ -201,6 +214,11 @@ function ActivityLogItem({ log }: { log: ActivityResponse }) {
 
 type Tab = "all" | "comments" | "history";
 
+/**
+ * Component chính hiển thị toàn bộ phần hoạt động của một sự vụ (Issue).
+ * Bao gồm form gửi bình luận mới, chuyển đổi các tab (Tất cả / Bình luận / Lịch sử hoạt động),
+ * tích hợp lắng nghe sự kiện WebSocket để cập nhật danh sách bình luận thời gian thực.
+ */
 export function ActivitySection({ issueUuid, projectId: projectIdProp }: { issueUuid: string; projectId?: string | null }) {
   const { projectId: contextProjectId } = useProject();
   const projectId = projectIdProp ?? contextProjectId;
@@ -359,14 +377,14 @@ export function ActivitySection({ issueUuid, projectId: projectIdProp }: { issue
             />
             {(focused || newComment.trim()) && (
               <div className="flex justify-end gap-2">
-                <button onClick={() => { setNewComment(""); setFocused(false); }}
-                  className="text-xs text-gray-700 border border-gray-500 rounded-md hover:bg-gray-100 px-2.5 py-1 transition">
+                <Button onClick={() => { setNewComment(""); setFocused(false); }}
+                  variant="secondary" size="sm">
                   Cancel
-                </button>
-                <button onClick={() => { if (newComment.trim()) { handleSubmit(newComment); setNewComment(""); setFocused(false); } }}
-                  className="text-xs bg-purple-800 text-white rounded px-3 py-1 hover:bg-purple-700 transition">
+                </Button>
+                <Button onClick={() => { if (newComment.trim()) { handleSubmit(newComment); setNewComment(""); setFocused(false); } }}
+                  variant="primary" size="sm">
                   Save
-                </button>
+                </Button>
               </div>
             )}
           </div>

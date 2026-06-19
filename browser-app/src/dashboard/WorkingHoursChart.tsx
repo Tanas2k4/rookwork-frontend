@@ -6,6 +6,7 @@ import {
 import { RiCheckLine, RiArrowDownSLine } from "react-icons/ri";
 import { workLogApi } from "../api/services/workLogApi";
 import type { DailyHours } from "../api/contracts/worklog";
+import { useClickOutside } from "../hooks/useClickOutside";
 
 const OPTIONS = [
   { value: "Weekly", label: "Weekly" },
@@ -19,13 +20,8 @@ function PeriodDropdown({ value, onChange }: {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  useClickOutside(ref, () => setOpen(false));
+
 
   return (
     <div ref={ref} className="relative">
@@ -110,11 +106,11 @@ function ChartTooltip({ active, payload, label, period }: {
   if (!active || !payload?.length) return null;
   const unit = period === "Weekly" ? "h" : "h total";
   return (
-    <div className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 text-xs min-w-[130px] shadow-sm">
+    <div className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 text-xs min-w-32.5 shadow-sm">
       <p className="font-heading font-semibold text-gray-600 mb-2">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 mb-1 last:mb-0">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: entry.color }} />
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: entry.color }} />
           <span className="text-gray-400">
             {entry.dataKey === "thisWeek" ? "This Period" : "Last Period"}
           </span>
@@ -190,11 +186,11 @@ export default function WorkingHoursChart() {
       </div>
 
       {loading ? (
-        <div className="h-[200px] flex items-center justify-center">
+        <div className="h-50 flex items-center justify-center">
           <p className="text-xs text-gray-400">Loading...</p>
         </div>
       ) : data.length === 0 || data.every((d) => d.thisWeek === 0 && d.lastWeek === 0) ? (
-        <div className="h-[200px] flex items-center justify-center">
+        <div className="h-50 flex items-center justify-center">
           <p className="text-xs text-gray-400">No work logged yet — start tracking your hours!</p>
         </div>
       ) : (

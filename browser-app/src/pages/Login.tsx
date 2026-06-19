@@ -34,7 +34,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       className="font-heading flex h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${LoginBackground})` }}
     >
-      <div className="w-96 h-[400px] bg-white p-6 opacity-90">
+      <div className="w-96 h-100 bg-white p-6 opacity-90">
         <h1 className="mb-6 text-2xl text-gray-800 font-semibold font-mono text-center tracking-widest">
           LOGIN
         </h1>
