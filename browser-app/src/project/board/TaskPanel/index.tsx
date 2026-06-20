@@ -1,3 +1,10 @@
+/**
+ * @file index.tsx (TaskPanel)
+ * @description Component chính quản lý panel hiển thị chi tiết thông tin công việc (Task Details Panel).
+ * Tích hợp nhật ký chấm công (Work Log), danh sách công việc con (Subtasks), bình luận/lịch sử (Activity), và liên kết giữa các task.
+ * @author Warmdrobe
+ */
+
 import { useState, useEffect } from "react";
 import type { Task, Status, Priority, User } from "../../../types/project";
 import { childTypeMap } from "../../../types/project";
@@ -9,6 +16,7 @@ import { ActivitySection } from "./ActivitySection";
 import { workLogApi } from "../../../api/services/workLogApi";
 import type { WorkLogResponse } from "../../../api/contracts/worklog";
 import { RiTimeLine } from "react-icons/ri";
+import { avatarUrl } from "../../../utils/avatar";
 
 interface Props {
   task: Task | null;
@@ -37,9 +45,7 @@ function formatLoggedAt(iso: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function avatarUrl(name: string, pic: string | null | undefined) {
-  return pic ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7c3aed&color=fff`;
-}
+
 
 function toDatetimeLocal(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -47,6 +53,11 @@ function toDatetimeLocal(d: Date): string {
 }
 
 //  Log Work Section 
+
+/**
+ * Component LogWorkSection cho phép người dùng chấm công thời gian làm việc (log work) cho một task,
+ * hiển thị tổng thời gian đã làm và lịch sử chấm công của các thành viên.
+ */
 function LogWorkSection({ taskUuid }: { taskUuid: string }) {
   const nowStr = toDatetimeLocal(new Date());
   const [startAt, setStartAt] = useState(nowStr);
@@ -237,6 +248,12 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
 }
 
 //  Main Panel 
+
+/**
+ * Component TaskPanel hiển thị bảng thông tin chi tiết trượt ra từ bên phải màn hình khi click vào một Task.
+ * Cung cấp các công cụ sửa nhanh trạng thái, tiêu đề, mô tả, hạn chót, thành viên đảm nhiệm,
+ * và quản lý công việc con cũng như thời gian chấm công.
+ */
 export function TaskPanel({
   task,
   open,
@@ -269,7 +286,7 @@ export function TaskPanel({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[60] bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-60 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -277,7 +294,7 @@ export function TaskPanel({
 
       {/* Panel */}
       <div
-        className={`fixed top-0 right-0 z-[70] h-full w-full max-w-lg bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed top-0 right-0 z-70 h-full w-full max-w-lg bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -311,7 +328,7 @@ export function TaskPanel({
                 ) : (
                   <p
                     onDoubleClick={() => { setEditingDesc(true); setEditDescValue(task.description ?? ""); }}
-                    className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-0.5 hover:bg-gray-50 transition min-h-[24px]"
+                    className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-0.5 hover:bg-gray-50 transition min-h-6"
                     title="Double-click to edit"
                   >
                     {task.description || (
@@ -354,7 +371,7 @@ export function TaskPanel({
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 border-t border-gray-100 px-6 py-4 flex justify-end gap-2 bg-white">
+            <div className="shrink-0 border-t border-gray-100 px-6 py-4 flex justify-end gap-2 bg-white">
               {confirmDelete ? (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-600">Delete this issue?</span>

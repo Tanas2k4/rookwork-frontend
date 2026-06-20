@@ -35,7 +35,7 @@ function DonutChart({ data, animated }: { data: OverviewData; animated: boolean 
 
   return (
     <div className="flex items-center gap-5">
-      <div className="relative w-[120px] h-[120px] shrink-0">
+      <div className="relative w-30 h-30 shrink-0">
         <svg width={120} height={120}>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth={sw} />
           {segments}

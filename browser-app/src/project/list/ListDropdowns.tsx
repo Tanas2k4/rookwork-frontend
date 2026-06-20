@@ -7,7 +7,7 @@ import { typeOptions, statusOptions } from "../shared/dropdownConstants";
 
 interface Props {
   openDropdown: DropdownState;
-  dropdownRef: RefObject<HTMLDivElement>;
+  dropdownRef: RefObject<HTMLDivElement | null>;
   tasks: (Task & { _uuid: string })[];
   users: User[];
   onAssignUser: (taskId: string, user: User | null) => void;

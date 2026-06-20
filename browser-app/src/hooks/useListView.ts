@@ -1,65 +1,22 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+/**
+ * @file useListView.ts
+ * @description Hook quản lý trạng thái, tìm kiếm, lọc và các chức năng cập nhật trực tiếp trên giao diện danh sách (List View).
+ * @author Warmdrobe
+ */
+
+import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
 import type { Task, Status, TaskType, User } from "../types/project";
-import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
-import type { UserSummary } from "../api/contracts/issue";
-import type { Toast } from "../types/project";
+import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
-
-//  Mapping helpers 
-
-function apiStatusToUI(s: IssueResponse["status"]): Status {
-  if (!s) return "to_do";
-  const map: Record<NonNullable<IssueResponse["status"]>, Status> = {
-    TO_DO: "to_do",
-    IN_PROGRESS: "in_progress",
-    DONE: "done",
-  };
-  return map[s];
-}
-
-function uiStatusToApi(s: Status): NonNullable<IssueResponse["status"]> {
-  const map: Record<Status, NonNullable<IssueResponse["status"]>> = {
-    to_do: "TO_DO",
-    in_progress: "IN_PROGRESS",
-    done: "DONE",
-  };
-  return map[s];
-}
-
-function apiTypeToUI(t: IssueResponse["issueType"]): Task["type"] {
-  return t.toLowerCase() as Task["type"];
-}
-
-function apiUserToUI(u: UserSummary): User {
-  return {
-    id: 0,
-    email: "",
-    display_name: u.profileName,
-    avt:
-      u.picture ??
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(u.profileName)}&background=7c3aed&color=fff`,
-  };
-}
-
-function issueToTask(issue: IssueResponse): Task & { _uuid: string; _assigneeUuid?: string } {
-  return {
-    _uuid: issue.id,
-    id: 0,
-    title: issue.issueName,
-    description: issue.description ?? undefined,
-    type: apiTypeToUI(issue.issueType),
-    priority: (issue.priority?.toLowerCase() as Task["priority"]) ?? "medium",
-    status: apiStatusToUI(issue.status),
-    assigned_to: issue.assignedTo ? apiUserToUI(issue.assignedTo) : null,
-    deadline: issue.deadline ?? null,
-    subtasks: [],
-    parentId: null,
-    childIds: [],
-    _assigneeUuid: issue.assignedTo?.id,
-  };
-}
+import {
+  apiUserToUI,
+  issueToTask,
+  uiStatusToApi,
+} from "../utils/issueMapper";
+import { useToast } from "./useToast";
+import { useClickOutside } from "./useClickOutside";
 
 //  Types 
 
@@ -71,10 +28,14 @@ export interface DropdownState {
 
 //  Hook 
 
+/**
+ * Hook quản lý trạng thái, tìm kiếm, bộ lọc và các dropdown chỉnh sửa nhanh 
+ * của màn hình xem dạng danh sách (List View).
+ */
 export function useListView() {
   const { projectId } = useContext(ProjectContext);
 
-  const [tasks, setTasks]                   = useState<(Task & { _uuid: string; _assigneeUuid?: string })[]>([]);
+  const [tasks, setTasks]                   = useState<(Task & { _uuid: string })[]>([]);
   const [users, setUsers]                   = useState<User[]>([]);
   const [searchQuery, setSearchQuery]       = useState("");
   const [filterOpen, setFilterOpen]         = useState(false);
@@ -83,22 +44,10 @@ export function useListView() {
   const [selectedTypes, setSelectedTypes]   = useState<string[]>([]);
   const [openDropdown, setOpenDropdown]     = useState<DropdownState>({ type: null, taskId: null });
   const [tick, setTick]                     = useState(0);
-  const [toasts, setToasts]                 = useState<Toast[]>([]);
+  const { toasts, addToast, removeToast }   = useToast();
 
-  const dropdownRef = useRef<HTMLDivElement>(null!);
-  const filterRef   = useRef<HTMLDivElement>(null!);
-
-  //  Toast helpers 
-
-  const addToast = useCallback((message: string, type: Toast["type"] = "success") => {
-    const id = Date.now();
-    setToasts((p) => [...p, { id, message, type }]);
-    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3000);
-  }, []);
-
-  const removeToast = useCallback((id: number) => {
-    setToasts((p) => p.filter((t) => t.id !== id));
-  }, []);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const filterRef   = useRef<HTMLDivElement>(null);
 
   //  Fetch issues 
 
@@ -110,7 +59,7 @@ export function useListView() {
       .getAll(projectId)
       .then((issues) => {
         if (cancelled) return;
-        const mapped = issues.map(issueToTask);
+        const mapped = issues.map((i) => issueToTask(i, issues));
         setTasks(mapped);
 
         const seen = new Set<string>();
@@ -126,27 +75,19 @@ export function useListView() {
       .catch(() => addToast("Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  }, [projectId, tick]);
+  }, [projectId, tick, addToast]);
 
   //  Close on outside click 
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
-        setOpenDropdown({ type: null, taskId: null });
-      if (filterRef.current && !filterRef.current.contains(e.target as Node))
-        setFilterOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  useClickOutside(dropdownRef, () => setOpenDropdown({ type: null, taskId: null }));
+  useClickOutside(filterRef, () => setFilterOpen(false));
 
   //  Filter 
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch  = task.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus  = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
-    const matchesUser    = selectedUsers.length === 0 || selectedUsers.includes(task._assigneeUuid ?? "");
+    const matchesUser    = selectedUsers.length === 0 || selectedUsers.includes((task.assigned_to as any)?.uuid ?? "");
     const matchesType    = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
   });

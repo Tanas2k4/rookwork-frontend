@@ -15,7 +15,7 @@ function ProjectTabs() {
   ];
 
   return (
-    <div className="bg-white text-[14px] border-b-2  px-8">
+    <div className="bg-white text-[14px] border-b border-gray-200 px-8">
       <ul className="flex gap-10">
         {tabs.map((tab) => (
           <li key={tab.key}>

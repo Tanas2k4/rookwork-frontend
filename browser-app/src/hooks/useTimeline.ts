@@ -1,25 +1,15 @@
+/**
+ * @file useTimeline.ts
+ * @description Hook quản lý dữ liệu và chuyển đổi cấu trúc sự vụ sang định dạng biểu đồ Gantt (Timeline).
+ * @author Warmdrobe
+ */
+
 import { useState, useEffect } from "react";
 import { issueApi } from "../api/services/issueApi";
 import { taskToGantt } from "../project/timeline/timelineUtils";
 import type { GanttTask } from "../project/timeline/timelineUtils";
 import type { IssueResponse } from "../api/contracts/issue";
-import type { Task, TaskType, Status } from "../types/project";
-
-//  Mapping helpers 
-
-function apiStatusToUI(s: IssueResponse["status"]): Status {
-  if (!s) return "to_do";
-  const map: Record<NonNullable<IssueResponse["status"]>, Status> = {
-    TO_DO: "to_do",
-    IN_PROGRESS: "in_progress",
-    DONE: "done",
-  };
-  return map[s];
-}
-
-function apiTypeToUI(t: IssueResponse["issueType"]): TaskType {
-  return t.toLowerCase() as TaskType;
-}
+import { issueToTask } from "../utils/issueMapper";
 
 const TYPE_DURATION: Record<IssueResponse["issueType"], number> = {
   TASK: 7,
@@ -27,40 +17,23 @@ const TYPE_DURATION: Record<IssueResponse["issueType"], number> = {
   EPIC: 28,
 };
 
+/**
+ * Cộng thêm số ngày vào một đối tượng Date.
+ * @param date Đối tượng Date gốc
+ * @param days Số ngày cộng thêm
+ */
 function addDaysToDate(date: Date, days: number): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
 }
 
-function issueToMinimalTask(issue: IssueResponse): Task {
-  return {
-    id: 0,
-    title: issue.issueName,
-    type: apiTypeToUI(issue.issueType),
-    status: apiStatusToUI(issue.status),
-    priority: "medium",
-    deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
-    assigned_to: issue.assignedTo
-      ? {
-          id: 0,
-          email: "",
-          display_name: issue.assignedTo.profileName,
-          avt:
-            issue.assignedTo.picture ??
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              issue.assignedTo.profileName,
-            )}&background=7c3aed&color=fff`,
-        }
-      : null,
-    subtasks: [],
-    parentId: null,
-    childIds: [],
-  };
-}
-
+/**
+ * Chuyển đổi một đối tượng IssueResponse của API thành đối tượng GanttTask dùng cho thư viện Timeline.
+ * @param issue Đối tượng issue từ API BE
+ */
 function issueToGantt(issue: IssueResponse): GanttTask {
-  const minimalTask = issueToMinimalTask(issue);
+  const minimalTask = issueToTask(issue);
   const gantt = taskToGantt(minimalTask);
   const start = new Date(issue.createdAt);
   const end = issue.deadline
@@ -77,6 +50,10 @@ export interface UseTimelineReturn {
   reload: () => void;
 }
 
+/**
+ * Hook useTimeline tải danh sách các sự vụ của dự án và chuyển đổi chúng thành dạng dữ liệu Timeline Gantt.
+ * @param projectId ID định danh dự án hiện tại
+ */
 export function useTimeline(projectId: string | null): UseTimelineReturn {
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [error, setError] = useState<string | null>(null);

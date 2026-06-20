@@ -97,7 +97,7 @@ export function BoardColumn({
   return (
     <div
       ref={columnRef}
-      className={`bg-gray-100 rounded-xl p-4 min-h-[200px] transition ${
+      className={`bg-gray-100 rounded-xl p-4 min-h-50 transition ${
         isOver ? "ring-2 ring-purple-500 bg-purple-50" : ""
       }`}
     >

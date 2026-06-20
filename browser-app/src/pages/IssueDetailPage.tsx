@@ -6,8 +6,9 @@ import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskPanel/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskPanel/ActivitySection";
+import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
+import { avatarUrl } from "../utils/avatar";
 import {
-  type Status,
   type Priority,
   statusMap,
   statuses,
@@ -20,15 +21,7 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function apiStatusToUI(s: IssueResponse["status"]): Status {
-  if (s === "IN_PROGRESS") return "in_progress";
-  if (s === "DONE") return "done";
-  return "to_do";
-}
 
-function apiPriorityToUI(p: IssueResponse["priority"]): Priority {
-  return (p?.toLowerCase() ?? "medium") as Priority;
-}
 
 function PriorityBars({ priority }: { priority: Priority }) {
   const idx = priorities.indexOf(priority);
@@ -51,10 +44,10 @@ function InlineDropdown({ trigger, children }: { trigger: React.ReactNode; child
       </button>
       {open && (
         <>
-          <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30 min-w-[160px] max-w-[200px]">
+          <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30 min-w-40 max-w-50">
             {children}
           </div>
-          <div className="fixed inset-0 z-[29]" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-29" onClick={() => setOpen(false)} />
         </>
       )}
     </div>
@@ -127,8 +120,6 @@ export default function IssueDetailPage() {
   const TypeIcon = typeIconMap[type];
   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
   const isOverdue = deadline && new Date(deadline) < new Date() && issue.status !== "DONE";
-  const avatar = (pic: string | null, name: string) =>
-    pic ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7c3aed&color=fff`;
 
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
@@ -140,7 +131,7 @@ export default function IssueDetailPage() {
       </div>
 
       {/* Title area */}
-      <div className="flex-shrink-0 px-8 pt-2 pb-5 border-b border-gray-100">
+      <div className="shrink-0 px-8 pt-2 pb-5 border-b border-gray-100">
         <div className="flex items-center justify-between gap-3">
           <TypeIcon size={13} className={typeColorMap[type]} />
           <h1 className="text-xl font-semibold text-gray-700 leading-snug flex-1 pt-1 min-w-0">
@@ -209,7 +200,7 @@ export default function IssueDetailPage() {
                 className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-600 transition" />
             ) : (
               <p onDoubleClick={() => { setEditingDesc(true); setEditDescValue(issue.description ?? ""); }}
-                className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-1 hover:bg-gray-50 transition min-h-[24px] leading-relaxed"
+                className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-1 hover:bg-gray-50 transition min-h-6 leading-relaxed"
                 title="Double-click to edit">
                 {issue.description || <span className="italic text-gray-300">No description — double-click to add</span>}
               </p>
@@ -227,7 +218,7 @@ export default function IssueDetailPage() {
         </div>
 
         {/* Right — Details */}
-        <div className="w-96 flex-shrink-0 border-l border-gray-100 overflow-y-auto">
+        <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto">
           <div className="px-5 py-6">
             <DetailRow label="Issue type">
               <span className={`inline-flex items-center gap-1.5 ${typeColorMap[type]}`}>
@@ -253,7 +244,7 @@ export default function IssueDetailPage() {
             <DetailRow label="Assigned to">
               {issue.assignedTo ? (
                 <span className="flex items-center gap-1.5">
-                  <img src={avatar(issue.assignedTo.picture, issue.assignedTo.profileName)}
+                  <img src={avatarUrl(issue.assignedTo.profileName, issue.assignedTo.picture)}
                     className="w-4 h-4 rounded-full shrink-0" alt="" />
                   <span className="text-gray-700">{issue.assignedTo.profileName}</span>
                 </span>

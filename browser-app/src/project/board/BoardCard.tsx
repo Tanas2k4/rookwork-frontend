@@ -58,7 +58,7 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
             const PI = typeIconMap[parent.type];
             return <PI className={typeColorMap[parent.type]} size={9} />;
           })()}
-          <span className="truncate max-w-[120px]">{parent.title}</span>
+          <span className="truncate max-w-30">{parent.title}</span>
         </div>
       )}
 

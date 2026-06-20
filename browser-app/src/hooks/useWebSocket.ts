@@ -1,3 +1,9 @@
+/**
+ * @file useWebSocket.ts
+ * @description Hook thiết lập kết nối thời gian thực qua WebSocket (STOMP qua SockJS) để đồng bộ hóa bình luận và nhận thông báo tức thời.
+ * @author Warmdrobe
+ */
+
 import { useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client, type IMessage } from "@stomp/stompjs";
@@ -28,6 +34,12 @@ interface UseWebSocketOptions {
   onNotification?: (payload: WsNotificationPayload) => void;
 }
 
+/**
+ * Hook useWebSocket khởi tạo kết nối STOMP client, lắng nghe các sự kiện liên quan đến bình luận của một sự vụ (issue) cụ thể,
+ * và các thông báo cá nhân gửi từ server thông qua hàng đợi của người dùng.
+ * 
+ * @param options Các tham số cấu hình bao gồm projectId, issueId và các hàm callback khi nhận sự kiện.
+ */
 export function useWebSocket({
   projectId,
   issueId,
@@ -42,6 +54,7 @@ export function useWebSocket({
   useEffect(() => {
     onCommentRef.current = onComment;
   }, [onComment]);
+
   useEffect(() => {
     onNotificationRef.current = onNotification;
   }, [onNotification]);

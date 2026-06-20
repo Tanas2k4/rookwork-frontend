@@ -108,7 +108,7 @@ export function ChildrenSection({
                 )}
               </div>
               <div
-                className="fixed inset-0 z-[29]"
+                className="fixed inset-0 z-29"
                 onClick={() => setShowLinkDd(false)}
               />
             </>
