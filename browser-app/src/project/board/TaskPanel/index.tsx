@@ -105,11 +105,11 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
     setError("");
     setLoading(true);
     try {
-      // datetime-local "2024-05-24T12:00" → "2024-05-24T12:00:00"
+      // Convert local times to UTC ISO strings
       const created = await workLogApi.logWork({
         issueId: taskUuid,
-        startAt: `${startAt}:00`,
-        endAt: `${endAt}:00`,
+        startAt: new Date(startAt || nowStr).toISOString(),
+        endAt: new Date(endAt).toISOString(),
         note: note.trim() || undefined,
       });
       // logWork trả về array (có thể split nhiều ngày)

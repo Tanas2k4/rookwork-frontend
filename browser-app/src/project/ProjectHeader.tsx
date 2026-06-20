@@ -110,7 +110,7 @@ function ProjectHeader() {
     setCreating(true);
     setCreateError("");
     try {
-      const deadlineISO = dueDate ? `${dueDate}:00` : undefined;
+      const deadlineISO = dueDate ? new Date(dueDate).toISOString() : undefined;
       const created = await issueApi.create(projectId, {
         issueName: taskTitle.trim(),
         issueType: selectedType.toUpperCase() as IssueType,

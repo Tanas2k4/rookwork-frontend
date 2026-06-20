@@ -162,8 +162,8 @@ export function useListView() {
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: deadline || null } : t));
     closeDropdown();
 
-    // datetime-local trả về "YYYY-MM-DDTHH:mm", Spring nhận "YYYY-MM-DDTHH:mm:ss"
-    const formatted = deadline ? `${deadline}:00` : undefined;
+    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
+    const formatted = deadline ? deadline.split("T")[0] : undefined;
     updateIssue(taskId, { deadline: formatted },
       deadline ? "Deadline updated" : "Deadline cleared"
     );
