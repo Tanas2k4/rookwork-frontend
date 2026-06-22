@@ -13,6 +13,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(async () => {
     if (!projectKey) return;
+    await Promise.resolve();
     setLoading(true);
     try {
       const all = await projectApi.getAll();

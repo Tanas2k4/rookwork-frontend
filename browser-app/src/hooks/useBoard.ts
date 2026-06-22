@@ -36,7 +36,6 @@ import { useToast } from "../hooks/useToast";
  */
 export function useBoard(projectId: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
-  //const [comments] = useState<Comment[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const { toasts, addToast: pushToast, removeToast } = useToast();

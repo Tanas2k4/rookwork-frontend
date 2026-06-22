@@ -2,6 +2,7 @@ import type {
   LoginRequest,
   AuthRegister,
   AuthResponse,
+  GoogleLoginRequest,
 } from "../contracts/auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -29,4 +30,7 @@ export const authApi = {
 
   refresh: (refreshToken: string) =>
     post<AuthResponse>("/api/auth/refresh", { refreshToken }),
+
+  googleLogin: (data: GoogleLoginRequest) =>
+    post<AuthResponse>("/api/auth/google", data),
 };

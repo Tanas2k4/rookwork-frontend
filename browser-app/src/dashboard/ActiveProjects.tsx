@@ -522,12 +522,15 @@ export default function ActiveProjects({
 }: {
   projects: ProjectUI[];
 }) {
+  const [prevProjects, setPrevProjects] = useState<ProjectUI[]>(projects);
   const [ordered, setOrdered] = useState<ProjectUI[]>(projects);
-  const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
+  if (projects !== prevProjects) {
+    setPrevProjects(projects);
     setOrdered(projects);
-  }, [projects]);
+  }
+
+  const [showModal, setShowModal] = useState(false);
 
   const moveProject = (from: number, to: number) => {
     setOrdered((prev) => {
