@@ -36,7 +36,7 @@ export function TaskPanelHeader({
   }
 
   return (
-    <div className="flex-shrink-0 border-b border-gray-200 px-6 py-4 flex items-start gap-3 bg-white">
+    <div className="shrink-0 border-b border-gray-200 px-6 py-4 flex items-start gap-3 bg-white">
       <Icon className={`${typeColorMap[task.type]} text-lg mt-1.5 shrink-0`} />
       <div className="flex-1 min-w-0">
         {/* Parent breadcrumb */}
@@ -48,7 +48,7 @@ export function TaskPanelHeader({
             })()}
             <button
               onClick={() => onOpenTask(parent)}
-              className="hover:text-purple-700 hover:underline transition truncate max-w-[200px]"
+              className="hover:text-purple-700 hover:underline transition truncate max-w-50"
             >
               {parent.title}
             </button>

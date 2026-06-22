@@ -1,8 +1,12 @@
+/**
+ * @file useBoard.ts
+ * @description Hook quản lý trạng thái, dữ liệu và các hành động chính trên bảng Kanban (Kanban Board) của dự án.
+ * @author Warmdrobe
+ */
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import type {
   Task,
-  Comment,
-  Toast,
   Status,
   Priority,
   TaskType,
@@ -11,105 +15,32 @@ import type {
 } from "../types/project";
 import { statusMap, priorityLabelMap } from "../types/project";
 import { issueApi } from "../api/services/issueApi";
-import type { IssueResponse, IssueType, PriorityType, Status as ApiStatus, UserSummary } from "../api/contracts/issue";
-import { formatNow } from "../utils/date";
-
-//  Mapping helpers 
-
-function apiTypeToUI(t: IssueType): TaskType {
-  return t.toLowerCase() as TaskType;
-}
-
-function uiTypeToApi(t: TaskType): IssueType {
-  return t.toUpperCase() as IssueType;
-}
-
-function apiStatusToUI(s: ApiStatus | null): Status {
-  if (!s) return "to_do";
-  const map: Record<ApiStatus, Status> = {
-    TO_DO: "to_do",
-    IN_PROGRESS: "in_progress",
-    DONE: "done",
-  };
-  return map[s];
-}
-
-function uiStatusToApi(s: Status): ApiStatus {
-  const map: Record<Status, ApiStatus> = {
-    to_do: "TO_DO",
-    in_progress: "IN_PROGRESS",
-    done: "DONE",
-  };
-  return map[s];
-}
-
-function apiPriorityToUI(p: PriorityType | null): Priority {
-  if (!p) return "medium";
-  return p.toLowerCase() as Priority;
-}
-
-function uiPriorityToApi(p: Priority): PriorityType {
-  return p.toUpperCase() as PriorityType;
-}
-
-function apiUserToUI(u: UserSummary): User {
-  return {
-    id: 0, // not used for API calls — we use u.id (string uuid) separately
-    email: "",
-    display_name: u.profileName,
-    avt: u.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(u.profileName)}&background=7c3aed&color=fff`,
-    uuid: u.id, // store uuid for API usage
-  } as User & { uuid: string };
-}
-
-let _taskIdCounter = 0;
-const uuidToNumId = new Map<string, number>();
-
-function uuidToId(uuid: string): number {
-  if (!uuidToNumId.has(uuid)) {
-    uuidToNumId.set(uuid, ++_taskIdCounter);
-  }
-  return uuidToNumId.get(uuid)!;
-}
-
-function idToUuid(id: number): string | undefined {
-  for (const [uuid, numId] of uuidToNumId.entries()) {
-    if (numId === id) return uuid;
-  }
-  return undefined;
-}
-
-function issueToTask(issue: IssueResponse, allIssues: IssueResponse[]): Task & { _uuid: string } {
-  const children = allIssues
-    .filter((i) => i.parentId === issue.id)
-    .map((i) => uuidToId(i.id));
-
-  return {
-    id: uuidToId(issue.id),
-    _uuid: issue.id,  // store real UUID for API calls
-    title: issue.issueName,
-    description: issue.description ?? undefined,
-    type: apiTypeToUI(issue.issueType),
-    priority: apiPriorityToUI(issue.priority),
-    assigned_to: issue.assignedTo ? apiUserToUI(issue.assignedTo) : null,
-    deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
-    status: apiStatusToUI(issue.status),
-    subtasks: [],
-    parentId: issue.parentId ? uuidToId(issue.parentId) : null,
-    childIds: children,
-  };
-}
+import {
+  uiTypeToApi,
+  uiStatusToApi,
+  uiPriorityToApi,
+  uuidToId,
+  idToUuid,
+  issueToTask,
+} from "../utils/issueMapper";
+import { useToast } from "../hooks/useToast";
 
 //  Hook 
 
+/**
+ * Hook quản lý trạng thái của Bảng công việc (Kanban Board).
+ * Xử lý việc tải danh sách các sự vụ từ API, thêm mới, sửa, xóa, kéo thả sắp xếp lại các Task,
+ * cũng như quản lý các công việc con (subtasks) ở local.
+ * 
+ * @param projectId ID định danh của dự án hiện tại
+ */
 export function useBoard(projectId: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const { toasts, addToast: pushToast, removeToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const toastIdRef = useRef(0);
   const tempIdRef = useRef(-1);
 
   //  Load issues 
@@ -128,23 +59,17 @@ export function useBoard(projectId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, pushToast]);
 
   useEffect(() => {
-    loadIssues();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) loadIssues();
+    });
+    return () => {
+      active = false;
+    };
   }, [loadIssues]);
-
-  //  Toast helpers 
-
-  function pushToast(message: string, type: Toast["type"] = "success") {
-    const id = ++toastIdRef.current;
-    setToasts((p) => [...p, { id, message, type }]);
-    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3000);
-  }
-
-  function removeToast(id: number) {
-    setToasts((p) => p.filter((t) => t.id !== id));
-  }
 
   //  Optimistic task updater 
 
@@ -300,53 +225,88 @@ export function useBoard(projectId: string | null) {
   }
 
   // linkchild
-async function linkChild(parentId: number, childId: number) {
-  if (!projectId) {
-    pushToast("No projectId available", "error");
-    return;
-  }
+  async function linkChild(parentId: number, childId: number) {
+    if (!projectId) {
+      pushToast("No projectId available", "error");
+      return;
+    }
 
-  const parentTask = tasks.find((t) => t.id === parentId) as (Task & { _uuid?: string }) | undefined;
-  const childTask = tasks.find((t) => t.id === childId) as (Task & { _uuid?: string }) | undefined;
+    const parentTask = tasks.find((t) => t.id === parentId) as (Task & { _uuid?: string }) | undefined;
+    const childTask = tasks.find((t) => t.id === childId) as (Task & { _uuid?: string }) | undefined;
 
-  const parentUuid = parentTask?._uuid ?? idToUuid(parentId);
-  const childUuid = childTask?._uuid ?? idToUuid(childId);
+    const parentUuid = parentTask?._uuid ?? idToUuid(parentId);
+    const childUuid = childTask?._uuid ?? idToUuid(childId);
 
-  if (!childUuid) {
-    pushToast("Cannot find UUID of child task", "error");
-    return;
-  }
+    if (!childUuid) {
+      pushToast("Cannot find UUID of child task", "error");
+      return;
+    }
 
-  // Optimistic update - Update UI immediately
-  setTasks((prev) =>
-    prev.map((t) => {
-      if (t.id === parentId) {
-        return { ...t, childIds: [...(t.childIds ?? []), childId] };
-      }
-      if (t.id === childId) {
-        return { ...t, parentId };
-      }
-      return t;
-    })
-  );
-
-  // Also update selected task if it's the parent
-  if (selectedTask?.id === parentId) {
-    setSelectedTask((p) =>
-      p ? { ...p, childIds: [...(p.childIds ?? []), childId] } : p
+    // Optimistic update - Update UI immediately
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === parentId) {
+          return { ...t, childIds: [...(t.childIds ?? []), childId] };
+        }
+        if (t.id === childId) {
+          return { ...t, parentId };
+        }
+        return t;
+      })
     );
+
+    // Also update selected task if it's the parent
+    if (selectedTask?.id === parentId) {
+      setSelectedTask((p) =>
+        p ? { ...p, childIds: [...(p.childIds ?? []), childId] } : p
+      );
+    }
+
+    // Call API to save to database
+    try {
+      await issueApi.update(projectId, childUuid, {
+        parentId: parentUuid,
+      });
+      pushToast("Linked successfully ✓");
+    } catch (err) {
+      console.error("Link child API error:", err);
+
+      // Rollback on failure
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === parentId) {
+            return { ...t, childIds: (t.childIds ?? []).filter((id) => id !== childId) };
+          }
+          if (t.id === childId) {
+            return { ...t, parentId: null };
+          }
+          return t;
+        })
+      );
+
+      if (selectedTask?.id === parentId) {
+        setSelectedTask((p) =>
+          p ? { ...p, childIds: (p.childIds ?? []).filter((id) => id !== childId) } : p
+        );
+      }
+
+      pushToast("Failed to link - Changes reverted", "error");
+    }
   }
 
-  // Call API to save to database
-  try {
-    await issueApi.update(projectId, childUuid, {
-      parentId: parentUuid,
-    });
-    pushToast("Linked successfully ✓");
-  } catch (err) {
-    console.error("Link child API error:", err);
+  // unlinkchild
+  async function unlinkChild(parentId: number, childId: number) {
+    if (!projectId) return;
 
-    // Rollback on failure
+    const childTask = tasks.find((t) => t.id === childId) as (Task & { _uuid?: string }) | undefined;
+    const childUuid = childTask?._uuid ?? idToUuid(childId);
+
+    if (!childUuid) {
+      pushToast("Cannot find UUID of task", "error");
+      return;
+    }
+
+    // Optimistic update
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id === parentId) {
@@ -365,49 +325,14 @@ async function linkChild(parentId: number, childId: number) {
       );
     }
 
-    pushToast("Failed to link - Changes reverted", "error");
+    try {
+      await issueApi.update(projectId, childUuid, { parentId: null });
+      pushToast("Unlinked successfully", "info");
+    } catch (err) {
+      console.error("Unlink child API error:", err);
+      pushToast("Failed to unlink", "error");
+    }
   }
-}
-
-// unlinkchild
-async function unlinkChild(parentId: number, childId: number) {
-  if (!projectId) return;
-
-  const childTask = tasks.find((t) => t.id === childId) as (Task & { _uuid?: string }) | undefined;
-  const childUuid = childTask?._uuid ?? idToUuid(childId);
-
-  if (!childUuid) {
-    pushToast("Cannot find UUID of task", "error");
-    return;
-  }
-
-  // Optimistic update
-  setTasks((prev) =>
-    prev.map((t) => {
-      if (t.id === parentId) {
-        return { ...t, childIds: (t.childIds ?? []).filter((id) => id !== childId) };
-      }
-      if (t.id === childId) {
-        return { ...t, parentId: null };
-      }
-      return t;
-    })
-  );
-
-  if (selectedTask?.id === parentId) {
-    setSelectedTask((p) =>
-      p ? { ...p, childIds: (p.childIds ?? []).filter((id) => id !== childId) } : p
-    );
-  }
-
-  try {
-    await issueApi.update(projectId, childUuid, { parentId: null });
-    pushToast("Unlinked successfully", "info");
-  } catch (err) {
-    console.error("Unlink child API error:", err);
-    pushToast("Failed to unlink", "error");
-  }
-}
 
   //  Reorder (local only) 
   function reorderTasks(taskId: number, fromIndex: number, toIndex: number) {
@@ -463,45 +388,8 @@ async function unlinkChild(parentId: number, childId: number) {
     pushToast("Subtask removed", "info");
   }
 
-  //  Comments (local only — no comment API yet) 
-
-  const [localComments, setLocalComments] = useState<Comment[]>([]);
-
-  function submitComment(content: string, parentId?: number) {
-    if (!selectedTask || !content.trim()) return;
-    const c: Comment = {
-      id: tempIdRef.current--,
-      taskId: selectedTask.id,
-      userId: 0,
-      content: content.trim(),
-      createdAt: formatNow(),
-      parentId: parentId ?? null,
-    };
-    setLocalComments((p) => [...p, c]);
-    pushToast(parentId ? "Reply posted" : "Comment posted");
-  }
-
-  function editComment(id: number, content: string) {
-    if (!content.trim()) return;
-    setLocalComments((p) =>
-      p.map((c) => (c.id === id ? { ...c, content: content.trim() } : c)),
-    );
-    pushToast("Comment updated");
-  }
-
-  function deleteComment(id: number) {
-    setLocalComments((p) => p.filter((c) => c.id !== id));
-    pushToast("Comment deleted", "info");
-  }
-
-  const taskComments = selectedTask
-    ? localComments.filter((c) => c.taskId === selectedTask.id)
-    : [];
-
   return {
     tasks,
-    comments: localComments,
-    taskComments,
     selectedTask,
     panelOpen,
     toasts,
@@ -523,9 +411,6 @@ async function unlinkChild(parentId: number, childId: number) {
     toggleSubtask,
     addSubtask,
     deleteSubtask,
-    submitComment,
-    editComment,
-    deleteComment,
     removeToast,
     reload: loadIssues,
   };

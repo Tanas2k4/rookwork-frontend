@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import WorkingHoursChart from "../doashbard/WorkingHoursChart";
-import ActiveProjects from "../doashbard/ActiveProjects";
+import WorkingHoursChart from "../dashboard/WorkingHoursChart";
+import ActiveProjects from "../dashboard/ActiveProjects";
 import { type ProjectUI } from "../api/contracts/projectUI";
 import { RiCheckLine } from "react-icons/ri";
 import Image from "../assets/image.png";
@@ -103,7 +103,7 @@ function TypewriterText() {
     <p className="text-sm text-gray-500 mb-1 h-5 flex items-center">
       {displayed}
       <span
-        className="inline-block w-[1.5px] h-[13px] bg-gray-400 ml-[1px] align-middle"
+        className="inline-block w-[1.5px] h-3.25 bg-gray-400 ml-px align-middle"
         style={{ animation: "blink 1s step-end infinite" }}
       />
       <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
@@ -201,7 +201,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                 Hi <span style={{ color: "#7c3aed" }}>{profileName}</span>!
               </h1>
             </div>
-            <div className="flex-shrink-0 w-28 h-20 flex items-center justify-center select-none">
+            <div className="shrink-0 w-28 h-20 flex items-center justify-center select-none">
               <img src={Image} alt="" />
             </div>
           </div>
@@ -251,7 +251,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
               </h2>
             </div>
             <div className="relative pl-4">
-              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
+              <div className="absolute left-1.75 top-2 bottom-2 w-px bg-gray-200" />
               <div className="space-y-3">
                 {todayTasks.map((issue) => {
                   const status = toTaskStatus(issue.status);
@@ -262,7 +262,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                   return (
                     <div key={issue.id} className="flex gap-3">
                       <div
-                        className="relative z-10 mt-1 w-3.5 h-3.5 -ml-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
+                        className="relative z-10 mt-1 w-3.5 h-3.5 -ml-4 rounded-full border-2 shrink-0 flex items-center justify-center"
                         style={{ borderColor: isDone ? accentColor : "#e5e7eb", background: isDone ? accentColor : "white" }}
                       >
                         {isDone && <RiCheckLine size={8} color="white" />}
@@ -275,7 +275,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-xs font-semibold truncate text-gray-700">{issue.issueName}</p>
                           <span
-                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0 border"
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 border"
                             style={{
                               color: STATUS_COLOR[status],
                               borderColor: STATUS_COLOR[status] + "40",
@@ -303,7 +303,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                                 {issue.assignedTo.profileName[0]}
                               </div>
                             )}
-                            <span className="text-[10px] text-gray-400 truncate max-w-[80px]">
+                            <span className="text-[10px] text-gray-400 truncate max-w-20">
                               {issue.assignedTo.profileName.split(" ")[0]}
                             </span>
                           </div>

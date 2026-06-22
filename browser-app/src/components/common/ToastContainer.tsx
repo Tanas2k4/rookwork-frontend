@@ -1,3 +1,9 @@
+/**
+ * @file ToastContainer.tsx
+ * @description Component khung chứa hiển thị danh sách các thông báo nổi (Toast notifications) ở góc màn hình.
+ * @author Warmdrobe
+ */
+
 import { MdCheckCircle, MdClose } from "react-icons/md";
 import type { Toast } from "../../types/project";
 
@@ -6,9 +12,13 @@ interface Props {
   onRemove: (id: number) => void;
 }
 
+/**
+ * Component ToastContainer hiển thị danh sách các thông báo nổi (Toast notifications).
+ * Nhận trạng thái `toasts` và callback `onRemove` từ hook useToast để vẽ giao diện thông báo thành công/lỗi/thông tin.
+ */
 export function ToastContainer({ toasts, onRemove }: Props) {
   return (
-    <div className="fixed top-4 right-4 z-[200] space-y-2 pointer-events-none">
+    <div className="fixed top-4 right-4 z-200 space-y-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}

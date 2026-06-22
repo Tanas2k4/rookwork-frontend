@@ -42,7 +42,7 @@ export default function Overview() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-[1400px] mx-auto px-8 py-7 grid grid-cols-3 gap-5">
+      <div className="max-w-350 mx-auto px-8 py-7 grid grid-cols-3 gap-5">
         <OverallProgress data={data} animated={animated} />
         <DeadlineTimeline data={data} />
         <Milestones data={data} animated={animated} />

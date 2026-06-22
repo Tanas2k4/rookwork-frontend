@@ -128,15 +128,15 @@ function RowDragPreview({ project }: { project: ProjectUI }) {
   const badgeColor = project.daysLeft <= 5 ? "#16a34a" : "#d97706";
   return (
     <div
-      className="flex items-center gap-4 px-4 py-3 rounded-xl border border-violet-300 bg-white w-[580px]"
+      className="flex items-center gap-4 px-4 py-3 rounded-xl border border-violet-300 bg-white w-145"
       style={{
         boxShadow:
           "0 16px 40px rgba(124,58,237,0.15), 0 4px 12px rgba(0,0,0,0.08)",
       }}
     >
-      <RiDraggable size={16} className="text-violet-400 flex-shrink-0" />
+      <RiDraggable size={16} className="text-violet-400 shrink-0" />
       <div
-        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+        className="w-2.5 h-2.5 rounded-full shrink-0"
         style={{ background: project.accentColor }}
       />
       <div className="flex-1 min-w-0">
@@ -147,7 +147,7 @@ function RowDragPreview({ project }: { project: ProjectUI }) {
           {project.description ?? project.ownerName}
         </p>
       </div>
-      <div className="w-28 flex-shrink-0">
+      <div className="w-28 shrink-0">
         <div className="flex justify-between text-[10px] mb-1">
           <span className="text-gray-400">Progress</span>
           <span className="font-bold text-gray-600">{project.progress}%</span>
@@ -399,10 +399,10 @@ function DraggableRow({
       >
         <RiDraggable
           size={16}
-          className="text-gray-200 group-hover:text-gray-400 transition-colors flex-shrink-0"
+          className="text-gray-200 group-hover:text-gray-400 transition-colors shrink-0"
         />
         <div
-          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+          className="w-2.5 h-2.5 rounded-full shrink-0"
           style={{ background: project.accentColor }}
         />
 
@@ -417,12 +417,12 @@ function DraggableRow({
         </div>
 
         {/* Members */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <MemberAvatars members={project.members} size={6} />
         </div>
         
         {/* Progress */}
-        <div className="w-28 hidden sm:block flex-shrink-0">
+        <div className="w-28 hidden sm:block shrink-0">
           <div className="flex justify-between text-[10px] mb-1">
             <span className="text-gray-400">Progress</span>
             <span className="font-bold text-gray-600">{project.progress}%</span>
@@ -440,14 +440,14 @@ function DraggableRow({
 
         {/* Days left */}
         <span
-          className="text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0"
+          className="text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
           style={{ background: badgeBg, color: badgeColor }}
         >
           {project.daysLeft}d left
         </span>
 
         {/* Created date */}
-        <span className="text-[11px] text-gray-400 flex-shrink-0 hidden md:block w-24 text-right">
+        <span className="text-[11px] text-gray-400 shrink-0 hidden md:block w-24 text-right">
           {new Date(project.createdAt).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -522,12 +522,15 @@ export default function ActiveProjects({
 }: {
   projects: ProjectUI[];
 }) {
+  const [prevProjects, setPrevProjects] = useState<ProjectUI[]>(projects);
   const [ordered, setOrdered] = useState<ProjectUI[]>(projects);
-  const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
+  if (projects !== prevProjects) {
+    setPrevProjects(projects);
     setOrdered(projects);
-  }, [projects]);
+  }
+
+  const [showModal, setShowModal] = useState(false);
 
   const moveProject = (from: number, to: number) => {
     setOrdered((prev) => {

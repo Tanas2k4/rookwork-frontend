@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import LoginBackground from "../assets/login-background.jpg";
 import { IoIosLogIn } from "react-icons/io";
 import { IoMailOutline } from "react-icons/io5";
@@ -7,9 +7,43 @@ import { useNavigate } from "react-router-dom";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
 
+interface CredentialResponse {
+  credential: string;
+  select_by?: string;
+}
+
+interface GoogleIdConfiguration {
+  client_id: string;
+  callback: (response: CredentialResponse) => void;
+}
+
+interface GsiButtonConfiguration {
+  type?: "standard" | "icon";
+  theme?: "outline" | "filled_blue" | "filled_black";
+  size?: "large" | "medium" | "small";
+  text?: "signin_with" | "signup_with" | "signin" | "continue_with" | "signin_to";
+  shape?: "rectangular" | "pill" | "circle" | "square";
+  logo_alignment?: "left" | "center";
+  width?: number;
+  locale?: string;
+}
+
+interface GoogleAccountsId {
+  initialize(config: GoogleIdConfiguration): void;
+  renderButton(element: HTMLElement | null, config: GsiButtonConfiguration): void;
+}
+
+interface GoogleAccounts {
+  id: GoogleAccountsId;
+}
+
+interface Google {
+  accounts: GoogleAccounts;
+}
+
 declare global {
   interface Window {
-    google?: any;
+    google?: Google;
   }
 }
 
@@ -35,7 +69,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
-  const handleGoogleLoginResponse = async (response: any) => {
+  const handleGoogleLoginResponse = useCallback(async (response: CredentialResponse) => {
     setError("");
     setLoading(true);
     try {
@@ -48,7 +82,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [onSuccess]);
 
   useEffect(() => {
     const initializeGoogle = () => {
@@ -75,7 +109,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       script.onload = initializeGoogle;
       document.head.appendChild(script);
     }
-  }, []);
+  }, [handleGoogleLoginResponse]);
 
   return (
     <div

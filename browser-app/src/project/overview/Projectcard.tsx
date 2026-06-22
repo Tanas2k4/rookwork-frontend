@@ -50,7 +50,7 @@ export default function ProjectCard({ data }: { data: OverviewData }) {
             </svg>
           </div>
           <p className="text-sm font-semibold text-gray-400">Assignment coming soon</p>
-          <p className="text-xs text-gray-300 text-center max-w-[200px] leading-relaxed">Team assignment features will be available in the next release.</p>
+          <p className="text-xs text-gray-300 text-center max-w-50 leading-relaxed">Team assignment features will be available in the next release.</p>
         </div>
       )}
     </div>

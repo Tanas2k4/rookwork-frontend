@@ -1,18 +1,17 @@
+/**
+ * @file DeadlineTimeline.tsx
+ * @description Component hiển thị dòng thời gian biểu đồ (Timeline) cho các sự vụ sắp đến hạn và quá hạn của dự án.
+ * @author Warmdrobe
+ */
+
 import { useState } from "react";
-import type { OverviewData, OverviewIssue } from "../../hooks/useOverview";
-import type { IssueType, PriorityType } from "../../api/contracts/issue";
+import type { OverviewData } from "../../hooks/useOverview";
+import { apiTypeToUI, apiPriorityToUI, apiStatusToUI } from "../../utils/issueMapper";
+import { avatarUrl } from "../../utils/avatar";
 
 type TaskStatus = "to_do" | "in_progress" | "done";
 type TaskType = "epic" | "story" | "task";
 type TaskPriority = "urgent" | "high" | "medium" | "low";
-
-function apiTypeToUI(t: IssueType): TaskType { return t.toLowerCase() as TaskType; }
-function apiPriorityToUI(p: PriorityType | null): TaskPriority { return (p?.toLowerCase() ?? "medium") as TaskPriority; }
-function apiStatusToUI(s: OverviewIssue["status"]): TaskStatus {
-  if (s === "IN_PROGRESS") return "in_progress";
-  if (s === "DONE") return "done";
-  return "to_do";
-}
 
 function TypeChip({ type }: { type: TaskType }) {
   const cls: Record<TaskType, string> = { epic: "bg-violet-100 text-violet-700", story: "bg-sky-100 text-sky-700", task: "bg-gray-100 text-gray-600" };
@@ -31,6 +30,10 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${cfg[status].cls}`}>{cfg[status].label}</span>;
 }
 
+/**
+ * Component DeadlineTimeline hiển thị danh sách các sự vụ được sắp xếp theo thời hạn hoàn thành của chúng.
+ * Giúp người quản lý nhanh chóng phát hiện các công việc quá hạn hoặc sắp đến hạn cần chú ý.
+ */
 export default function DeadlineTimeline({ data }: { data: OverviewData }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const { timelineTasks, overdueCount, dueSoonCount } = data;
@@ -68,7 +71,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
         <p className="text-xs text-gray-400 py-4 text-center">No deadlines found.</p>
       ) : (
         <div className="relative px-4 py-6">
-          <div className="absolute top-[53px] left-8 right-8 h-px bg-gray-400" />
+          <div className="absolute top-13.25 left-8 right-8 h-px bg-gray-400" />
           <div className="flex items-start justify-between gap-1 relative">
             {timelineTasks.map((item) => {
               const isDone = item.status === "DONE";
@@ -91,7 +94,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
                   <span className={`text-[9px] font-semibold whitespace-nowrap ${labelCls}`}>{item.deadlineLabel}</span>
                   <div className={`w-5 h-5 rounded-full border-2 z-10 shrink-0 transition-transform duration-150 ${nodeBg} ${isHovered ? "scale-125" : ""}`} />
                   <span className={`text-[9px] font-semibold whitespace-nowrap ${labelCls}`}>{daysLabel}</span>
-                  <span className="text-[9px] text-gray-500 text-center leading-tight max-w-[72px] truncate px-0.5">{item.issueName}</span>
+                  <span className="text-[9px] text-gray-500 text-center leading-tight max-w-18 truncate px-0.5">{item.issueName}</span>
                   <TypeChip type={type} />
 
                   {isHovered && (
@@ -103,7 +106,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
                       <p className="text-[12px] font-semibold text-gray-800 leading-snug mb-2">{item.issueName}</p>
                       <div className="flex items-center gap-1.5 mb-2">
                         {item.assignedTo ? (
-                          <img src={item.assignedTo.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.assignedTo.profileName)}&background=7c3aed&color=fff`}
+                          <img src={avatarUrl(item.assignedTo.profileName, item.assignedTo.picture)}
                             alt="" className="w-5 h-5 rounded-full object-cover" />
                         ) : (
                           <div className="w-5 h-5 bg-gray-200 rounded-full" />

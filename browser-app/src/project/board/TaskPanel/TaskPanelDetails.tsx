@@ -157,7 +157,7 @@ export function TaskPanelDetails({
         <div className="relative inline-block border border-gray-400 px-2 rounded-md">
           <button
             onClick={() => { setShowAssigneeDd((p) => !p); setShowStatusDd(false); setShowPriorityDd(false); }}
-            className="flex items-center gap-2 text-sm text-gray-700 px-2 py-1 transition max-w-[160px]"
+            className="flex items-center gap-2 text-sm text-gray-700 px-2 py-1 transition max-w-40"
           >
             {task.assigned_to ? (
               <>

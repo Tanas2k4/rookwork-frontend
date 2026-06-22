@@ -160,11 +160,11 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
       {openNotification && (
         <div
           onClick={() => setOpenNotification(false)}
-          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-[55] transition-opacity duration-300"
+          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-55 transition-opacity duration-300"
         />
       )}
 
-      <header className="font-heading text-sm h-[50px] px-4 bg-white border-b border-gray-300 flex items-center relative z-40">
+      <header className="font-heading text-sm h-12.5 px-4 bg-white border-b border-gray-300 flex items-center relative z-40">
         <div className="flex items-center justify-between w-full">
           <button
             onClick={() => setSidebar((prev) => !prev)}
@@ -256,7 +256,7 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
 
       {/* Notification Side Panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-[360px] bg-white border-l border-gray-200 z-[60] flex flex-col
+        className={`fixed top-0 right-0 h-full w-90 bg-white border-l border-gray-200 z-60 flex flex-col
           transition-transform duration-300 ease-in-out
           ${openNotification ? "translate-x-0" : "translate-x-full"}`}
         onClick={(e) => e.stopPropagation()}
