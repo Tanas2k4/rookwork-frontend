@@ -104,7 +104,6 @@ function issueToTask(issue: IssueResponse, allIssues: IssueResponse[]): Task & {
 
 export function useBoard(projectId: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [comments] = useState<Comment[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);

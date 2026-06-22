@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoginBackground from "../assets/login-background.jpg";
 import { IoIosLogIn } from "react-icons/io";
 import { IoMailOutline } from "react-icons/io5";
@@ -6,6 +6,12 @@ import { TbLock } from "react-icons/tb";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
 
 function Login({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState("");
@@ -29,12 +35,54 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
+  const handleGoogleLoginResponse = async (response: any) => {
+    setError("");
+    setLoading(true);
+    try {
+      const data = await authApi.googleLogin({ token: response.credential });
+      tokenStorage.save(data.accessToken, data.refreshToken);
+      window.electron?.loginSuccess();
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const initializeGoogle = () => {
+      if (window.google) {
+        const client_id = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+        window.google.accounts.id.initialize({
+          client_id: client_id,
+          callback: handleGoogleLoginResponse,
+        });
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn"),
+          { theme: "outline", size: "large", width: 336 }
+        );
+      }
+    };
+
+    if (window.google) {
+      initializeGoogle();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogle;
+      document.head.appendChild(script);
+    }
+  }, []);
+
   return (
     <div
       className="font-heading flex h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${LoginBackground})` }}
     >
-      <div className="w-96 h-[400px] bg-white p-6 opacity-90">
+      <div className="w-96 bg-white p-6 opacity-90 rounded-xl shadow-xl">
         <h1 className="mb-6 text-2xl text-gray-800 font-semibold font-mono text-center tracking-widest">
           LOGIN
         </h1>
@@ -82,7 +130,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
         </div>
 
         {/* LOGIN BUTTON */}
-        <div className="pt-14">
+        <div className="pt-6">
           <button
             className="w-full flex items-center justify-center bg-purple-900 py-2.5 text-white rounded-lg hover:bg-purple-800 disabled:opacity-60"
             onClick={handleLogin}
@@ -94,6 +142,18 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
               <IoIosLogIn size={22} />
             )}
           </button>
+        </div>
+
+        {/* OR DIVIDER */}
+        <div className="my-4 flex items-center justify-between">
+          <span className="w-1/4 border-b border-gray-300"></span>
+          <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">OR</span>
+          <span className="w-1/4 border-b border-gray-300"></span>
+        </div>
+
+        {/* GOOGLE SIGN IN BUTTON */}
+        <div className="flex justify-center">
+          <div id="google-signin-btn" className="w-full flex justify-center"></div>
         </div>
       </div>
     </div>
