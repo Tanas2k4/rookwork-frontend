@@ -67,11 +67,11 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 
 export default function IssueDetailPage() {
   const { issueId } = useParams<{ issueId: string }>();
-  const navigate    = useNavigate();
-  const location    = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [issue, setIssue]             = useState<IssueResponse | null>(null);
-  const [notFound, setNotFound]       = useState(false);
+  const [issue, setIssue] = useState<IssueResponse | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
 
@@ -111,11 +111,11 @@ export default function IssueDetailPage() {
 
   type LocationState = { from?: { label?: string; path?: string } };
   const routeState = location.state as LocationState | null;
-  const backLabel  = routeState?.from?.label ?? "My Issues";
-  const backPath   = routeState?.from?.path  ?? "/my-issues";
+  const backLabel = routeState?.from?.label ?? "My Issues";
+  const backPath = routeState?.from?.path ?? "/my-issues";
 
-  const type     = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
-  const status   = apiStatusToUI(issue.status);
+  const type = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
+  const status = apiStatusToUI(issue.status);
   const priority = apiPriorityToUI(issue.priority);
   const TypeIcon = typeIconMap[type];
   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
@@ -208,7 +208,7 @@ export default function IssueDetailPage() {
           </div>
 
           {/* Subtasks */}
-          <SubtasksSection subtasks={[]} onToggle={() => {}} onAdd={() => {}} onDelete={() => {}} />
+          <SubtasksSection subtasks={[]} onToggle={() => { }} onAdd={() => { }} onDelete={() => { }} />
 
           {/* Activity — pass projectId trực tiếp từ issue vì không có ProjectProvider ở route này */}
           <ActivitySection

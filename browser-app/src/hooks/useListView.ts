@@ -35,19 +35,19 @@ export interface DropdownState {
 export function useListView() {
   const { projectId } = useContext(ProjectContext);
 
-  const [tasks, setTasks]                   = useState<(Task & { _uuid: string })[]>([]);
-  const [users, setUsers]                   = useState<User[]>([]);
-  const [searchQuery, setSearchQuery]       = useState("");
-  const [filterOpen, setFilterOpen]         = useState(false);
+  const [tasks, setTasks] = useState<(Task & { _uuid: string })[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedUsers, setSelectedUsers]   = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes]   = useState<string[]>([]);
-  const [openDropdown, setOpenDropdown]     = useState<DropdownState>({ type: null, taskId: null });
-  const [tick, setTick]                     = useState(0);
-  const { toasts, addToast, removeToast }   = useToast();
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [openDropdown, setOpenDropdown] = useState<DropdownState>({ type: null, taskId: null });
+  const [tick, setTick] = useState(0);
+  const { toasts, addToast, removeToast } = useToast();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const filterRef   = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   //  Fetch issues 
 
@@ -85,26 +85,26 @@ export function useListView() {
   //  Filter 
 
   const filteredTasks = tasks.filter((task) => {
-    const matchesSearch  = task.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus  = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
-    const matchesUser    = selectedUsers.length === 0 || selectedUsers.includes((task.assigned_to as any)?.uuid ?? "");
-    const matchesType    = selectedTypes.length === 0 || selectedTypes.includes(task.type);
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
+    const matchesUser = selectedUsers.length === 0 || (task.assigned_to ? selectedUsers.includes(task.assigned_to.avt) : false);
+    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
   });
 
   //  Dropdown position 
 
   function openDropdownWithPosition(e: React.MouseEvent, type: DropdownState["type"], taskId: string) {
-    const rect           = e.currentTarget.getBoundingClientRect();
-    const spaceBelow     = window.innerHeight - rect.bottom;
-    const spaceAbove     = rect.top;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
     const estimatedHeight = type === "date" ? 120 : 200;
 
-    let top       = rect.bottom + window.scrollY + 4;
+    let top = rect.bottom + window.scrollY + 4;
     let maxHeight = Math.min(estimatedHeight, spaceBelow - 20);
 
     if (spaceBelow < estimatedHeight && spaceAbove > spaceBelow) {
-      top       = rect.top + window.scrollY - Math.min(estimatedHeight, spaceAbove - 20);
+      top = rect.top + window.scrollY - Math.min(estimatedHeight, spaceAbove - 20);
       maxHeight = Math.min(estimatedHeight, spaceAbove - 20);
     }
 
@@ -131,13 +131,13 @@ export function useListView() {
 
   //  Handlers 
 
-  function handleAssignUser(taskId: string, user: User & { _uuid?: string } | null) {
+  function handleAssignUser(taskId: string, user: (User & { uuid?: string; _uuid?: string }) | null) {
     // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, assigned_to: user } : t));
     closeDropdown();
 
-    const assignedToId = (user as (User & { _uuid?: string }) | null)?._uuid ?? null;
-    updateIssue(taskId, { assignedToId: assignedToId ?? undefined }, 
+    const assignedToId = user?.uuid ?? user?._uuid ?? null;
+    updateIssue(taskId, { assignedToId: assignedToId ?? undefined },
       user ? `Assigned to ${user.display_name}` : "Assignee removed"
     );
   }
