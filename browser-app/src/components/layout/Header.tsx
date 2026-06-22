@@ -35,6 +35,10 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
   const [respondingId, setRespondingId]         = useState<string | null>(null);
   const [respondedMap, setRespondedMap]         = useState<Record<string, "accepted" | "declined">>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const [avatarBroken, setAvatarBroken]         = useState(false);
+
+  // Reset broken flag whenever the avatar URL changes (e.g. after re-login)
+  useEffect(() => { setAvatarBroken(false); }, [avatarUrl]);
 
   function normalize(all: NotificationResponse[]): NotificationResponse[] {
     return all.map((n) => ({
@@ -217,11 +221,13 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
                 onClick={() => setOpen((p) => !p)}
                 className="flex items-center gap-2 text-gray-700 border border-gray-500 rounded-full px-1 py-1 hover:bg-gray-50 transition"
               >
-                {avatarUrl ? (
+                {avatarUrl && !avatarBroken ? (
                   <img
                     src={avatarUrl}
                     alt={displayName ?? "avatar"}
+                    referrerPolicy="no-referrer"
                     className="border border-gray-400 size-6 rounded-full object-cover"
+                    onError={() => setAvatarBroken(true)}
                   />
                 ) : (
                   <div className="size-6 rounded-full bg-purple-200 text-purple-800 text-[10px] font-bold flex items-center justify-center">
