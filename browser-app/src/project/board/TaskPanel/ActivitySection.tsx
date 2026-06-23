@@ -9,7 +9,7 @@ import type { CommentResponse } from "../../../api/contracts/comment";
 import { commentApi } from "../../../api/services/commentApi";
 import { apiClient } from "../../../api/apiClient";
 import { useProject } from "../../../hooks/useProject";
-import { useWebSocket, type WsCommentPayload } from "../../../hooks/useWebSocket";
+import { useWebSocket, type WsCommentPayload, type WsActivityPayload } from "../../../hooks/useWebSocket";
 import { tokenStorage } from "../../../api/tokenStorage";
 import { avatarUrl } from "../../../utils/avatar";
 import { Button } from "../../../components/common/Button";
@@ -45,15 +45,34 @@ function actionLabel(a: ActivityResponse): string {
   const meta = a.metadata
     ? (() => { try { return JSON.parse(a.metadata); } catch { return {}; } })()
     : {};
+
+  if (a.entityType === "COMMENT") {
+    switch (a.actionType) {
+      case "COMMENTED": return `commented on issue "${a.entityName}"`;
+      case "DELETED":   return `deleted a comment on issue "${a.entityName}"`;
+      default:          return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
+    }
+  }
+
+  if (a.entityType === "SUBTASK") {
+    switch (a.actionType) {
+      case "CREATED":   return `created subtask "${a.entityName}"`;
+      case "COMPLETED": return `completed subtask "${a.entityName}"`;
+      case "UPDATED":   return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
+      case "DELETED":   return `deleted subtask "${a.entityName}"`;
+      default:          return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
+    }
+  }
+
+  const typeLabel = a.entityType === "ISSUE" ? "issue" : a.entityType.toLowerCase();
   switch (a.actionType) {
-    case "CREATED":   return `created issue "${a.entityName}"`;
-    case "COMPLETED": return `completed issue "${a.entityName}"`;
-    case "MOVED":     return `moved "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
-    case "ASSIGNED":  return `assigned "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
-    case "UPDATED":   return `updated ${meta.field ?? "field"} of "${a.entityName}"`;
-    case "COMMENTED": return `commented on "${a.entityName}"`;
-    case "DELETED":   return `deleted "${a.entityName}"`;
-    default:          return `${a.actionType.toLowerCase()} "${a.entityName}"`;
+    case "CREATED":   return `created ${typeLabel} "${a.entityName}"`;
+    case "COMPLETED": return `completed ${typeLabel} "${a.entityName}"`;
+    case "MOVED":     return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
+    case "ASSIGNED":  return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
+    case "UPDATED":   return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
+    case "DELETED":   return `deleted ${typeLabel} "${a.entityName}"`;
+    default:          return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
   }
 }
 
@@ -248,7 +267,7 @@ export function ActivitySection({ issueUuid, projectId: projectIdProp }: { issue
       .then((data) => { if (!cancelled) setComments(data ?? []); })
       .catch(console.error);
 
-    apiClient.get<ActivityResponse[]>(`/api/projects/${projectId}/activities?limit=30`)
+    apiClient.get<ActivityResponse[]>(`/api/projects/${projectId}/issues/${issueUuid}/activities?limit=30`)
       .then((data) => { if (!cancelled) setActivities(data ?? []); })
       .catch(console.error);
 
@@ -288,7 +307,21 @@ export function ActivitySection({ issueUuid, projectId: projectIdProp }: { issue
     }
   }, []);
 
-  useWebSocket({ projectId, issueId: issueUuid, onComment: handleWsComment });
+  const handleWsActivity = useCallback((payload: WsActivityPayload) => {
+    if (payload.type === "NEW_ACTIVITY" && payload.activity) {
+      setActivities((prev) => {
+        if (prev.some((a) => a.id === payload.activity.id)) return prev;
+        return [payload.activity, ...prev];
+      });
+    }
+  }, []);
+
+  useWebSocket({
+    projectId,
+    issueId: issueUuid,
+    onComment: handleWsComment,
+    onActivity: handleWsActivity,
+  });
 
   // Handlers — KHÔNG add optimistic, để WS xử lý hoặc fallback local
   async function handleSubmit(content: string, parentId?: string) {
@@ -352,9 +385,7 @@ export function ActivitySection({ issueUuid, projectId: projectIdProp }: { issue
       <div className="flex gap-0 border-b border-gray-200 mb-4">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition ${
-              tab === t.key ? "border-purple-600 text-purple-700" : "border-transparent text-gray-400 hover:text-gray-600"
-            }`}>
+            className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition ${tab === t.key ? "border-purple-600 text-purple-700" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
             {t.label}
           </button>
         ))}

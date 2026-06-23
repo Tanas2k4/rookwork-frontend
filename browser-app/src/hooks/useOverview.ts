@@ -122,15 +122,38 @@ function computeProgress(issue: IssueResponse): number {
  * Xử lý chuỗi nhãn hành động hiển thị cho nhật ký hoạt động.
  */
 function actionLabel(a: ActivityResponse): string {
-  const type = a.actionType?.toLowerCase() ?? "";
-  const entity = a.entityName ?? "";
-  if (type.includes("create")) return `created issue "${entity}"`;
-  if (type.includes("update")) return `updated "${entity}"`;
-  if (type.includes("delete")) return `deleted "${entity}"`;
-  if (type.includes("comment")) return `commented on "${entity}"`;
-  if (type.includes("status")) return `changed status of "${entity}"`;
-  if (type.includes("assign")) return `assigned "${entity}"`;
-  return `${a.actionType ?? "acted on"} "${entity}"`;
+  const meta = a.metadata
+    ? (() => { try { return JSON.parse(a.metadata); } catch { return {}; } })()
+    : {};
+
+  if (a.entityType === "COMMENT") {
+    switch (a.actionType) {
+      case "COMMENTED": return `commented on issue "${a.entityName}"`;
+      case "DELETED":   return `deleted a comment on issue "${a.entityName}"`;
+      default:          return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
+    }
+  }
+
+  if (a.entityType === "SUBTASK") {
+    switch (a.actionType) {
+      case "CREATED":   return `created subtask "${a.entityName}"`;
+      case "COMPLETED": return `completed subtask "${a.entityName}"`;
+      case "UPDATED":   return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
+      case "DELETED":   return `deleted subtask "${a.entityName}"`;
+      default:          return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
+    }
+  }
+
+  const typeLabel = a.entityType === "ISSUE" ? "issue" : a.entityType.toLowerCase();
+  switch (a.actionType) {
+    case "CREATED":   return `created ${typeLabel} "${a.entityName}"`;
+    case "COMPLETED": return `completed ${typeLabel} "${a.entityName}"`;
+    case "MOVED":     return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
+    case "ASSIGNED":  return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
+    case "UPDATED":   return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
+    case "DELETED":   return `deleted ${typeLabel} "${a.entityName}"`;
+    default:          return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
+  }
 }
 
 /**
