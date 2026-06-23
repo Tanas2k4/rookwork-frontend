@@ -86,6 +86,18 @@ export default function IssueDetailPage() {
 
   async function patchIssue(updates: UpdateIssueRequest) {
     if (!issue) return;
+
+    // Check if the updates actually change any field in the issue
+    const hasChange = Object.entries(updates).some(([key, val]) => {
+      if (val === undefined) return false;
+      const currentVal = (issue as any)[key];
+      const normalizedCurrent = currentVal === null || currentVal === undefined ? "" : currentVal;
+      const normalizedNew = val === null || val === undefined ? "" : val;
+      return normalizedCurrent !== normalizedNew;
+    });
+
+    if (!hasChange) return;
+
     setIssue((prev) => prev ? { ...prev, ...updates } : prev);
     try {
       const updated = await issueApi.update(issue.projectId, issue.id, updates);
