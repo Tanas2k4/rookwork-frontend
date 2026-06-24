@@ -20,6 +20,7 @@ export interface CreateIssueRequest {
 export interface UpdateIssueRequest {
   issueName?: string;
   description?: string;
+  issueType?: IssueType;
   priority?: PriorityType;
   deadline?: string;      // "2024-08-15" — maps to LocalDate
   assignedToId?: string;  // UUID string

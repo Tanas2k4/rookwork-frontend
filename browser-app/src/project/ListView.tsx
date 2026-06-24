@@ -1,10 +1,12 @@
 import { IoSearchSharp } from "react-icons/io5";
 import { LiaSortSolid } from "react-icons/lia";
 import { FaCaretDown, FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { useListView } from "../hooks/useListView";
 import { ListFilterPanel } from "./list/ListFilterPanel";
 import { ListDropdowns } from "./list/ListDropdowns";
 import { ToastContainer } from "../components/common/ToastContainer";
+import { Button } from "../components/common/Button";
 
 const typeOptions = [
   { label: "Task",  value: "task",  icon: <FaTasks  size={12} />, color: "bg-blue-100 text-blue-700" },
@@ -93,7 +95,7 @@ export default function ListView() {
                     </td>
                   </tr>
                 ) : (
-                  lv.filteredTasks.map((task) => {
+                  lv.pagedTasks.map((task) => {
                     const typeOpt   = getTypeOption(task.type);
                     const statusOpt = getStatusOption(task.status);
                     return (
@@ -180,6 +182,72 @@ export default function ListView() {
             </table>
           </div>
         </div>
+
+        {/* Pagination */}
+        {lv.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 px-1">
+            <span className="text-sm text-gray-500">
+              Pages {lv.currentPage} / {lv.totalPages}
+              &nbsp;&bull;&nbsp;
+              {lv.filteredTasks.length} task{lv.filteredTasks.length !== 1 ? "s" : ""}
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              {/* Prev */}
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={lv.goToPrevPage}
+                disabled={lv.currentPage === 1}
+                className="!px-2.5 !py-2"
+              >
+                <MdChevronLeft size={18} />
+              </Button>
+
+              {/* Page numbers */}
+              {Array.from({ length: lv.totalPages }, (_, i) => i + 1)
+                .filter((p) => {
+                  if (lv.totalPages <= 7) return true;
+                  if (p === 1 || p === lv.totalPages) return true;
+                  if (Math.abs(p - lv.currentPage) <= 1) return true;
+                  return false;
+                })
+                .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+                    acc.push("...");
+                  }
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm select-none">…</span>
+                  ) : (
+                    <Button
+                      key={item}
+                      variant={lv.currentPage === item ? "primary" : "secondary"}
+                      size="md"
+                      onClick={() => lv.goToPage(item as number)}
+                      className="!min-w-[38px] !px-2.5"
+                    >
+                      {item}
+                    </Button>
+                  )
+                )}
+
+              {/* Next */}
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={lv.goToNextPage}
+                disabled={lv.currentPage === lv.totalPages}
+                className="!px-2.5 !py-2"
+              >
+                <MdChevronRight size={18} />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ListDropdowns
