@@ -3,10 +3,14 @@ import ProjectHeader from "../project/ProjectHeader";
 import ProjectTabs from "../navigation/ProjectTabs";
 import { ProjectProvider } from "../project/ProjectProvider";
 
-function ProjectPage() {
+interface ProjectPageProps {
+  onProjectsChanged?: () => void;
+}
+
+function ProjectPage({ onProjectsChanged }: ProjectPageProps) {
   return (
     <ProjectProvider>
-      <ProjectHeader />
+      <ProjectHeader onProjectsChanged={onProjectsChanged} />
       <ProjectTabs />
       <div>
         <Outlet />
