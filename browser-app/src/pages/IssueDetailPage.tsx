@@ -254,12 +254,19 @@ export default function IssueDetailPage() {
             </DetailRow>
 
             <DetailRow label="Assigned to">
-              {issue.assignedTo ? (
-                <span className="flex items-center gap-1.5">
-                  <img src={avatarUrl(issue.assignedTo.profileName, issue.assignedTo.picture)}
-                    className="w-4 h-4 rounded-full shrink-0" alt="" />
-                  <span className="text-gray-700">{issue.assignedTo.profileName}</span>
-                </span>
+              {issue.assignees && issue.assignees.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {issue.assignees.map((a) => (
+                    <div key={a.id} className="flex items-center gap-1.5">
+                      <img
+                        src={avatarUrl(a.profileName, a.picture)}
+                        className="w-4 h-4 rounded-full shrink-0 object-cover"
+                        alt=""
+                      />
+                      <span className="text-gray-700 text-sm">{a.profileName}</span>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <span className="text-gray-400 italic">Unassigned</span>
               )}
