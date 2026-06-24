@@ -6,6 +6,20 @@ export interface UserSummary {
   id: string;
   profileName: string;
   picture: string | null;
+  email: string;
+  jobTitle?: string | null;
+  organization?: string | null;
+  location?: string | null;
+  emailPublic?: boolean;
+  jobTitlePublic?: boolean;
+  organizationPublic?: boolean;
+  locationPublic?: boolean;
+  language?: string;
+  timezone?: string;
+  notifyIssueAssigned?: boolean;
+  notifyMentioned?: boolean;
+  notifyProjectUpdates?: boolean;
+  notifyDailyDigest?: boolean;
 }
 
 export interface CreateIssueRequest {

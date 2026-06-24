@@ -18,6 +18,7 @@ import ListView from "./project/ListView";
 import Loading from "./components/common/Loading";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
+import SettingsPage from "./pages/SettingsPage";
 import { projectApi } from "./api/services/projectApi";
 import { userApi } from "./api/services/userApi";
 import { tokenStorage } from "./api/tokenStorage";
@@ -144,6 +145,7 @@ function App() {
                       path="/issues/:issueId"
                       element={<IssueDetailPage />}
                     />
+                    <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </main>

@@ -277,10 +277,10 @@ function Header({
               {open && (
                 <ul className="absolute right-0 mt-2 w-40 bg-white rounded-lg border border-gray-300 text-sm z-50 overflow-hidden">
                   <li className="px-4 py-2 border-b border-gray-200 hover:bg-gray-100 cursor-pointer">
-                    <a href="#">Profile</a>
+                    <Link to="/settings" className="block w-full h-full" onClick={() => setOpen(false)}>Profile</Link>
                   </li>
                   <li className="px-4 py-2 border-b border-gray-200 hover:bg-gray-100 cursor-pointer">
-                    <a href="#">Settings</a>
+                    <Link to="/settings" className="block w-full h-full" onClick={() => setOpen(false)}>Settings</Link>
                   </li>
                   <li
                     className="px-4 py-2 hover:bg-red-50 cursor-pointer text-red-500"
