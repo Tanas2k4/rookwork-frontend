@@ -12,7 +12,10 @@ import rookworkLogo from "../../assets/logo-no-background.png";
 import { CreateProjectPanel } from "./shared/CreateProjectPanel";
 import { notificationApi } from "../../api/services/notificationApi";
 import { invitationApi } from "../../api/services/invitationApi";
-import { useWebSocket, type WsNotificationPayload } from "../../hooks/useWebSocket";
+import {
+  useWebSocket,
+  type WsNotificationPayload,
+} from "../../hooks/useWebSocket";
 import type { NotificationResponse } from "../../api/contracts/notification";
 import type { ProjectResponse } from "../../api/contracts";
 
@@ -25,20 +28,28 @@ interface HeaderProps {
   onProjectsChanged?: () => void;
 }
 
-function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated, onProjectsChanged }: HeaderProps) {
+function Header({
+  setSidebar,
+  avatarUrl,
+  displayName,
+  onLogout,
+  onProjectCreated,
+  onProjectsChanged,
+}: HeaderProps) {
   const navigate = useNavigate();
-  const [open, setOpen]                         = useState(false);
+  const [open, setOpen] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
-  const [openCreatePanel, setOpenCreatePanel]   = useState(false);
+  const [openCreatePanel, setOpenCreatePanel] = useState(false);
   const isElectron = window.navigator.userAgent.includes("Electron");
-  const [notifications, setNotifications]       = useState<NotificationResponse[]>([]);
-  const [respondingId, setRespondingId]         = useState<string | null>(null);
-  const [respondedMap, setRespondedMap]         = useState<Record<string, "accepted" | "declined">>({});
+  const [notifications, setNotifications] = useState<NotificationResponse[]>(
+    [],
+  );
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [respondedMap, setRespondedMap] = useState<
+    Record<string, "accepted" | "declined">
+  >({});
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const [avatarBroken, setAvatarBroken]         = useState(false);
-
-  // Reset broken flag whenever the avatar URL changes (e.g. after re-login)
-  useEffect(() => { setAvatarBroken(false); }, [avatarUrl]);
+  const [avatarBroken, setAvatarBroken] = useState(false);
 
   function normalize(all: NotificationResponse[]): NotificationResponse[] {
     return all.map((n) => ({
@@ -48,37 +59,51 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
   }
 
   const loadNotifications = useCallback(() => {
-    notificationApi.getAll()
+    notificationApi
+      .getAll()
       .then((all) => setNotifications(normalize(all)))
-      .catch((err: unknown) => console.error("Failed to load notifications", err));
+      .catch((err: unknown) =>
+        console.error("Failed to load notifications", err),
+      );
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    notificationApi.getAll()
-      .then((all) => { if (!cancelled) setNotifications(normalize(all)); })
+    notificationApi
+      .getAll()
+      .then((all) => {
+        if (!cancelled) setNotifications(normalize(all));
+      })
       .catch(console.error);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  //  WebSocket 
+  //  WebSocket
   useWebSocket({
     projectId: null,
     issueId: null,
-    onNotification: useCallback((payload: WsNotificationPayload) => {
-      if (payload.notificationId) {
-        loadNotifications();
-      }
-      if (payload.type === "INVITATION_ACCEPTED") {
-        onProjectsChanged?.();
-      }
-    }, [loadNotifications, onProjectsChanged]),
+    onNotification: useCallback(
+      (payload: WsNotificationPayload) => {
+        if (payload.notificationId) {
+          loadNotifications();
+        }
+        if (payload.type === "INVITATION_ACCEPTED") {
+          onProjectsChanged?.();
+        }
+      },
+      [loadNotifications, onProjectsChanged],
+    ),
   });
 
   // Close user menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      )
         setOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -88,7 +113,9 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
   const handleMarkAsRead = useCallback(async (id: string) => {
     try {
       await notificationApi.markAsRead(id);
-      setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true } : n));
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+      );
     } catch (err) {
       console.error("Failed to mark as read", err);
     }
@@ -113,7 +140,7 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
     }
   }, []);
 
-  //  Respond to invitation 
+  //  Respond to invitation
   const handleRespond = useCallback(
     async (e: React.MouseEvent, invitationId: string, accept: boolean) => {
       e.stopPropagation();
@@ -135,7 +162,7 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
         setRespondingId(null);
       }
     },
-    [loadNotifications, respondingId, onProjectsChanged]
+    [loadNotifications, respondingId, onProjectsChanged],
   );
 
   const handleLogout = () => {
@@ -156,7 +183,12 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const initials = displayName
-    ? displayName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+    ? displayName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : "T";
 
   return (
@@ -204,7 +236,9 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
               <button
                 onClick={() => setOpenNotification((p) => !p)}
                 className={`p-2 rounded-full transition ${
-                  openNotification ? "bg-gray-200 text-gray-900" : "text-gray-600 hover:bg-gray-200"
+                  openNotification
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 <BsBell size={20} />
@@ -223,6 +257,7 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
               >
                 {avatarUrl && !avatarBroken ? (
                   <img
+                    key={avatarUrl}
                     src={avatarUrl}
                     alt={displayName ?? "avatar"}
                     referrerPolicy="no-referrer"
@@ -270,7 +305,9 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
         {/* Panel Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-800 text-base">Notifications</span>
+            <span className="font-bold text-gray-800 text-base">
+              Notifications
+            </span>
             {unreadCount > 0 && (
               <span className="bg-purple-100 text-purple-700 text-xs font-semibold px-2 py-0.5 rounded-full">
                 {unreadCount} new
@@ -307,11 +344,17 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
               {notifications.map((n) => {
                 const sender = n.sender;
                 const avatarInitials = (sender?.profileName ?? n.title)
-                  .split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+                  .split(" ")
+                  .map((w: string) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase();
                 const avatarPic = sender?.picture ?? null;
                 const isInvitation = n.title === "Project Invitation";
                 const isResponding = respondingId === n.invitationId;
-                const respondedAs = n.invitationId ? respondedMap[n.invitationId] : undefined;
+                const respondedAs = n.invitationId
+                  ? respondedMap[n.invitationId]
+                  : undefined;
 
                 return (
                   <li
@@ -340,20 +383,33 @@ function Header({ setSidebar, avatarUrl, displayName, onLogout, onProjectCreated
                         </div>
                       )}
                       <div className="flex-1 min-w-0 pr-6">
-                        <p className="text-sm font-semibold text-gray-700 leading-snug">{n.title}</p>
-                        <p className="text-sm text-gray-600 mt-0.5 leading-snug">{n.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">{formatTime(n.createdAt)}</p>
+                        <p className="text-sm font-semibold text-gray-700 leading-snug">
+                          {n.title}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-0.5 leading-snug">
+                          {n.message}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formatTime(n.createdAt)}
+                        </p>
 
                         {/*  Invitation actions  */}
                         {isInvitation && !n.isRead && n.invitationId && (
                           <div
                             className="mt-2"
-                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }}
                           >
                             {respondedAs ? (
-                              <p className={`text-xs italic font-medium ${
-                                respondedAs === "accepted" ? "text-green-600" : "text-gray-400"
-                              }`}>
+                              <p
+                                className={`text-xs italic font-medium ${
+                                  respondedAs === "accepted"
+                                    ? "text-green-600"
+                                    : "text-gray-400"
+                                }`}
+                              >
                                 {respondedAs === "accepted"
                                   ? "You joined the project"
                                   : "You declined this invitation"}

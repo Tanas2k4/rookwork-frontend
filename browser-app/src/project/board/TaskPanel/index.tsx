@@ -45,14 +45,12 @@ function formatLoggedAt(iso: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-
-
 function toDatetimeLocal(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-//  Log Work Section 
+//  Log Work Section
 
 /**
  * Component LogWorkSection cho phép người dùng chấm công thời gian làm việc (log work) cho một task,
@@ -69,15 +67,11 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
   const [expanded, setExpanded] = useState(false);
   const [logs, setLogs] = useState<WorkLogResponse[]>([]);
 
-  // Reset startAt về now mỗi khi expand
-  useEffect(() => {
-    if (expanded) setStartAt(toDatetimeLocal(new Date()));
-  }, [expanded]);
-
   // Load existing logs khi expand
   useEffect(() => {
     if (!expanded || !taskUuid) return;
-    workLogApi.getByIssue(taskUuid)
+    workLogApi
+      .getByIssue(taskUuid)
       .then((data) => setLogs(data ?? []))
       .catch(console.error);
   }, [expanded, taskUuid]);
@@ -131,15 +125,26 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
   return (
     <div>
       <button
-        onClick={() => setExpanded((p) => !p)}
+        onClick={() => {
+          setExpanded((p) => {
+            if (!p) setStartAt(toDatetimeLocal(new Date()));
+            return !p;
+          });
+        }}
         className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 hover:text-purple-600 transition"
       >
         <RiTimeLine size={14} />
         Log Work
         {totalHours > 0 && (
-          <span className="ml-1 text-purple-600 font-bold">{totalHours.toFixed(1)}h total</span>
+          <span className="ml-1 text-purple-600 font-bold">
+            {totalHours.toFixed(1)}h total
+          </span>
         )}
-        <span className={`ml-1 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}>▾</span>
+        <span
+          className={`ml-1 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        >
+          ▾
+        </span>
       </button>
 
       {expanded && (
@@ -153,7 +158,10 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
               <input
                 type="datetime-local"
                 value={startAt}
-                onChange={(e) => { setStartAt(e.target.value); setError(""); }}
+                onChange={(e) => {
+                  setStartAt(e.target.value);
+                  setError("");
+                }}
                 className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-2 outline-none transition bg-white focus:border-purple-500"
               />
             </div>
@@ -166,9 +174,14 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
               <input
                 type="datetime-local"
                 value={endAt}
-                onChange={(e) => { setEndAt(e.target.value); setError(""); }}
+                onChange={(e) => {
+                  setEndAt(e.target.value);
+                  setError("");
+                }}
                 className={`w-full text-sm border-2 rounded-lg px-3 py-2 outline-none transition bg-white ${
-                  error ? "border-red-400" : "border-gray-200 focus:border-purple-500"
+                  error
+                    ? "border-red-400"
+                    : "border-gray-200 focus:border-purple-500"
                 }`}
               />
               {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -193,7 +206,9 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubmit();
+                }}
                 placeholder="What did you work on?"
                 className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-2 outline-none transition bg-white focus:border-purple-500"
               />
@@ -216,11 +231,16 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                   Work Log History
                 </p>
-                <span className="text-xs font-bold text-purple-600">{totalHours.toFixed(1)}h total</span>
+                <span className="text-xs font-bold text-purple-600">
+                  {totalHours.toFixed(1)}h total
+                </span>
               </div>
               <div className="space-y-2">
                 {logs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100">
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100"
+                  >
                     <img
                       src={avatarUrl(log.userProfileName, log.userPicture)}
                       className="w-6 h-6 rounded-full shrink-0 mt-0.5"
@@ -228,12 +248,20 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-gray-700">{log.userProfileName}</span>
-                        <span className="text-xs font-bold text-purple-600 shrink-0">{Number(log.hours).toFixed(1)}h</span>
+                        <span className="text-xs font-medium text-gray-700">
+                          {log.userProfileName}
+                        </span>
+                        <span className="text-xs font-bold text-purple-600 shrink-0">
+                          {Number(log.hours).toFixed(1)}h
+                        </span>
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{formatLoggedAt(log.loggedAt)}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {formatLoggedAt(log.loggedAt)}
+                      </p>
                       {log.note && (
-                        <p className="text-xs text-gray-500 mt-1 italic">"{log.note}"</p>
+                        <p className="text-xs text-gray-500 mt-1 italic">
+                          "{log.note}"
+                        </p>
                       )}
                     </div>
                   </div>
@@ -247,7 +275,7 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
   );
 }
 
-//  Main Panel 
+//  Main Panel
 
 /**
  * Component TaskPanel hiển thị bảng thông tin chi tiết trượt ra từ bên phải màn hình khi click vào một Task.
@@ -279,15 +307,18 @@ export function TaskPanel({
 
   // Resolve the real UUID from the numeric id stored in the task
   // The uuid is embedded in task via the mapping in useBoard
-  const taskUuid: string = (task as (Task & { _uuid?: string }) | null)?._uuid
-    ?? String(task?.id ?? "");
+  const taskUuid: string =
+    (task as (Task & { _uuid?: string }) | null)?._uuid ??
+    String(task?.id ?? "");
 
   return (
     <>
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-60 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          open
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
@@ -321,18 +352,28 @@ export function TaskPanel({
                     value={editDescValue}
                     onChange={(e) => setEditDescValue(e.target.value)}
                     rows={3}
-                    onBlur={() => { onSaveDescription(editDescValue); setEditingDesc(false); }}
-                    onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
+                    onBlur={() => {
+                      onSaveDescription(editDescValue);
+                      setEditingDesc(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setEditingDesc(false);
+                    }}
                     className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-600 transition"
                   />
                 ) : (
                   <p
-                    onDoubleClick={() => { setEditingDesc(true); setEditDescValue(task.description ?? ""); }}
+                    onDoubleClick={() => {
+                      setEditingDesc(true);
+                      setEditDescValue(task.description ?? "");
+                    }}
                     className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-0.5 hover:bg-gray-50 transition min-h-6"
                     title="Double-click to edit"
                   >
                     {task.description || (
-                      <span className="italic text-gray-300">No description — double-click to add</span>
+                      <span className="italic text-gray-300">
+                        No description — double-click to add
+                      </span>
                     )}
                   </p>
                 )}
@@ -348,7 +389,7 @@ export function TaskPanel({
 
               {childTypeMap[task.type] && (
                 <ChildrenSection
-                  key={`children-section-${task.id}-${(task.childIds ?? []).sort().join('-')}`}
+                  key={`children-section-${task.id}-${(task.childIds ?? []).sort().join("-")}`}
                   task={task}
                   allTasks={allTasks}
                   onOpenTask={onOpenTask}
@@ -374,9 +415,14 @@ export function TaskPanel({
             <div className="shrink-0 border-t border-gray-100 px-6 py-4 flex justify-end gap-2 bg-white">
               {confirmDelete ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">Delete this issue?</span>
+                  <span className="text-sm text-gray-600">
+                    Delete this issue?
+                  </span>
                   <button
-                    onClick={() => { setConfirmDelete(false); onDeleteTask(task); }}
+                    onClick={() => {
+                      setConfirmDelete(false);
+                      onDeleteTask(task);
+                    }}
                     className="text-sm px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                   >
                     Yes, delete

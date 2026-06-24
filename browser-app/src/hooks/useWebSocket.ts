@@ -18,6 +18,11 @@ export interface WsCommentPayload {
   issueId?: string;
 }
 
+export interface WsActivityPayload {
+  type: "NEW_ACTIVITY";
+  activity?: any;
+}
+
 export interface WsNotificationPayload {
   type: string;
   notificationId: string;
@@ -32,6 +37,7 @@ interface UseWebSocketOptions {
   issueId: string | null; // UUID của issue đang mở trong TaskPanel
   onComment?: (payload: WsCommentPayload) => void;
   onNotification?: (payload: WsNotificationPayload) => void;
+  onActivity?: (payload: WsActivityPayload) => void;
 }
 
 /**
@@ -45,10 +51,12 @@ export function useWebSocket({
   issueId,
   onComment,
   onNotification,
+  onActivity,
 }: UseWebSocketOptions) {
   const clientRef = useRef<Client | null>(null);
   const onCommentRef = useRef(onComment);
   const onNotificationRef = useRef(onNotification);
+  const onActivityRef = useRef(onActivity);
 
   // Keep refs up to date without reconnecting
   useEffect(() => {
@@ -58,6 +66,10 @@ export function useWebSocket({
   useEffect(() => {
     onNotificationRef.current = onNotification;
   }, [onNotification]);
+
+  useEffect(() => {
+    onActivityRef.current = onActivity;
+  }, [onActivity]);
 
   useEffect(() => {
     const token = tokenStorage.getAccess();
@@ -80,6 +92,19 @@ export function useWebSocket({
                 onCommentRef.current?.(payload);
               } catch (e) {
                 console.error("WS comment parse error", e);
+              }
+            },
+          );
+
+          // Subscribe activities cho issue đang mở
+          client.subscribe(
+            `/topic/project/${projectId}/issue/${issueId}/activities`,
+            (msg: IMessage) => {
+              try {
+                const payload = JSON.parse(msg.body) as WsActivityPayload;
+                onActivityRef.current?.(payload);
+              } catch (e) {
+                console.error("WS activity parse error", e);
               }
             },
           );
