@@ -120,7 +120,7 @@ function ProjectHeader() {
         status,
       });
       if (assigneeId && created.id) {
-        await issueApi.update(projectId, created.id, { assignedToId: assigneeId });
+        await issueApi.update(projectId, created.id, { assigneeIds: [assigneeId] });
       }
       resetTaskForm();
       reloadIssues();

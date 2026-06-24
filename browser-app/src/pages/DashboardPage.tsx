@@ -290,21 +290,28 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                             Due {new Date(issue.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </p>
                         )}
-                        {issue.assignedTo && (
+                        {issue.assignees && issue.assignees.length > 0 && (
                           <div className="flex items-center gap-1.5 mt-2">
-                            {issue.assignedTo.picture ? (
-                              <img
-                                src={issue.assignedTo.picture}
-                                alt={issue.assignedTo.profileName}
-                                className="w-5 h-5 rounded-full border border-white object-cover"
-                              />
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-violet-200 flex items-center justify-center text-[9px] font-bold text-violet-700">
-                                {issue.assignedTo.profileName[0]}
-                              </div>
-                            )}
+                            <div className="flex -space-x-1.5 overflow-hidden">
+                              {issue.assignees.slice(0, 2).map((a, i) => (
+                                <img
+                                  key={i}
+                                  src={a.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(a.profileName)}&background=7c3aed&color=fff`}
+                                  alt={a.profileName}
+                                  title={a.profileName}
+                                  className="inline-block h-5 w-5 rounded-full ring-1 ring-white object-cover"
+                                />
+                              ))}
+                              {issue.assignees.length > 2 && (
+                                <span className="w-5 h-5 rounded-full bg-purple-100 border ring-1 ring-white flex items-center justify-center text-[9px] font-bold text-purple-700 shrink-0">
+                                  +{issue.assignees.length - 2}
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] text-gray-400 truncate max-w-20">
-                              {issue.assignedTo.profileName.split(" ")[0]}
+                              {issue.assignees.length === 1
+                                ? issue.assignees[0].profileName.split(" ")[0]
+                                : `${issue.assignees.length} people`}
                             </span>
                           </div>
                         )}
