@@ -14,6 +14,7 @@ import { ChildrenSection } from "./ChildrenSection";
 import { SubtasksSection } from "./SubtasksSection";
 import { ActivitySection } from "./ActivitySection";
 import { workLogApi } from "../../../api/services/workLogApi";
+import { tokenStorage } from "../../../api/tokenStorage";
 import type { WorkLogResponse } from "../../../api/contracts/worklog";
 import { RiTimeLine } from "react-icons/ri";
 import { avatarUrl } from "../../../utils/avatar";
@@ -38,11 +39,15 @@ interface Props {
   onDeleteSubtask: (id: number) => void;
 }
 
-function formatLoggedAt(iso: string): string {
+
+function formatDateTime(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return (
+    `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ` +
+    `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  );
 }
 
 function toDatetimeLocal(d: Date): string {
@@ -56,8 +61,17 @@ function toDatetimeLocal(d: Date): string {
  * Component LogWorkSection cho phép người dùng chấm công thời gian làm việc (log work) cho một task,
  * hiển thị tổng thời gian đã làm và lịch sử chấm công của các thành viên.
  */
-function LogWorkSection({ taskUuid }: { taskUuid: string }) {
+function LogWorkSection({ task }: { task: Task }) {
+  const taskUuid = (task as any)._uuid ?? String(task.id);
+  const currentUserId = tokenStorage.getUserId();
+
+  // Check if the current user is one of the assignees of this task
+  const isAssignee = (task.assigned_to ?? []).some(
+    (u: any) => (u.uuid || u._uuid || String(u.id)) === currentUserId
+  );
+
   const nowStr = toDatetimeLocal(new Date());
+  const todayStartStr = toDatetimeLocal(new Date(new Date().setHours(0, 0, 0, 0)));
   const [startAt, setStartAt] = useState(nowStr);
   const [endAt, setEndAt] = useState("");
   const [note, setNote] = useState("");
@@ -66,6 +80,7 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [logs, setLogs] = useState<WorkLogResponse[]>([]);
+  const [showAll, setShowAll] = useState(false);
 
   // Load existing logs khi expand
   useEffect(() => {
@@ -85,7 +100,21 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
     return diff > 0 ? parseFloat(diff.toFixed(2)) : null;
   })();
 
-  const totalHours = logs.reduce((sum, l) => sum + Number(l.hours), 0);
+  // Recalculate totalHours from the earliest start time to the latest end time of all worklogs
+  const totalHours = (() => {
+    if (logs.length === 0) return 0;
+    const startTimes = logs.map(l => new Date(l.startAt || l.loggedAt).getTime()).filter(t => !isNaN(t));
+    const endTimes = logs.map(l => {
+      if (l.endAt) return new Date(l.endAt).getTime();
+      const st = new Date(l.loggedAt).getTime();
+      return st + Number(l.hours) * 3600000;
+    }).filter(t => !isNaN(t));
+    if (startTimes.length === 0 || endTimes.length === 0) return 0;
+    const minStart = Math.min(...startTimes);
+    const maxEnd = Math.max(...endTimes);
+    const diff = (maxEnd - minStart) / 3600000;
+    return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
+  })();
 
   async function handleSubmit() {
     if (!endAt) {
@@ -104,6 +133,7 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
         issueId: taskUuid,
         startAt: new Date(startAt || nowStr).toISOString(),
         endAt: new Date(endAt).toISOString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         note: note.trim() || undefined,
       });
       // logWork trả về array (có thể split nhiều ngày)
@@ -113,14 +143,21 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
       setNote("");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
-    } catch {
-      setError("Failed to log work");
+    } catch (err: any) {
+      try {
+        const parsed = JSON.parse(err.message);
+        setError(parsed.message || "Failed to log work");
+      } catch {
+        setError(err.message || "Failed to log work");
+      }
     } finally {
       setLoading(false);
     }
   }
 
   if (!taskUuid || taskUuid.startsWith("-")) return null;
+
+  const visibleLogs = showAll ? logs : logs.slice(0, 2);
 
   return (
     <div>
@@ -149,80 +186,88 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
 
       {expanded && (
         <div className="space-y-4">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
-            {/* Start */}
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Start <span className="text-gray-300">defaults to now</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={startAt}
-                onChange={(e) => {
-                  setStartAt(e.target.value);
-                  setError("");
-                }}
-                className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-2 outline-none transition bg-white focus:border-purple-500"
-              />
-            </div>
-
-            {/* End */}
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                End <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={endAt}
-                onChange={(e) => {
-                  setEndAt(e.target.value);
-                  setError("");
-                }}
-                className={`w-full text-sm border-2 rounded-lg px-3 py-2 outline-none transition bg-white ${
-                  error
-                    ? "border-red-400"
-                    : "border-gray-200 focus:border-purple-500"
-                }`}
-              />
-              {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-            </div>
-
-            {/* Computed hours preview */}
-            {computedHours !== null && computedHours > 0 && (
-              <div className="flex items-center gap-2 bg-purple-50 rounded-lg px-3 py-2 border border-purple-100">
-                <RiTimeLine size={13} className="text-purple-500 shrink-0" />
-                <span className="text-xs text-purple-700 font-medium">
-                  {computedHours.toFixed(2)} hours
-                </span>
+          {isAssignee ? (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
+              {/* Start */}
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                  Start <span className="text-gray-300">defaults to now</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startAt}
+                  min={todayStartStr}
+                  onChange={(e) => {
+                    setStartAt(e.target.value);
+                    setError("");
+                  }}
+                  className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-2 outline-none transition bg-white focus:border-purple-500"
+                />
               </div>
-            )}
 
-            {/* Note */}
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Note <span className="text-gray-300">optional</span>
-              </label>
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSubmit();
-                }}
-                placeholder="What did you work on?"
-                className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-2 outline-none transition bg-white focus:border-purple-500"
-              />
+              {/* End */}
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                  End <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={endAt}
+                  min={startAt || todayStartStr}
+                  onChange={(e) => {
+                    setEndAt(e.target.value);
+                    setError("");
+                  }}
+                  className={`w-full text-sm border-2 rounded-lg px-3 py-2 outline-none transition bg-white ${
+                    error
+                      ? "border-red-400"
+                      : "border-gray-200 focus:border-purple-500"
+                  }`}
+                />
+                {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+              </div>
+
+              {/* Computed hours preview */}
+              {computedHours !== null && computedHours > 0 && (
+                <div className="flex items-center gap-2 bg-purple-50 rounded-lg px-3 py-2 border border-purple-100">
+                  <RiTimeLine size={13} className="text-purple-500 shrink-0" />
+                  <span className="text-xs text-purple-700 font-medium">
+                    {computedHours.toFixed(2)} hours
+                  </span>
+                </div>
+              )}
+
+              {/* Note */}
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                  Note <span className="text-gray-300">optional</span>
+                </label>
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSubmit();
+                  }}
+                  placeholder="What did you work on?"
+                  className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-2 outline-none transition bg-white focus:border-purple-500"
+                />
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !computedHours || computedHours <= 0}
+                className="w-full flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-60 text-white text-xs font-medium py-2 rounded-lg transition"
+              >
+                <RiTimeLine size={13} />
+                {loading ? "Logging..." : success ? "✓ Logged!" : "Log Work"}
+              </button>
             </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !computedHours || computedHours <= 0}
-              className="w-full flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-60 text-white text-xs font-medium py-2 rounded-lg transition"
-            >
-              <RiTimeLine size={13} />
-              {loading ? "Logging..." : success ? "✓ Logged!" : "Log Work"}
-            </button>
-          </div>
+          ) : (
+            <p className="text-xs text-gray-400 italic bg-gray-50 border border-gray-100 rounded-lg p-3 text-center">
+              Only assignees can log work on this task.
+            </p>
+          )}
 
           {/* Existing logs */}
           {logs.length > 0 && (
@@ -236,7 +281,7 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
                 </span>
               </div>
               <div className="space-y-2">
-                {logs.map((log) => (
+                {visibleLogs.map((log) => (
                   <div
                     key={log.id}
                     className="flex items-start gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100"
@@ -256,7 +301,7 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
                         </span>
                       </div>
                       <p className="text-[10px] text-gray-400 mt-0.5">
-                        {formatLoggedAt(log.loggedAt)}
+                        {formatDateTime(log.startAt)} - {formatDateTime(log.endAt)}
                       </p>
                       {log.note && (
                         <p className="text-xs text-gray-500 mt-1 italic">
@@ -266,6 +311,16 @@ function LogWorkSection({ taskUuid }: { taskUuid: string }) {
                     </div>
                   </div>
                 ))}
+
+                {logs.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(!showAll)}
+                    className="w-full text-center text-xs font-semibold text-purple-600 hover:text-purple-800 transition py-1.5 mt-2 border border-dashed border-purple-200 rounded-lg hover:bg-purple-50"
+                  >
+                    {showAll ? "Show Less" : `See All (${logs.length})`}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -406,7 +461,7 @@ export function TaskPanel({
               />
 
               {/* Log Work — now uses real UUID */}
-              <LogWorkSection taskUuid={taskUuid} />
+              <LogWorkSection task={task} />
 
               <ActivitySection issueUuid={taskUuid} />
             </div>
