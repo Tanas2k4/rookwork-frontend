@@ -123,10 +123,23 @@ export default function ListView() {
                         <td className="px-4 py-3 border-r border-gray-200">
                           <div className="flex items-center justify-between cursor-pointer group"
                             onDoubleClick={(e) => lv.openDropdownWithPosition(e, "user", task._uuid)}>
-                            {task.assigned_to ? (
+                            {task.assigned_to.length > 0 ? (
                               <div className="flex items-center gap-2">
-                                <img src={task.assigned_to.avt} className="w-6 h-6 rounded-full" />
-                                <span className="text-[13px] text-gray-700">{task.assigned_to.display_name}</span>
+                                <div className="flex -space-x-2">
+                                  {task.assigned_to.slice(0, 2).map((u, i) => (
+                                    <img key={i} src={u.avt} title={u.display_name} className="w-6 h-6 rounded-full border-2 border-white" />
+                                  ))}
+                                  {task.assigned_to.length > 2 && (
+                                    <span className="w-6 h-6 rounded-full bg-purple-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-purple-700">
+                                      +{task.assigned_to.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[13px] text-gray-700">
+                                  {task.assigned_to.length === 1
+                                    ? task.assigned_to[0].display_name
+                                    : `${task.assigned_to.length} people`}
+                                </span>
                               </div>
                             ) : (
                               <span className="text-sm text-gray-400 italic">Unassigned</span>

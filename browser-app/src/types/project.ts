@@ -28,7 +28,7 @@ export interface Task {
   description?: string;
   type: TaskType;
   priority: Priority;
-  assigned_to: User | null;
+  assigned_to: User[];   // multi-assignee
   deadline: string | null;
   status: Status;
   subtasks: Subtask[];

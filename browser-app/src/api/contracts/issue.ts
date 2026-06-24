@@ -22,8 +22,8 @@ export interface UpdateIssueRequest {
   description?: string;
   issueType?: IssueType;
   priority?: PriorityType;
-  deadline?: string;      // "2024-08-15" — maps to LocalDate
-  assignedToId?: string;  // UUID string
+  deadline?: string;       // "2024-08-15" — maps to LocalDate
+  assigneeIds?: string[];  // null=no change, []=remove all, [id1,id2]=set new
   status?: Status;
   parentId?: string | null;
 }
@@ -37,7 +37,7 @@ export interface IssueResponse {
   status: Status | null;
   parentId: string | null;
   projectId: string;
-  assignedTo: UserSummary | null;
+  assignees: UserSummary[];   // multi-assignee list
   deadline: string | null;
   createdAt: string;
   updatedAt: string;

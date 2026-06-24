@@ -73,7 +73,7 @@ export function useBoard(projectId: string | null) {
 
   //  Optimistic task updater 
 
-  function updateTaskLocal(id: number, patch: Partial<Task>) {
+  function updateTaskLocal(id: number, patch: Partial<Task & { _assigneeUuids?: string[] }>) {
     setTasks((p) => p.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     if (selectedTask?.id === id)
       setSelectedTask((p) => (p ? { ...p, ...patch } : p));
@@ -105,7 +105,7 @@ export function useBoard(projectId: string | null) {
       type,
       priority,
       status,
-      assigned_to: null,
+      assigned_to: [],
       deadline: null,
       subtasks: [],
       parentId: null,
@@ -211,16 +211,15 @@ export function useBoard(projectId: string | null) {
     patchIssue(selectedTask.id, { priority: uiPriorityToApi(p) });
   }
 
-  function changeAssignee(u: User | null) {
+  function changeAssignee(users: User[]) {
     if (!selectedTask) return;
-    const currentAssigneeUuid = (selectedTask.assigned_to as any)?.uuid ?? (selectedTask.assigned_to as any)?._uuid ?? null;
-    const newAssigneeUuid = (u as any)?.uuid ?? (u as any)?._uuid ?? null;
-    if (currentAssigneeUuid === newAssigneeUuid) return;
-    updateTaskLocal(selectedTask.id, { assigned_to: u });
-    pushToast(u ? `Assigned to ${u.display_name}` : "Unassigned");
-    // uuid được attach vào User object bởi TaskPanelDetails dưới key "_uuid"
-    const assigneeUuid = (u as (User & { _uuid?: string }) | null)?._uuid ?? null;
-    patchIssue(selectedTask.id, { assignedToId: assigneeUuid ?? undefined });
+    const currentUuids = ((selectedTask as any)._assigneeUuids as string[] | undefined) ?? [];
+    const newUuids = users.map((u) => (u as any)._uuid ?? (u as any).uuid ?? "").filter(Boolean);
+    // shallow compare
+    if (JSON.stringify([...currentUuids].sort()) === JSON.stringify([...newUuids].sort())) return;
+    updateTaskLocal(selectedTask.id, { assigned_to: users, _assigneeUuids: newUuids } as any);
+    pushToast(users.length > 0 ? `Assigned to ${users.map((u) => u.display_name).join(", ")}` : "Unassigned");
+    patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
   }
 
   function saveDeadline(val: string) {
