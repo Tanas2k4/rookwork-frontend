@@ -12,6 +12,7 @@ export interface LogWorkRequest {
   issueId: string;
   startAt: string;  
   endAt: string;    
+  timezone?: string;
   note?: string;
 }
 
@@ -23,5 +24,8 @@ export interface WorkLogResponse {
   userPicture: string | null;
   hours: number;
   loggedAt: string; // ISO LocalDateTime string
+  startAt: string;
+  endAt: string;
+  createdAt: string;
   note: string | null;
 }
