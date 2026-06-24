@@ -36,7 +36,7 @@ export interface DropdownState {
 export function useListView() {
   const { projectId } = useContext(ProjectContext);
 
-  const [tasks, setTasks] = useState<(Task & { _uuid: string })[]>([]);
+  const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuid?: string })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -146,17 +146,33 @@ export function useListView() {
   //  Handlers 
 
   function handleAssignUser(taskId: string, user: (User & { uuid?: string; _uuid?: string }) | null) {
+    const task = tasks.find((t) => t._uuid === taskId);
+    if (!task) return;
+    const currentAssigneeUuid = task._assigneeUuid ?? null;
+    const newAssigneeUuid = user?.uuid ?? user?._uuid ?? null;
+    if (currentAssigneeUuid === newAssigneeUuid) {
+      closeDropdown();
+      return;
+    }
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, assigned_to: user } : t));
+    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, assigned_to: user, _assigneeUuid: newAssigneeUuid ?? undefined } : t));
     closeDropdown();
 
-    const assignedToId = user?.uuid ?? user?._uuid ?? null;
+    const assignedToId = newAssigneeUuid;
     updateIssue(taskId, { assignedToId: assignedToId ?? undefined },
       user ? `Assigned to ${user.display_name}` : "Assignee removed"
     );
   }
 
   function handleStatusChange(taskId: string, status: Status) {
+    const task = tasks.find((t) => t._uuid === taskId);
+    if (!task) return;
+    if (task.status === status) {
+      closeDropdown();
+      return;
+    }
+
     // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, status } : t));
     closeDropdown();
@@ -173,6 +189,15 @@ export function useListView() {
   }
 
   function handleDeadlineChange(taskId: string, deadline: string) {
+    const task = tasks.find((t) => t._uuid === taskId);
+    if (!task) return;
+    const currentDeadline = task.deadline ? task.deadline.split("T")[0] : "";
+    const newDeadline = deadline ? deadline.split("T")[0] : "";
+    if (currentDeadline === newDeadline) {
+      closeDropdown();
+      return;
+    }
+
     // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: deadline || null } : t));
     closeDropdown();
