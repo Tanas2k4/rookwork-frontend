@@ -11,6 +11,7 @@ import {
 } from "../../../types/project";
 import { useProject } from "../../../hooks/useProject";
 import { formatDeadline } from "../../shared/dropdownConstants";
+import { avatarUrl } from "../../../utils/avatar";
 
 interface Props {
   task: Task;
@@ -20,7 +21,7 @@ interface Props {
   onSaveDeadline: (val: string) => void;
 }
 
-export function TaskPanelDetails({
+export function TaskModalDetails({
   task,
   onChangeStatus,
   onChangePriority,
@@ -58,9 +59,7 @@ export function TaskPanelDetails({
     id: 0,
     email: "",
     display_name: m.profileName,
-    avt:
-      m.picture ??
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(m.profileName)}&background=7c3aed&color=fff`,
+    avt: avatarUrl(m.profileName, m.picture),
     _uuid: m.id,
   }));
 
@@ -87,7 +86,7 @@ export function TaskPanelDetails({
   const extraCount = currentAssignees.length - 3;
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+    <div className="flex flex-col gap-y-5">
       {/* Status */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">

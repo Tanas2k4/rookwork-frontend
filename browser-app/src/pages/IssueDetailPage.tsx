@@ -4,8 +4,8 @@ import { MdOutlineExpandMore } from "react-icons/md";
 import { IoIosArrowBack } from "react-icons/io";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
-import { SubtasksSection } from "../project/board/TaskPanel/SubtasksSection";
-import { ActivitySection } from "../project/board/TaskPanel/ActivitySection";
+import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
+import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
 import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
 import {
@@ -19,10 +19,7 @@ import {
   typeColorMap,
 } from "../types/project";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-
+// helper components
 function PriorityBars({ priority }: { priority: Priority }) {
   const idx = priorities.indexOf(priority);
   return (
@@ -209,7 +206,7 @@ export default function IssueDetailPage() {
                 rows={4}
                 onBlur={() => { patchIssue({ description: editDescValue }); setEditingDesc(false); }}
                 onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
-                className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-600 transition" />
+                className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-700 transition" />
             ) : (
               <p onDoubleClick={() => { setEditingDesc(true); setEditDescValue(issue.description ?? ""); }}
                 className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-1 hover:bg-gray-50 transition min-h-6 leading-relaxed"

@@ -91,9 +91,9 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
 
               <button className="flex items-center h-10 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group">
                 <div className="w-12 flex justify-center items-center shrink-0">
-                  <BsCalendar2Event size={17} className="text-gray-600 group-hover:text-purple-600" />
+                  <BsCalendar2Event size={17} className="text-gray-600 group-hover:text-purple-800" />
                 </div>
-                <span className={`truncate transition-all duration-300 group-hover:text-purple-600 ${sidebar ? "opacity-100" : "opacity-0"}`}>
+                <span className={`truncate transition-all duration-300 group-hover:text-purple-800 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                   Events
                 </span>
               </button>
@@ -107,9 +107,9 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                   className="flex items-center w-full h-10 rounded-lg hover:bg-gray-100 transition-colors group"
                 >
                   <div className="w-12 flex justify-center items-center shrink-0">
-                    <BsFolder size={17} className="text-gray-600 group-hover:text-purple-600" />
+                    <BsFolder size={17} className="text-gray-600 group-hover:text-purple-800" />
                   </div>
-                  <span className={`flex-1 text-left font-medium truncate transition-all duration-300 group-hover:text-purple-600 ${sidebar ? "opacity-100" : "opacity-0"}`}>
+                  <span className={`flex-1 text-left font-medium truncate transition-all duration-300 group-hover:text-purple-800 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                     Projects
                   </span>
                   {sidebar && (
