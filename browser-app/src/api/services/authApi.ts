@@ -22,6 +22,15 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json();
 }
 
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`);
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(message || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export const authApi = {
   login: (data: LoginRequest) => post<AuthResponse>("/api/auth/login", data),
 
@@ -33,4 +42,7 @@ export const authApi = {
 
   googleLogin: (data: GoogleLoginRequest) =>
     post<AuthResponse>("/api/auth/google", data),
+
+  checkEmail: (email: string) =>
+    get<boolean>(`/api/auth/check-email?email=${encodeURIComponent(email)}`),
 };
