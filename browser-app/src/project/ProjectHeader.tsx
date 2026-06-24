@@ -130,7 +130,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
         status,
       });
       if (assigneeId && created.id) {
-        await issueApi.update(projectId, created.id, { assignedToId: assigneeId });
+        await issueApi.update(projectId, created.id, { assigneeIds: [assigneeId] });
       }
       addToast(`Created task "${taskTitle.trim()}" successfully!`, "success");
       resetTaskForm();
