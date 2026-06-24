@@ -217,18 +217,20 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
   // Workload — count per assignee
   const workloadMap = new Map<string, WorkloadItem>();
   issues.forEach((i) => {
-    if (!i.assignedTo) return;
-    const { id, profileName, picture } = i.assignedTo;
-    if (!workloadMap.has(id)) {
-      workloadMap.set(id, {
-        id,
-        name: profileName,
-        picture: avatarUrl(profileName, picture),
-        email: "",
-        count: 0,
-      });
-    }
-    workloadMap.get(id)!.count += 1;
+    if (!i.assignees) return;
+    i.assignees.forEach((assignee) => {
+      const { id, profileName, picture } = assignee;
+      if (!workloadMap.has(id)) {
+        workloadMap.set(id, {
+          id,
+          name: profileName,
+          picture: avatarUrl(profileName, picture),
+          email: "",
+          count: 0,
+        });
+      }
+      workloadMap.get(id)!.count += 1;
+    });
   });
   const workload = Array.from(workloadMap.values()).sort((a, b) => b.count - a.count);
   const maxWorkload = Math.max(...workload.map((w) => w.count), 1);
