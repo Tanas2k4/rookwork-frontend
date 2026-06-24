@@ -14,6 +14,7 @@ import {
   apiUserToUI,
   issueToTask,
   uiStatusToApi,
+  uiTypeToApi,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";
 import { useClickOutside } from "./useClickOutside";
@@ -44,6 +45,8 @@ export function useListView() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [openDropdown, setOpenDropdown] = useState<DropdownState>({ type: null, taskId: null });
   const [tick, setTick] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
   const { toasts, addToast, removeToast } = useToast();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -91,6 +94,17 @@ export function useListView() {
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
   });
+
+  //  Pagination 
+
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedTasks = filteredTasks.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Reset to page 1 when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatuses, selectedUsers, selectedTypes]);
 
   //  Dropdown position 
 
@@ -167,17 +181,11 @@ export function useListView() {
   }
 
   function handleTypeChange(taskId: string, type: TaskType) {
-    const task = tasks.find((t) => t._uuid === taskId);
-    if (!task) return;
-    if (task.type === type) {
-      closeDropdown();
-      return;
-    }
-
-    // Optimistic update only — issueType is not in UpdateIssueRequest
+    // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, type } : t));
     closeDropdown();
-    // NOTE: API không có field issueType trong UpdateIssueRequest, bỏ qua API call
+
+    updateIssue(taskId, { issueType: uiTypeToApi(type) }, `Type → ${type}`);
   }
 
   function handleDeadlineChange(taskId: string, deadline: string) {
@@ -215,6 +223,15 @@ export function useListView() {
     setSelectedTypes((p) => p.includes(type) ? p.filter((t) => t !== type) : [...p, type]);
   }
 
+  //  Pagination handlers 
+
+  function goToPage(page: number) {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  }
+
+  function goToPrevPage() { goToPage(safePage - 1); }
+  function goToNextPage() { goToPage(safePage + 1); }
+
   function clearFilters() {
     setSelectedStatuses([]);
     setSelectedUsers([]);
@@ -228,6 +245,7 @@ export function useListView() {
   return {
     tasks,
     filteredTasks,
+    pagedTasks,
     users,
     searchQuery,
     setSearchQuery,
@@ -253,5 +271,11 @@ export function useListView() {
     toasts,
     removeToast,
     reload,
+    currentPage: safePage,
+    totalPages,
+    goToPage,
+    goToPrevPage,
+    goToNextPage,
+    PAGE_SIZE,
   };
 }

@@ -94,7 +94,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
         });
         window.google.accounts.id.renderButton(
           document.getElementById("google-signin-btn"),
-          { theme: "outline", size: "large", width: 336 }
+          { theme: "outline", size: "large", width: 336, locale: "en" }
         );
       }
     };
@@ -103,7 +103,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       initializeGoogle();
     } else {
       const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
+      script.src = "https://accounts.google.com/gsi/client?hl=en";
       script.async = true;
       script.defer = true;
       script.onload = initializeGoogle;
