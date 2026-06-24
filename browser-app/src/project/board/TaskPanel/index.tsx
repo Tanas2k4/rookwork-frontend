@@ -28,7 +28,7 @@ interface Props {
   onSaveDescription: (desc: string) => void;
   onChangeStatus: (s: Status) => void;
   onChangePriority: (p: Priority) => void;
-  onChangeAssignee: (u: User | null) => void;
+  onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
   onDeleteTask: (task: Task) => void;
   onLink: (parentId: number, childId: number) => void;
