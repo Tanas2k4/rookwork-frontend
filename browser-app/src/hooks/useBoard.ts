@@ -173,13 +173,16 @@ export function useBoard(projectId: string | null) {
 
   function saveTitle(title: string) {
     if (!selectedTask || !title.trim()) return;
-    updateTaskLocal(selectedTask.id, { title: title.trim() });
+    const cleanTitle = title.trim();
+    if (selectedTask.title === cleanTitle) return;
+    updateTaskLocal(selectedTask.id, { title: cleanTitle });
     pushToast("Title updated");
-    patchIssue(selectedTask.id, { issueName: title.trim() });
+    patchIssue(selectedTask.id, { issueName: cleanTitle });
   }
 
   function saveDescription(description: string) {
     if (!selectedTask) return;
+    if ((selectedTask.description ?? "") === (description ?? "")) return;
     updateTaskLocal(selectedTask.id, { description });
     pushToast("Description updated");
     patchIssue(selectedTask.id, { description });
@@ -187,6 +190,7 @@ export function useBoard(projectId: string | null) {
 
   function changeStatus(s: Status) {
     if (!selectedTask) return;
+    if (selectedTask.status === s) return;
     updateTaskLocal(selectedTask.id, { status: s });
     pushToast(`Status → ${statusMap[s].label}`);
     patchIssue(selectedTask.id, { status: uiStatusToApi(s) });
@@ -201,6 +205,7 @@ export function useBoard(projectId: string | null) {
 
   function changePriority(p: Priority) {
     if (!selectedTask) return;
+    if (selectedTask.priority === p) return;
     updateTaskLocal(selectedTask.id, { priority: p });
     pushToast(`Priority → ${priorityLabelMap[p]}`);
     patchIssue(selectedTask.id, { priority: uiPriorityToApi(p) });
@@ -208,6 +213,9 @@ export function useBoard(projectId: string | null) {
 
   function changeAssignee(u: User | null) {
     if (!selectedTask) return;
+    const currentAssigneeUuid = (selectedTask.assigned_to as any)?.uuid ?? (selectedTask.assigned_to as any)?._uuid ?? null;
+    const newAssigneeUuid = (u as any)?.uuid ?? (u as any)?._uuid ?? null;
+    if (currentAssigneeUuid === newAssigneeUuid) return;
     updateTaskLocal(selectedTask.id, { assigned_to: u });
     pushToast(u ? `Assigned to ${u.display_name}` : "Unassigned");
     // uuid được attach vào User object bởi TaskPanelDetails dưới key "_uuid"
@@ -218,6 +226,7 @@ export function useBoard(projectId: string | null) {
   function saveDeadline(val: string) {
     if (!selectedTask) return;
     const date = val ? val.split("T")[0] : null;
+    if (selectedTask.deadline === date) return;
     updateTaskLocal(selectedTask.id, { deadline: date });
     pushToast("Deadline updated");
     // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
