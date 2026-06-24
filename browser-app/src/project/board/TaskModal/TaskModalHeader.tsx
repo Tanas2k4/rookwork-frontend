@@ -15,7 +15,7 @@ interface Props {
   onOpenTask: (task: Task) => void;
 }
 
-export function TaskPanelHeader({
+export function TaskModalHeader({
   task,
   allTasks,
   onClose,
@@ -36,7 +36,7 @@ export function TaskPanelHeader({
   }
 
   return (
-    <div className="shrink-0 border-b border-gray-200 px-6 py-4 flex items-start gap-3 bg-white">
+    <div className="shrink-0 border-b border-gray-200 px-6 py-4 flex items-start gap-3 bg-white rounded-t-2xl">
       <Icon className={`${typeColorMap[task.type]} text-lg mt-1.5 shrink-0`} />
       <div className="flex-1 min-w-0">
         {/* Parent breadcrumb */}
@@ -74,7 +74,7 @@ export function TaskPanelHeader({
               setEditing(true);
               setValue(task.title);
             }}
-            className="text-lg font-bold text-gray-800 cursor-default rounded px-1 -mx-1 hover:bg-gray-50 transition leading-snug"
+            className="text-xl font-bold text-gray-800 cursor-default rounded px-1 -mx-1 hover:bg-gray-50 transition leading-snug"
             title="Double-click to edit"
           >
             {task.title}

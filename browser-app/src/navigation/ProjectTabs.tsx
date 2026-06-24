@@ -30,7 +30,7 @@ function ProjectTabs() {
                 after:font-semibold after:invisible after:absolute
                 ${
                   isActive
-                    ? "font-semibold text-purple-600 border-b-[3px] border-purple-600"
+                    ? "font-semibold text-purple-800 border-b-[3px] border-purple-800"
                     : "text-gray-800"
                 }
               `

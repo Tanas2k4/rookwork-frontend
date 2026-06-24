@@ -144,8 +144,8 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                     }`}
                   >
                     {opt === "private"
-                      ? <FaLock size={14} className={accessModifier === opt ? "text-purple-600" : "text-gray-400"} />
-                      : <FaGlobe size={14} className={accessModifier === opt ? "text-purple-600" : "text-gray-400"} />
+                      ? <FaLock size={14} className={accessModifier === opt ? "text-purple-800" : "text-gray-400"} />
+                      : <FaGlobe size={14} className={accessModifier === opt ? "text-purple-800" : "text-gray-400"} />
                     }
                     <div>
                       <p className={`text-sm font-medium capitalize ${accessModifier === opt ? "text-purple-700" : "text-gray-700"}`}>
@@ -156,7 +156,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                       </p>
                     </div>
                     {accessModifier === opt && (
-                      <BiCheck className="ml-auto text-purple-600 shrink-0" size={18} />
+                      <BiCheck className="ml-auto text-purple-800 shrink-0" size={18} />
                     )}
                   </button>
                 ))}
