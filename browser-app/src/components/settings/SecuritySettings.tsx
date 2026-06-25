@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { FiCheck, FiX } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 
 export default function SecuritySettings() {
@@ -11,6 +12,23 @@ export default function SecuritySettings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const passwordChecks = useMemo(() => [
+    { label: "At least 8 characters", met: newPassword.length >= 8 },
+    { label: "One uppercase letter (A-Z)", met: /[A-Z]/.test(newPassword) },
+    { label: "One lowercase letter (a-z)", met: /[a-z]/.test(newPassword) },
+    { label: "One digit (0-9)", met: /\d/.test(newPassword) },
+    { label: "One special character (!@#$...)", met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(newPassword) },
+  ], [newPassword]);
+
+  const passedCount = passwordChecks.filter((c) => c.met).length;
+  const allPassed = passedCount === passwordChecks.length;
+  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
+  const canSubmit = allPassed && passwordsMatch && currentPassword.length > 0;
+
+  const strengthLabel = passedCount <= 1 ? "Very weak" : passedCount === 2 ? "Weak" : passedCount === 3 ? "Fair" : passedCount === 4 ? "Strong" : "Very strong";
+  const strengthColor = passedCount <= 1 ? "bg-red-500" : passedCount === 2 ? "bg-orange-500" : passedCount === 3 ? "bg-yellow-500" : passedCount === 4 ? "bg-blue-500" : "bg-green-500";
+  const strengthTextColor = passedCount <= 1 ? "text-red-600" : passedCount === 2 ? "text-orange-600" : passedCount === 3 ? "text-yellow-600" : passedCount === 4 ? "text-blue-600" : "text-green-600";
 
   const handleDeleteAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +47,7 @@ export default function SecuritySettings() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      alert(t('security.mismatch'));
-      return;
-    }
+    if (!canSubmit) return;
     setIsSaving(true);
     try {
       await userApi.updatePassword({ currentPassword, newPassword });
@@ -73,6 +88,35 @@ export default function SecuritySettings() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               required
             />
+
+            {/* Strength bar */}
+            {newPassword.length > 0 && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-500">Password strength</span>
+                  <span className={`text-xs font-semibold ${strengthTextColor}`}>{strengthLabel}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${strengthColor}`}
+                    style={{ width: `${(passedCount / passwordChecks.length) * 100}%` }}
+                  />
+                </div>
+
+                {/* Requirements checklist */}
+                <ul className="mt-3 space-y-1">
+                  {passwordChecks.map((check) => (
+                    <li key={check.label} className="flex items-center gap-2 text-xs">
+                      {check.met
+                        ? <FiCheck className="text-green-500 shrink-0" size={14} />
+                        : <FiX className="text-red-400 shrink-0" size={14} />
+                      }
+                      <span className={check.met ? "text-green-700" : "text-gray-500"}>{check.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('security.confirm_password')}</label>
@@ -83,13 +127,23 @@ export default function SecuritySettings() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               required
             />
+            {confirmPassword.length > 0 && !passwordsMatch && (
+              <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                <FiX size={12} /> Passwords do not match
+              </p>
+            )}
+            {passwordsMatch && (
+              <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                <FiCheck size={12} /> Passwords match
+              </p>
+            )}
           </div>
         </div>
 
         <div className="pt-6 flex justify-end">
           <button
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || !canSubmit}
             className="px-6 py-2 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
           >
             {isSaving ? t('security.saving') : t('security.save')}
