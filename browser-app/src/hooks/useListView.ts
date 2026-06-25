@@ -77,7 +77,7 @@ export function useListView() {
         });
         setUsers(assignees);
       })
-      .catch(() => addToast("Failed to load issues", "error"));
+      .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
   }, [projectId, tick, addToast]);
@@ -140,8 +140,8 @@ export function useListView() {
     try {
       await issueApi.update(projectId, taskId, data);
       addToast(successMsg, "success");
-    } catch {
-      addToast("Update failed. Please try again.", "error");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Update failed. Please try again.", "error");
       // Rollback: reload from server
       setTick((n) => n + 1);
     }
