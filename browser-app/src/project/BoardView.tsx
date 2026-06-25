@@ -117,6 +117,9 @@ export default function BoardView() {
         onToggleSubtask={board.toggleSubtask}
         onAddSubtask={board.addSubtask}
         onDeleteSubtask={board.deleteSubtask}
+        onUpdateAttachments={(attachments) =>
+          board.selectedTask && board.updateAttachments(board.selectedTask.id, attachments)
+        }
       />
     </div>
   );

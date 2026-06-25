@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 
 const LANGUAGES = [
@@ -12,7 +11,7 @@ const LANGUAGES = [
 
 const TIMEZONES = Intl.supportedValuesOf('timeZone');
 
-export default function PreferencesSettings({ user }: { user: UserSummary | null }) {
+export default function PreferencesSettings({ user: _user }: { user: UserSummary | null }) {
   const { t, i18n } = useTranslation();
   const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const systemLanguage = navigator.language.split("-")[0]; // "en-US" → "en"

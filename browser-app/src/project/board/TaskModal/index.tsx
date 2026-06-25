@@ -17,6 +17,7 @@ import { AttachmentsSection } from "./AttachmentsSection";
 import { workLogApi } from "../../../api/services/workLogApi";
 import { tokenStorage } from "../../../api/tokenStorage";
 import type { WorkLogResponse } from "../../../api/contracts/worklog";
+import type { AttachmentResponse } from "../../../api/contracts/attachment";
 import { RiTimeLine } from "react-icons/ri";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime, toDatetimeLocal } from "../../../utils/date";
@@ -41,6 +42,7 @@ interface Props {
   onToggleSubtask: (id: number) => void;
   onAddSubtask: (title: string) => void;
   onDeleteSubtask: (id: number) => void;
+  onUpdateAttachments?: (attachments: AttachmentResponse[]) => void;
 }
 
 //  Log Work Section
@@ -354,6 +356,7 @@ export function TaskModal({
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
+  onUpdateAttachments,
 }: Props) {
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
@@ -461,8 +464,12 @@ export function TaskModal({
                       </div>
                     )}
                   </div>
-
-                  <AttachmentsSection />
+                  <AttachmentsSection
+                    projectId={(task as any)._projectId || ""}
+                    issueId={(task as any)._uuid || ""}
+                    initialAttachments={task.attachments || []}
+                    onUpdateAttachments={onUpdateAttachments}
+                  />
 
                   {childTypeMap[task.type] && (
                     <ChildrenSection

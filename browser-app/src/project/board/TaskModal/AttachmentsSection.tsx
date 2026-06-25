@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   RiAttachment2,
   RiDeleteBin6Line,
@@ -7,22 +7,34 @@ import {
   RiFileTextLine,
 } from "react-icons/ri";
 import { IoMdAdd } from "react-icons/io";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { issueApi } from "../../../api/services/issueApi";
+import type { AttachmentResponse } from "../../../api/contracts/attachment";
 
-interface AttachmentMock {
-  id: string;
-  name: string;
-  size: string;
-  uploadedAt: string;
-  type: "image" | "pdf" | "excel" | "document";
-  previewUrl?: string;
+interface AttachmentsSectionProps {
+  projectId: string;
+  issueId: string;
+  initialAttachments?: AttachmentResponse[];
+  onUpdateAttachments?: (attachments: AttachmentResponse[]) => void;
 }
 
-export function AttachmentsSection() {
-  const [attachments, setAttachments] = useState<AttachmentMock[]>([]);
-
+export function AttachmentsSection({
+  projectId,
+  issueId,
+  initialAttachments = [],
+  onUpdateAttachments,
+}: AttachmentsSectionProps) {
+  const [attachments, setAttachments] = useState<AttachmentResponse[]>(initialAttachments);
   const [error, setError] = useState<string>("");
   const [showAll, setShowAll] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state if initialAttachments changes
+  useEffect(() => {
+    setAttachments(initialAttachments);
+  }, [initialAttachments]);
 
   // Format file size helper
   function formatBytes(bytes: number, decimals = 1) {
@@ -35,7 +47,7 @@ export function AttachmentsSection() {
   }
 
   // Detect file type helper
-  function getFileType(fileName: string): AttachmentMock["type"] {
+  function getFileType(fileName: string): "image" | "pdf" | "excel" | "document" {
     const ext = fileName.split(".").pop()?.toLowerCase();
     if (ext === "pdf") return "pdf";
     if (["xls", "xlsx", "csv"].includes(ext || "")) return "excel";
@@ -44,10 +56,25 @@ export function AttachmentsSection() {
     return "document";
   }
 
+  // Format date helper
+  function formatDate(dateStr: string) {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Just now";
+    }
+  }
+
   // Process files selected/dropped
-  function processFiles(files: FileList) {
+  async function processFiles(files: FileList) {
     setError("");
-    const newItems: AttachmentMock[] = [];
+    const validFiles: File[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -56,22 +83,30 @@ export function AttachmentsSection() {
         setError(`File "${file.name}" exceeds the 10MB size limit.`);
         continue;
       }
-
-      const type = getFileType(file.name);
-      const isImg = type === "image";
-
-      newItems.push({
-        id: String(Date.now() + i),
-        name: file.name,
-        size: formatBytes(file.size),
-        uploadedAt: "Just now",
-        type,
-        previewUrl: isImg ? URL.createObjectURL(file) : undefined,
-      });
+      validFiles.push(file);
     }
 
-    if (newItems.length > 0) {
-      setAttachments((prev) => [...newItems, ...prev]);
+    if (validFiles.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const newAttachments = await issueApi.uploadAttachments(projectId, issueId, validFiles);
+      setAttachments((prev) => {
+        const updated = [...newAttachments, ...prev];
+        if (onUpdateAttachments) {
+          onUpdateAttachments(updated);
+        }
+        return updated;
+      });
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || err?.message || "Failed to upload files."
+      );
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   }
 
@@ -96,11 +131,28 @@ export function AttachmentsSection() {
     fileInputRef.current?.click();
   }
 
-  function handleDelete(id: string) {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  async function handleDelete(id: string) {
+    setError("");
+    setIsDeletingId(id);
+    try {
+      await issueApi.deleteAttachment(projectId, issueId, id);
+      setAttachments((prev) => {
+        const updated = prev.filter((a) => a.id !== id);
+        if (onUpdateAttachments) {
+          onUpdateAttachments(updated);
+        }
+        return updated;
+      });
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || err?.message || "Failed to delete file."
+      );
+    } finally {
+      setIsDeletingId(null);
+    }
   }
 
-  function getFileIcon(type: AttachmentMock["type"]) {
+  function getFileIcon(type: "image" | "pdf" | "excel" | "document") {
     switch (type) {
       case "pdf":
         return <RiFilePdfLine size={24} className="text-red-500" />;
@@ -129,11 +181,15 @@ export function AttachmentsSection() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
           <span>Attachments ({attachments.length})</span>
+          {isUploading && (
+            <AiOutlineLoading3Quarters size={12} className="animate-spin text-purple-700" />
+          )}
         </div>
         <button
           type="button"
           onClick={triggerBrowse}
-          className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-900 transition"
+          disabled={isUploading}
+          className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-900 transition disabled:opacity-50"
         >
           <IoMdAdd size={14} />
           Add attachment
@@ -155,13 +211,20 @@ export function AttachmentsSection() {
           onDrop={handleDrop}
           className="border-2 border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50/20 rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1"
         >
-          <RiAttachment2
-            size={22}
-            className="text-gray-400 rotate-45 mb-1 animate-pulse"
-          />
+          {isUploading ? (
+            <AiOutlineLoading3Quarters
+              size={22}
+              className="text-purple-700 animate-spin mb-1"
+            />
+          ) : (
+            <RiAttachment2
+              size={22}
+              className="text-gray-400 rotate-45 mb-1 animate-pulse"
+            />
+          )}
           <p className="text-xs text-gray-500 font-medium">
-            Drag & drop files here, or{" "}
-            <span className="text-purple-700 underline">browse</span>
+            {isUploading ? "Uploading files..." : "Drag & drop files here, or "}
+            {!isUploading && <span className="text-purple-700 underline">browse</span>}
           </p>
           <p className="text-[10px] text-gray-400">
             Support PDF, Excel, Word, Zip and Images up to 10MB
@@ -173,47 +236,59 @@ export function AttachmentsSection() {
       {attachments.length > 0 && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-            {visibleAttachments.map((item) => (
-              <div
-                key={item.id}
-                className="group relative flex items-center gap-3 bg-gray-50 hover:bg-gray-100/80 rounded-xl p-3 border border-gray-100 transition"
-              >
-                {/* Preview block */}
-                <div className="w-12 h-12 rounded-lg bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center border border-gray-200">
-                  {item.type === "image" && item.previewUrl ? (
-                    <img
-                      src={item.previewUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    getFileIcon(item.type)
-                  )}
-                </div>
+            {visibleAttachments.map((item) => {
+              const fileType = getFileType(item.originalName);
+              const isImg = fileType === "image";
+              const isDeleting = isDeletingId === item.id;
 
-                {/* Info */}
-                <div className="flex-1 min-w-0 pr-6">
-                  <p
-                    title={item.name}
-                    className="text-xs font-medium text-gray-700 truncate hover:text-purple-700 transition cursor-pointer"
-                  >
-                    {item.name}
-                  </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    {item.size} • {item.uploadedAt}
-                  </p>
-                </div>
-
-                {/* Action Delete */}
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
-                  title="Delete file"
+              return (
+                <div
+                  key={item.id}
+                  className="group relative flex items-center gap-3 bg-gray-50 hover:bg-gray-100/80 rounded-xl p-3 border border-gray-100 transition"
                 >
-                  <RiDeleteBin6Line size={13} />
-                </button>
-              </div>
-            ))}
+                  {/* Preview block */}
+                  <div className="w-12 h-12 rounded-lg bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center border border-gray-200">
+                    {isImg && item.presignedUrl ? (
+                      <img
+                        src={item.presignedUrl}
+                        alt={item.originalName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      getFileIcon(fileType)
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 pr-6">
+                    <p
+                      title={item.originalName}
+                      onClick={() => window.open(item.presignedUrl, "_blank")}
+                      className="text-xs font-medium text-gray-700 truncate hover:text-purple-700 transition cursor-pointer"
+                    >
+                      {item.originalName}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {formatBytes(item.sizeBytes)} • {item.uploadedBy} ({formatDate(item.createdAt)})
+                    </p>
+                  </div>
+
+                  {/* Action Delete */}
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    disabled={isDeletingId !== null}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition disabled:opacity-50"
+                    title="Delete file"
+                  >
+                    {isDeleting ? (
+                      <AiOutlineLoading3Quarters size={13} className="animate-spin" />
+                    ) : (
+                      <RiDeleteBin6Line size={13} />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           {/* See more toggle button */}

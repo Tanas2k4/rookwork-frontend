@@ -47,15 +47,25 @@ function App() {
 
   useEffect(() => {
     if (!loggedIn) return;
-    Promise.all([userApi.getMe(), projectApi.getAll()])
-      .then(([user, projectsRes]) => {
-        setProfileName(user.profileName);
-        setAvatarUrl(user.picture ?? undefined);
-        setProjects(
-          projectsRes.map((p: ProjectResponse, i: number) => toProjectUI(p, i)),
-        );
-      })
-      .catch(console.error);
+
+    const loadUserData = () => {
+      Promise.all([userApi.getMe(), projectApi.getAll()])
+        .then(([user, projectsRes]) => {
+          setProfileName(user.profileName);
+          setAvatarUrl(user.picture ?? undefined);
+          setProjects(
+            projectsRes.map((p: ProjectResponse, i: number) => toProjectUI(p, i)),
+          );
+        })
+        .catch(console.error);
+    };
+
+    loadUserData();
+
+    window.addEventListener("profileUpdated", loadUserData);
+    return () => {
+      window.removeEventListener("profileUpdated", loadUserData);
+    };
   }, [loggedIn]);
 
   const handleLoginSuccess = () => {
