@@ -117,7 +117,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
                                 />
                               ))}
                             </div>
-                            <span className="text-[10px] text-gray-500 truncate max-w-[140px]">
+                            <span className="text-[10px] text-gray-500 truncate max-w-35">
                               {item.assignees.length === 1
                                 ? item.assignees[0].profileName
                                 : `${item.assignees.length} people`}
