@@ -4,7 +4,7 @@
  * @author Warmdrobe
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useContext } from "react";
 import type {
   Task,
   Status,
@@ -24,6 +24,7 @@ import {
   issueToTask,
 } from "../utils/issueMapper";
 import { useToast } from "../hooks/useToast";
+import { ProjectContext } from "../context/ProjectContext";
 
 //  Hook 
 
@@ -35,6 +36,7 @@ import { useToast } from "../hooks/useToast";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
+  const { issueUpdateTick } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -55,7 +57,7 @@ export function useBoard(projectId: string | null) {
       setTasks(issues.map((i) => issueToTask(i, issues)));
     } catch (err) {
       console.error("Failed to load issues", err);
-      pushToast("Failed to load tasks", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to load tasks", "error");
     } finally {
       setLoading(false);
     }
@@ -69,11 +71,12 @@ export function useBoard(projectId: string | null) {
     return () => {
       active = false;
     };
-  }, [loadIssues]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → board tự reload
+  }, [loadIssues, issueUpdateTick]);
 
   //  Optimistic task updater 
 
-  function updateTaskLocal(id: number, patch: Partial<Task>) {
+  function updateTaskLocal(id: number, patch: Partial<Task & { _assigneeUuids?: string[] }>) {
     setTasks((p) => p.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     if (selectedTask?.id === id)
       setSelectedTask((p) => (p ? { ...p, ...patch } : p));
@@ -105,7 +108,7 @@ export function useBoard(projectId: string | null) {
       type,
       priority,
       status,
-      assigned_to: null,
+      assigned_to: [],
       deadline: null,
       subtasks: [],
       parentId: null,
@@ -128,9 +131,9 @@ export function useBoard(projectId: string | null) {
       setTasks((p) => p.map((t) => (t.id === tempId ? realTask : t)));
       pushToast("Task created");
       return realTask;
-    } catch {
+    } catch (err) {
       setTasks((p) => p.filter((t) => t.id !== tempId));
-      pushToast("Failed to create task", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to create task", "error");
     }
   }
 
@@ -148,10 +151,10 @@ export function useBoard(projectId: string | null) {
 
     try {
       await issueApi.delete(projectId, uuid);
-    } catch {
+    } catch (err) {
       // Rollback
       setTasks((p) => [...p, task]);
-      pushToast("Failed to delete task", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to delete task", "error");
     }
   }
 
@@ -167,7 +170,7 @@ export function useBoard(projectId: string | null) {
       await issueApi.update(projectId, uuid, patch);
     } catch (err) {
       console.error("Failed to update issue", err);
-      pushToast("Failed to save change", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to save change", "error");
     }
   }
 
@@ -211,16 +214,18 @@ export function useBoard(projectId: string | null) {
     patchIssue(selectedTask.id, { priority: uiPriorityToApi(p) });
   }
 
-  function changeAssignee(u: User | null) {
+  function changeAssignee(users: User[]) {
     if (!selectedTask) return;
-    const currentAssigneeUuid = (selectedTask.assigned_to as any)?.uuid ?? (selectedTask.assigned_to as any)?._uuid ?? null;
-    const newAssigneeUuid = (u as any)?.uuid ?? (u as any)?._uuid ?? null;
-    if (currentAssigneeUuid === newAssigneeUuid) return;
-    updateTaskLocal(selectedTask.id, { assigned_to: u });
-    pushToast(u ? `Assigned to ${u.display_name}` : "Unassigned");
-    // uuid được attach vào User object bởi TaskPanelDetails dưới key "_uuid"
-    const assigneeUuid = (u as (User & { _uuid?: string }) | null)?._uuid ?? null;
-    patchIssue(selectedTask.id, { assignedToId: assigneeUuid ?? undefined });
+    const currentUuids = (selectedTask as Task & { _assigneeUuids?: string[] })._assigneeUuids ?? [];
+    const newUuids = users.map((u) => {
+      const typedU = u as User & { _uuid?: string; uuid?: string };
+      return typedU._uuid ?? typedU.uuid ?? "";
+    }).filter(Boolean);
+    // shallow compare
+    if (JSON.stringify([...currentUuids].sort()) === JSON.stringify([...newUuids].sort())) return;
+    updateTaskLocal(selectedTask.id, { assigned_to: users, _assigneeUuids: newUuids } as Partial<Task & { _assigneeUuids?: string[] }>);
+    pushToast(users.length > 0 ? `Assigned to ${users.map((u) => u.display_name).join(", ")}` : "Unassigned");
+    patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
   }
 
   function saveDeadline(val: string) {
@@ -299,7 +304,7 @@ export function useBoard(projectId: string | null) {
         );
       }
 
-      pushToast("Failed to link - Changes reverted", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to link - Changes reverted", "error");
     }
   }
 
@@ -339,7 +344,7 @@ export function useBoard(projectId: string | null) {
       pushToast("Unlinked successfully", "info");
     } catch (err) {
       console.error("Unlink child API error:", err);
-      pushToast("Failed to unlink", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to unlink", "error");
     }
   }
 

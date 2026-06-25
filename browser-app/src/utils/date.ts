@@ -46,3 +46,28 @@ export function addDays(date: Date, days: number): Date {
 export function diffDays(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
+
+/**
+ * Định dạng ngày giờ từ chuỗi ISO sang định dạng DD/MM/YYYY HH:MM:SS.
+ * @param iso Chuỗi ngày giờ ISO
+ * @returns Chuỗi ngày giờ được định dạng
+ */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ` +
+    `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  );
+}
+
+/**
+ * Chuyển đối tượng Date thành chuỗi định dạng YYYY-MM-DDTHH:MM phù hợp cho datetime-local input.
+ * @param d Đối tượng Date
+ * @returns Chuỗi định dạng local datetime
+ */
+export function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

@@ -1,7 +1,8 @@
-import { useState, useRef, useMemo, useContext } from "react";
+import { useRef, useMemo, useContext } from "react";
 import { GanttBar } from "./timeline/GanttBar";
 import { TaskListPanel } from "./timeline/TaskListPanel";
 import { addDays, diffDays } from "../utils/date";
+import { useState } from "react";
 import type { ViewMode } from "./timeline/timelineUtils";
 import {
   buildTimelineColumns,
@@ -17,12 +18,11 @@ import { ProjectContext } from "../context/ProjectContext";
 const GROUP_ORDER = ["Epic", "Story", "Task"];
 
 export default function TimelineView() {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, openIssueModal } = useContext(ProjectContext);
   const { ganttTasks: TASKS, error, reload } = useTimeline(projectId);
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [hoveredTask, setHoveredTask] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const isDraggingScroll = useRef(false);
@@ -79,10 +79,7 @@ export default function TimelineView() {
     return diffDays(timelineStart, date) * colWidth;
   }
 
-  const selectedTaskData = TASKS.find((t) => t.id === selectedTask);
-
-  //  Loading state 
-  //  Error state 
+  //  Error state
   if (error) {
     return (
       <div className="flex items-center justify-center h-full bg-white">
@@ -103,7 +100,7 @@ export default function TimelineView() {
     );
   }
 
-  //  Empty state 
+  //  Empty state
   if (TASKS.length === 0) {
     return (
       <div className="flex items-center justify-center h-full bg-white">
@@ -170,9 +167,8 @@ export default function TimelineView() {
         <TaskListPanel
           groups={groups}
           tasks={TASKS}
-          selectedTask={selectedTask}
           collapsedGroups={collapsedGroups}
-          onSelectTask={setSelectedTask}
+          onOpenModal={openIssueModal}
           onToggleGroup={toggleGroup}
         />
 
@@ -247,9 +243,7 @@ export default function TimelineView() {
                         <div
                           key={task.id}
                           style={{ height: ROW_HEIGHT }}
-                          className={`border-b border-gray-100 transition-colors ${
-                            selectedTask === task.id ? "bg-indigo-50/60" : ""
-                          }`}
+                          className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors"
                         />
                       ))}
                   </div>
@@ -295,11 +289,8 @@ export default function TimelineView() {
                             colWidth * 0.8,
                           )}
                           isHovered={hoveredTask === task.id}
-                          isSelected={selectedTask === task.id}
                           onHover={setHoveredTask}
-                          onSelect={(id) => {
-                            if (!didDragScroll.current) setSelectedTask(id);
-                          }}
+                          onOpenModal={openIssueModal}
                         />
                       );
                     });
@@ -311,118 +302,9 @@ export default function TimelineView() {
         </div>
       </div>
 
-      {/* Task detail panel */}
-      {selectedTaskData && (
-        <div className="border-t border-gray-200 bg-white px-6 py-3 flex items-center gap-8 animate-slide-up">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <span
-              className="w-2.5 h-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: selectedTaskData.color }}
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800 truncate">
-                {selectedTaskData.name}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {selectedTaskData.start.toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                })}{" "}
-                →{" "}
-                {selectedTaskData.end.toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                })}{" "}
-                · {diffDays(selectedTaskData.start, selectedTaskData.end)} days
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 shrink-0">
-            {/* Progress */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider">Progress</span>
-              <div className="flex items-center gap-2">
-                <div className="w-24 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${selectedTaskData.progress}%`, backgroundColor: selectedTaskData.color }}
-                  />
-                </div>
-                <span className="text-xs font-bold text-gray-600">
-                  {selectedTaskData.progress}%
-                </span>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider">Status</span>
-              <div className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[selectedTaskData.status || "todo"].dot}`} />
-                <span className="text-xs text-gray-600">
-                  {STATUS_CONFIG[selectedTaskData.status || "todo"].label}
-                </span>
-              </div>
-            </div>
-
-            {/* Assignees */}
-            {selectedTaskData.assignees && selectedTaskData.assignees.length > 0 && (
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Assignee</span>
-                <div className="flex items-center gap-2">
-                  {selectedTaskData.assignees.map((a) => (
-                    <img
-                      key={a.id}
-                      src={a.avatar}
-                      alt={a.name}
-                      title={a.name}
-                      className="w-6 h-6 rounded-full border-2 border-white object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  ))}
-                  <span className="text-xs text-gray-600">
-                    {selectedTaskData.assignees.map((a) => a.name.split(" ")[0]).join(", ")}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Type badge */}
-            {selectedTaskData.type && (
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Type</span>
-                <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                    selectedTaskData.type === "epic"
-                      ? "bg-amber-100 text-amber-600"
-                      : selectedTaskData.type === "story"
-                        ? "bg-emerald-100 text-emerald-600"
-                        : "bg-indigo-100 text-indigo-600"
-                  }`}
-                >
-                  {selectedTaskData.type}
-                </span>
-              </div>
-            )}
-
-            <button
-              onClick={() => setSelectedTask(null)}
-              className="text-gray-300 hover:text-gray-600 transition-colors p-1 rounded"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes slide-up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        .animate-slide-up { animation: slide-up 0.2s ease; }
       `}</style>
     </div>
   );

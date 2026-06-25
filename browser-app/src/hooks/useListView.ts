@@ -34,9 +34,9 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick } = useContext(ProjectContext);
 
-  const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuid?: string })[]>([]);
+  const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -68,17 +68,20 @@ export function useListView() {
         const seen = new Set<string>();
         const assignees: User[] = [];
         issues.forEach((i) => {
-          if (i.assignedTo && !seen.has(i.assignedTo.id)) {
-            seen.add(i.assignedTo.id);
-            assignees.push(apiUserToUI(i.assignedTo));
-          }
+          (i.assignees ?? []).forEach((u) => {
+            if (!seen.has(u.id)) {
+              seen.add(u.id);
+              assignees.push(apiUserToUI(u));
+            }
+          });
         });
         setUsers(assignees);
       })
-      .catch(() => addToast("Failed to load issues", "error"));
+      .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  }, [projectId, tick, addToast]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+  }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
 
@@ -90,7 +93,12 @@ export function useListView() {
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
-    const matchesUser = selectedUsers.length === 0 || (task.assigned_to ? selectedUsers.includes(task.assigned_to.avt) : false);
+    const matchesUser =
+      selectedUsers.length === 0 ||
+      task.assigned_to.some((u) => {
+        const typedU = u as User & { _uuid?: string; uuid?: string };
+        return selectedUsers.includes(typedU._uuid ?? typedU.uuid ?? typedU.avt);
+      });
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
   });
@@ -136,8 +144,8 @@ export function useListView() {
     try {
       await issueApi.update(projectId, taskId, data);
       addToast(successMsg, "success");
-    } catch {
-      addToast("Update failed. Please try again.", "error");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Update failed. Please try again.", "error");
       // Rollback: reload from server
       setTick((n) => n + 1);
     }
@@ -148,20 +156,44 @@ export function useListView() {
   function handleAssignUser(taskId: string, user: (User & { uuid?: string; _uuid?: string }) | null) {
     const task = tasks.find((t) => t._uuid === taskId);
     if (!task) return;
-    const currentAssigneeUuid = task._assigneeUuid ?? null;
-    const newAssigneeUuid = user?.uuid ?? user?._uuid ?? null;
-    if (currentAssigneeUuid === newAssigneeUuid) {
-      closeDropdown();
-      return;
+
+    const currentUuids = task._assigneeUuids ?? [];
+    const clickedUuid = user?.uuid ?? user?._uuid ?? null;
+
+    let newUuids: string[];
+    let newUsers: User[];
+
+    if (clickedUuid === null) {
+      // "Unassigned" clicked — xóa hết
+      newUuids = [];
+      newUsers = [];
+    } else if (currentUuids.includes(clickedUuid)) {
+      // toggle off
+      newUuids = currentUuids.filter((id) => id !== clickedUuid);
+      newUsers = (task.assigned_to as (User & { _uuid?: string; uuid?: string })[]).filter(
+        (u) => (u._uuid ?? u.uuid) !== clickedUuid,
+      );
+    } else {
+      // toggle on
+      newUuids = [...currentUuids, clickedUuid];
+      newUsers = [...(task.assigned_to as User[]), user!];
     }
 
-    // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, assigned_to: user, _assigneeUuid: newAssigneeUuid ?? undefined } : t));
-    closeDropdown();
+    // Optimistic update
+    setTasks((p) =>
+      p.map((t) =>
+        t._uuid === taskId
+          ? { ...t, assigned_to: newUsers, _assigneeUuids: newUuids }
+          : t,
+      ),
+    );
 
-    const assignedToId = newAssigneeUuid;
-    updateIssue(taskId, { assignedToId: assignedToId ?? undefined },
-      user ? `Assigned to ${user.display_name}` : "Assignee removed"
+    updateIssue(
+      taskId,
+      { assigneeIds: newUuids },
+      newUsers.length > 0
+        ? `Assigned to ${newUsers.map((u) => u.display_name).join(", ")}`
+        : "Assignee removed",
     );
   }
 

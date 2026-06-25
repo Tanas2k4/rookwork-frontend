@@ -92,15 +92,13 @@ export function taskToGantt(task: Task): GanttTask {
     group:
       task.type === "epic" ? "Epic" : task.type === "story" ? "Story" : "Task",
     type: task.type,
-    assignees: task.assigned_to
-      ? [
-          {
-            id: String(task.assigned_to.id),
-            name: task.assigned_to.display_name,
-            avatar: task.assigned_to.avt,
-            color: USER_COLORS[(task.assigned_to.id - 1) % USER_COLORS.length],
-          },
-        ]
+    assignees: Array.isArray(task.assigned_to)
+      ? task.assigned_to.map((u) => ({
+          id: String(u.id),
+          name: u.display_name,
+          avatar: u.avt,
+          color: USER_COLORS[Math.abs(u.id - 1) % USER_COLORS.length] || USER_COLORS[0],
+        }))
       : [],
   };
 }
