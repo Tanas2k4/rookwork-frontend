@@ -10,10 +10,7 @@ export interface UpdateProfileRequest {
   locationPublic?: boolean;
 }
 
-export interface UpdatePreferencesRequest {
-  language?: string;
-  timezone?: string;
-}
+
 
 export interface UpdateNotificationsRequest {
   notifyIssueAssigned?: boolean;
