@@ -23,6 +23,7 @@ export interface UserSummary {
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
   role?: string;
+
 }
 
 export interface CreateIssueRequest {
