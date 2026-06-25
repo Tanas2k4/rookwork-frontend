@@ -73,7 +73,7 @@ export function useTimeline(projectId: string | null): UseTimelineReturn {
       })
       .catch((err) => {
         console.error("useTimeline: failed to load issues", err);
-        if (!cancelled) setError("Failed to load timeline data");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load timeline data");
       });
 
     return () => { cancelled = true; };

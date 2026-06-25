@@ -297,7 +297,7 @@ export function useOverview(): UseOverviewReturn {
       })
       .catch((err) => {
         console.error("useOverview: failed to load", err);
-        if (!cancelled) setError("Failed to load overview");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load overview");
       });
 
     return () => { cancelled = true; };
