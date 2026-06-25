@@ -80,8 +80,8 @@ function Register() {
 
         {/* PROFILE NAME */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <LuUser className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <LuUser className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               className="w-full bg-transparent text-[14px] outline-none"
               placeholder="display name"
@@ -93,8 +93,8 @@ function Register() {
 
         {/* EMAIL */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <IoMailOutline className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <IoMailOutline className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               className="w-full bg-transparent text-[14px] outline-none"
               placeholder="email"
@@ -111,8 +111,8 @@ function Register() {
 
         {/* PASSWORD */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               type="password"
               className="w-full bg-transparent text-[14px] outline-none"
@@ -125,8 +125,8 @@ function Register() {
 
         {/* CONFIRM PASSWORD */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               type="password"
               className="w-full bg-transparent text-[14px] outline-none"

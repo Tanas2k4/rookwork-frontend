@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { ImPencil } from "react-icons/im";
 import { FaLink } from "react-icons/fa6";
 import { IoAdd, IoClose } from "react-icons/io5";
+import { FaCheck } from "react-icons/fa6";
 import { RiUserAddLine } from "react-icons/ri";
 import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
 import { useProject } from "../hooks/useProject";
 import { issueApi } from "../api/services/issueApi";
+import { projectApi } from "../api/services/projectApi";
 import { invitationApi } from "../api/services/invitationApi";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 import type {
   IssueType,
   PriorityType,
@@ -42,28 +46,33 @@ const TYPE_OPTIONS = [
   },
 ] as const;
 
-function ProjectHeader() {
-  const { project, members, projectId, reloadIssues } = useProject();
+interface ProjectHeaderProps {
+  onProjectsChanged?: () => void;
+}
 
-  const [showAddUser, setShowAddUser]     = useState(false);
+function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
+  const { project, members, projectId, reloadIssues, refresh } = useProject();
+  const { toasts, addToast, removeToast } = useToast();
+
+  const [showAddUser, setShowAddUser] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
 
   // Invite states
-  const [email, setEmail]                 = useState("");
-  const [inviting, setInviting]           = useState(false);
-  const [inviteError, setInviteError]     = useState("");
+  const [email, setEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
 
   // Create task states
-  const [selectedType, setSelectedType]   = useState<TaskType>("task");
-  const [taskTitle, setTaskTitle]         = useState("");
+  const [selectedType, setSelectedType] = useState<TaskType>("task");
+  const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
-  const [dueDate, setDueDate]             = useState("");
-  const [priority, setPriority]           = useState<PriorityType>("MEDIUM");
-  const [status, setStatus]               = useState<ApiStatus>("TO_DO");
-  const [assigneeId, setAssigneeId]       = useState<string>("");
-  const [creating, setCreating]           = useState(false);
-  const [createError, setCreateError]     = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [priority, setPriority] = useState<PriorityType>("MEDIUM");
+  const [status, setStatus] = useState<ApiStatus>("TO_DO");
+  const [assigneeId, setAssigneeId] = useState<string>("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   useEffect(() => {
     document.body.style.overflow = showCreateTask ? "hidden" : "unset";
@@ -81,6 +90,7 @@ function ProjectHeader() {
 
     try {
       await invitationApi.send(projectId, email.trim());
+      addToast(`Sent invitation to ${email.trim()}`, "success");
       setInviteSuccess(`Sent to ${email.trim()}`);
       setEmail("");
       setTimeout(() => {
@@ -88,9 +98,9 @@ function ProjectHeader() {
         setInviteSuccess("");
       }, 1500);
     } catch (err: unknown) {
-      setInviteError(
-        err instanceof Error ? err.message : "Failed to send invitation"
-      );
+      const errMsg = err instanceof Error ? err.message : "Failed to send invitation";
+      addToast(errMsg, "error");
+      setInviteError(errMsg);
     } finally {
       setInviting(false);
     }
@@ -120,12 +130,15 @@ function ProjectHeader() {
         status,
       });
       if (assigneeId && created.id) {
-        await issueApi.update(projectId, created.id, { assignedToId: assigneeId });
+        await issueApi.update(projectId, created.id, { assigneeIds: [assigneeId] });
       }
+      addToast(`Created task "${taskTitle.trim()}" successfully!`, "success");
       resetTaskForm();
       reloadIssues();
     } catch (err: unknown) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create task");
+      const errMsg = err instanceof Error ? err.message : "Failed to create task";
+      addToast(errMsg, "error");
+      setCreateError(errMsg);
     } finally {
       setCreating(false);
     }
@@ -143,16 +156,111 @@ function ProjectHeader() {
     setShowCreateTask(false);
   };
 
+  // Edit project title states
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const [saveTitleError, setSaveTitleError] = useState("");
+
+  const handleSaveTitle = async () => {
+    if (!projectId) return;
+    const trimmedTitle = editTitleValue.trim();
+    if (!trimmedTitle) {
+      setSaveTitleError("Project name cannot be empty");
+      return;
+    }
+    if (trimmedTitle === project?.projectName) {
+      setIsEditingTitle(false);
+      setSaveTitleError("");
+      return;
+    }
+
+    setIsSavingTitle(true);
+    setSaveTitleError("");
+    try {
+      await projectApi.update(projectId, { projectName: trimmedTitle });
+      refresh();
+      onProjectsChanged?.();
+      addToast("Project title updated successfully!", "success");
+      setIsEditingTitle(false);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Failed to update project title";
+      addToast(errMsg, "error");
+      setSaveTitleError(errMsg);
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveTitle();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setIsEditingTitle(false);
+      setSaveTitleError("");
+    }
+  };
+
   return (
     <>
       <div className="py-3 px-8 bg-white">
         <div className="flex flex-row items-center gap-3 mb-3">
-          <h1 className="text-5xl font-bold text-gray-800">
-            {project?.projectName ?? "Project"}
-          </h1>
-          <button className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition">
-            <ImPencil size={14} />
-          </button>
+          {isEditingTitle ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-row items-center gap-2">
+                <input
+                  type="text"
+                  value={editTitleValue}
+                  onChange={(e) => setEditTitleValue(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  className="text-5xl font-bold text-gray-800 border-b-2 border-purple-500 focus:outline-none bg-transparent py-1 max-w-xl"
+                  autoFocus
+                  disabled={isSavingTitle}
+                />
+                <button
+                  onClick={handleSaveTitle}
+                  disabled={isSavingTitle}
+                  className="text-green-700 p-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition disabled:opacity-50"
+                  title="Save title"
+                >
+                  <FaCheck size={14} />
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditingTitle(false);
+                    setSaveTitleError("");
+                  }}
+                  disabled={isSavingTitle}
+                  className="text-red-700 p-1 bg-red-100 hover:bg-red-200 rounded-lg transition disabled:opacity-50"
+                  title="Cancel"
+                >
+                  <IoClose size={18} />
+                </button>
+              </div>
+              {saveTitleError && (
+                <span className="text-xs text-red-500 font-medium px-1">{saveTitleError}</span>
+              )}
+            </div>
+          ) : (
+            <>
+              <h1 className="text-5xl font-bold text-gray-800">
+                {project?.projectName ?? "Project"}
+              </h1>
+              <button
+                onClick={() => {
+                  setEditTitleValue(project?.projectName ?? "");
+                  setIsEditingTitle(true);
+                  setSaveTitleError("");
+                }}
+                className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition"
+                title="Edit project name"
+              >
+                <ImPencil size={14} />
+              </button>
+            </>
+          )}
           <button className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition">
             <FaLink size={14} />
           </button>
@@ -230,7 +338,7 @@ function ProjectHeader() {
                   <IoClose size={18} />
                 </button>
               </div>
-              {inviteError   && <p className="text-xs text-red-500 mt-1 px-1">{inviteError}</p>}
+              {inviteError && <p className="text-xs text-red-500 mt-1 px-1">{inviteError}</p>}
               {inviteSuccess && <p className="text-xs text-green-600 mt-1 px-1">{inviteSuccess}</p>}
             </div>
           </div>
@@ -266,11 +374,10 @@ function ProjectHeader() {
                         key={option.value}
                         type="button"
                         onClick={() => setSelectedType(option.value)}
-                        className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition ${
-                          selectedType === option.value
-                            ? option.activeColor
-                            : `${option.color} border-transparent hover:border-gray-300`
-                        }`}
+                        className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition ${selectedType === option.value
+                          ? option.activeColor
+                          : `${option.color} border-transparent hover:border-gray-300`
+                          }`}
                       >
                         <div className="text-2xl">{option.icon}</div>
                         <div className="text-sm font-semibold">{option.label}</div>
@@ -393,6 +500,7 @@ function ProjectHeader() {
           </div>
         </div>
       )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </>
   );
 }

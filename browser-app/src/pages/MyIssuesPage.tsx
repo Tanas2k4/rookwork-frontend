@@ -219,13 +219,23 @@ export default function MyIssuesPage() {
                           </span>
                         )}
 
-                        {issue.assignedTo && (
-                          <img
-                            src={avatarUrl(issue.assignedTo.profileName, issue.assignedTo.picture)}
-                            className="w-5 h-5 rounded-full shrink-0"
-                            title={issue.assignedTo.profileName}
-                            alt=""
-                          />
+                        {issue.assignees && issue.assignees.length > 0 && (
+                          <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                            {issue.assignees.slice(0, 2).map((a, idx) => (
+                              <img
+                                key={idx}
+                                src={avatarUrl(a.profileName, a.picture)}
+                                className="w-5 h-5 rounded-full border border-white shrink-0 object-cover"
+                                title={a.profileName}
+                                alt=""
+                              />
+                            ))}
+                            {issue.assignees.length > 2 && (
+                              <span className="w-5 h-5 rounded-full bg-purple-100 border border-white flex items-center justify-center text-[9px] font-bold text-purple-700 shrink-0">
+                                +{issue.assignees.length - 2}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </button>

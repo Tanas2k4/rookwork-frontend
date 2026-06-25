@@ -1,6 +1,7 @@
 // components/list/ListDropdowns.tsx
 import type { RefObject } from "react";
 import { IoClose } from "react-icons/io5";
+import { MdCheck } from "react-icons/md";
 import type { Task, User, Status, TaskType } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
 import { typeOptions, statusOptions } from "../shared/dropdownConstants";
@@ -57,25 +58,37 @@ export function ListDropdowns({
         <div ref={dropdownRef} style={{ ...baseStyle, maxHeight: `${maxHeight}px` }}
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-56 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
+            {/* Unassign all */}
             <button onClick={() => onAssignUser(taskId, null)}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition">
               <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
                 <IoClose size={14} className="text-gray-500" />
               </div>
-              <span className="italic text-gray-500">Unassigned</span>
+              <span className="italic text-gray-500">Unassigned (clear all)</span>
             </button>
             <div className="border-t border-gray-200 my-1" />
-            {users.map((u) => (
-              <button key={u.id} onClick={() => onAssignUser(taskId, u)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                  currentTask?.assigned_to?.display_name === u.display_name
-                    ? "bg-purple-50 text-purple-700"
-                    : "text-gray-700"
-                }`}>
-                <img src={u.avt} className="w-6 h-6 rounded-full" />
-                {u.display_name}
-              </button>
-            ))}
+            {users.map((u) => {
+              const typedU = u as User & { _uuid?: string; uuid?: string };
+              const assignedArr = (currentTask?.assigned_to ?? []) as (User & { _uuid?: string; uuid?: string })[];
+              const userUuid = typedU._uuid ?? typedU.uuid ?? typedU.avt;
+              const isSelected = assignedArr.some(
+                (a) => (a._uuid ?? a.uuid ?? a.avt) === userUuid,
+              );
+              return (
+                <button key={u.avt} onClick={() => onAssignUser(taskId, u)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-purple-50 rounded transition ${
+                    isSelected ? "bg-purple-50/50 text-gray-700 font-medium" : "text-gray-700"
+                  }`}>
+                  <span className={`w-4 h-4 rounded flex items-center justify-center border transition shrink-0 ${
+                    isSelected ? "bg-purple-900 border-purple-900" : "border-gray-300"
+                  }`}>
+                    {isSelected && <MdCheck size={11} className="text-white" />}
+                  </span>
+                  <img src={u.avt} className="w-6 h-6 rounded-full shrink-0" />
+                  <span className="truncate">{u.display_name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

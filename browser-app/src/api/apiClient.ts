@@ -41,8 +41,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || `Request failed: ${res.status}`);
+    const text = await res.text();
+    let errorMessage = "";
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === "object") {
+        errorMessage = parsed.message || parsed.error || "";
+      }
+    } catch {
+      // not JSON
+    }
+    throw new Error(errorMessage || text || `Request failed: ${res.status}`);
   }
 
   // 204 No Content hoặc body rỗng → trả về null thay vì parse JSON

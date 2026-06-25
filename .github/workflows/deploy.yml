@@ -25,6 +25,7 @@ jobs:
         run: yarn build:browser
         env:
           VITE_API_URL: https://api.rookwork.asia
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
