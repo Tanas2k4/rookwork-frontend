@@ -1,22 +1,22 @@
 import type { OverviewData } from "../../hooks/useOverview";
 
 function DonutChart({ data, animated }: { data: OverviewData; animated: boolean }) {
-  const done       = data.doneTasks;
+  const done = data.doneTasks;
   const inProgress = data.inProgressTasks;
-  const total      = data.totalTasks || 1;
-  const toDo       = Math.max(0, total - done - inProgress);
+  const total = data.totalTasks || 0;
+  const toDo = Math.max(0, total - done - inProgress);
 
   const chartData = [
-    { label: "Done",        value: done,       color: "#10b981" },
+    { label: "Done", value: done, color: "#10b981" },
     { label: "In Progress", value: inProgress, color: "#6366f1" },
-    { label: "To Do",       value: toDo,       color: "#cbd5e1" },
+    { label: "To Do", value: toDo, color: "#cbd5e1" },
   ];
 
   const r = 48, cx = 60, cy = 60, sw = 16;
   const circ = 2 * Math.PI * r;
   let offset = 0;
   const segments = chartData.map((d) => {
-    const realDash = (d.value / total) * circ;
+    const realDash = total > 0 ? (d.value / total) * circ : 0;
     const dash = animated ? realDash : 0;
     const el = (
       <circle key={d.label} cx={cx} cy={cy} r={r} fill="none"
@@ -52,7 +52,7 @@ function DonutChart({ data, animated }: { data: OverviewData; animated: boolean 
             <span className="text-[11px] text-gray-500 flex-1">{d.label}</span>
             <span className="text-sm font-semibold text-gray-800">{d.value}</span>
             <span className="text-[10px] text-gray-400 w-8 text-right">
-              {Math.round((d.value / total) * 100)}%
+              {total > 0 ? Math.round((d.value / total) * 100) : 0}%
             </span>
           </div>
         ))}

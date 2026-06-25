@@ -19,6 +19,7 @@ export interface UserSummary {
   notifyMentioned?: boolean;
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
+  role?: string;
 }
 
 export interface CreateIssueRequest {
