@@ -106,7 +106,7 @@ export default function ListView() {
                         {/* Title */}
                         <td className="px-4 py-3 border-r border-gray-200">
                           <button
-                            onClick={() => openIssueModal((task as any)._uuid)}
+                            onClick={() => openIssueModal(task._uuid)}
                             className="text-[13px] text-gray-700 font-medium hover:text-purple-700 hover:underline transition-colors text-left"
                             title="Click để xem chi tiết"
                           >
