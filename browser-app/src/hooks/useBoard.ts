@@ -4,7 +4,7 @@
  * @author Warmdrobe
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useContext } from "react";
 import type {
   Task,
   Status,
@@ -24,6 +24,7 @@ import {
   issueToTask,
 } from "../utils/issueMapper";
 import { useToast } from "../hooks/useToast";
+import { ProjectContext } from "../context/ProjectContext";
 
 //  Hook 
 
@@ -35,6 +36,7 @@ import { useToast } from "../hooks/useToast";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
+  const { issueUpdateTick } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -69,7 +71,8 @@ export function useBoard(projectId: string | null) {
     return () => {
       active = false;
     };
-  }, [loadIssues]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → board tự reload
+  }, [loadIssues, issueUpdateTick]);
 
   //  Optimistic task updater 
 

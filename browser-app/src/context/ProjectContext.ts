@@ -9,8 +9,19 @@ export interface ProjectContextValue {
   members: UserSummary[];
   loading: boolean;
   refresh: () => void;
-  reloadIssues: () => void;      
-  setReloadIssues: (fn: () => void) => void; 
+  reloadIssues: () => void;
+  setReloadIssues: (fn: () => void) => void;
+  /** Mở TaskModal chi tiết từ bất kỳ view nào bằng UUID của issue */
+  openIssueModal: (uuid: string) => void;
+  /** Được gọi bởi SharedIssueModal để đăng ký hàm mở modal */
+  setOpenIssueModal: (fn: (uuid: string) => void) => void;
+  /**
+   * Tăng khi có thao tác cập nhật issue (status, assignee, title...).
+   * Timeline và ListView subscribe vào tick này để tự reload.
+   */
+  issueUpdateTick: number;
+  /** Gọi sau mỗi thao tác cập nhật để trigger reload ở các view khác */
+  notifyIssueUpdated: () => void;
 }
 
 export const ProjectContext = createContext<ProjectContextValue>({
@@ -22,4 +33,8 @@ export const ProjectContext = createContext<ProjectContextValue>({
   refresh: () => {},
   reloadIssues: () => {},
   setReloadIssues: () => {},
+  openIssueModal: () => {},
+  setOpenIssueModal: () => {},
+  issueUpdateTick: 0,
+  notifyIssueUpdated: () => {},
 });

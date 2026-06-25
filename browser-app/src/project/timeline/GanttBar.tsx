@@ -6,12 +6,12 @@ interface GanttBarProps {
   y: number;
   width: number;
   isHovered: boolean;
-  isSelected: boolean;
   onHover: (id: string | null) => void;
-  onSelect: (id: string | null) => void;
+  /** Click vào bar → mở TaskModal đầy đủ */
+  onOpenModal: (uuid: string) => void;
 }
 
-export function GanttBar({ task, x, y, width, isHovered, isSelected, onHover, onSelect }: GanttBarProps) {
+export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }: GanttBarProps) {
   const color = task.color || "#6366f1";
   const barH = 28;
 
@@ -26,20 +26,21 @@ export function GanttBar({ task, x, y, width, isHovered, isSelected, onHover, on
         borderRadius: 6,
         background: `linear-gradient(90deg, ${color}cc, ${color}88)`,
         border: `1px solid ${color}66`,
-        boxShadow: isSelected
-          ? `0 0 0 2px ${color}, 0 4px 16px ${color}44`
-          : isHovered ? `0 2px 12px ${color}44` : `0 1px 4px ${color}22`,
+        boxShadow: isHovered
+          ? `0 2px 12px ${color}44`
+          : `0 1px 4px ${color}22`,
         pointerEvents: "all",
         cursor: "pointer",
         transition: "box-shadow 0.15s, transform 0.15s",
-        transform: isHovered || isSelected ? "scaleY(1.08)" : "scaleY(1)",
+        transform: isHovered ? "scaleY(1.08)" : "scaleY(1)",
         display: "flex",
         alignItems: "center",
         overflow: "hidden",
       }}
       onMouseEnter={() => onHover(task.id)}
       onMouseLeave={() => onHover(null)}
-      onClick={() => onSelect(isSelected ? null : task.id)}
+      onClick={() => onOpenModal(task.id)}
+      title={task.name}
     >
       {/* Progress fill */}
       <div
