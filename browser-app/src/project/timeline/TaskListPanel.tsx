@@ -5,14 +5,14 @@ import type { GanttTask } from "./timelineUtils";
 interface TaskListPanelProps {
   groups: string[];
   tasks: GanttTask[];
-  selectedTask: string | null;
   collapsedGroups: Set<string>;
-  onSelectTask: (id: string | null) => void;
   onToggleGroup: (group: string) => void;
+  /** Click vào tên task → mở TaskModal đầy đủ */
+  onOpenModal: (uuid: string) => void;
 }
 
 export function TaskListPanel({
-  groups, tasks, selectedTask, collapsedGroups, onSelectTask, onToggleGroup,
+  groups, tasks, collapsedGroups, onToggleGroup, onOpenModal,
 }: TaskListPanelProps) {
   return (
     <div
@@ -50,25 +50,21 @@ export function TaskListPanel({
 
               {/* Task rows */}
               {!isCollapsed && groupTasks.map((task) => {
-                const isSelected = selectedTask === task.id;
                 const status = STATUS_CONFIG[task.status || "todo"];
 
                 return (
                   <div
                     key={task.id}
                     style={{ height: ROW_HEIGHT }}
-                    onClick={() => onSelectTask(isSelected ? null : task.id)}
-                    className={`flex items-center gap-2 px-4 pl-7 cursor-pointer transition-all duration-150 border-b border-gray-200 ${
-                      isSelected ? "bg-indigo-50 border-l-2 border-l-indigo-500" : "hover:bg-slate-50"
-                    }`}
+                    onClick={() => onOpenModal(task.id)}
+                    title="Click để xem chi tiết"
+                    className="flex items-center gap-2 px-4 pl-7 cursor-pointer transition-all duration-150 border-b border-gray-200 hover:bg-indigo-50 group"
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
-                    <span
-                      className="text-[13px] text-slate-600 truncate flex-1 leading-tight"
-                      style={{ fontWeight: isSelected ? 600 : 400 }}
-                    >
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`} />
+                    <span className="text-[13px] text-slate-600 truncate flex-1 leading-tight group-hover:text-indigo-700 transition-colors">
                       {task.name}
                     </span>
+                    {/* Assignee avatars */}
                     {task.assignees && task.assignees.length > 0 && (
                       <div className="flex items-center shrink-0" style={{ marginLeft: 6 }}>
                         {task.assignees.slice(0, 2).map((a, i) => (
@@ -92,6 +88,26 @@ export function TaskListPanel({
                             }}
                           />
                         ))}
+                        {task.assignees.length > 2 && (
+                          <span
+                            style={{
+                              width: 20, height: 20,
+                              borderRadius: "50%",
+                              border: "2px solid #fff",
+                              marginLeft: -6,
+                              fontSize: 9,
+                              fontWeight: 700,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: "#ede9fe",
+                              color: "#7c3aed",
+                              position: "relative",
+                            }}
+                          >
+                            +{task.assignees.length - 2}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

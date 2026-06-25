@@ -34,7 +34,7 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick } = useContext(ProjectContext);
 
   const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -80,7 +80,8 @@ export function useListView() {
       .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  }, [projectId, tick, addToast]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+  }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
 
