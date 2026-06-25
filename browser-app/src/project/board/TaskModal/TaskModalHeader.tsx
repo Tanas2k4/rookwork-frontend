@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MdClose } from "react-icons/md";
+import { FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import type { Task } from "../../../types/project";
 import {
   typeIconMap,
@@ -13,6 +14,7 @@ interface Props {
   onClose: () => void;
   onSaveTitle: (title: string) => void;
   onOpenTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 }
 
 export function TaskModalHeader({
@@ -21,9 +23,11 @@ export function TaskModalHeader({
   onClose,
   onSaveTitle,
   onOpenTask,
+  onDeleteTask,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const Icon = typeIconMap[task.type];
 
   const parent = task.parentId
@@ -84,12 +88,47 @@ export function TaskModalHeader({
           ID: #{task.id} · {typeLabelMap[task.type]}
         </p>
       </div>
-      <button
-        onClick={onClose}
-        className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition shrink-0"
-      >
-        <MdClose size={20} />
-      </button>
+      <div className="flex items-center gap-1 shrink-0">
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className={`p-1.5 rounded-full transition shrink-0 ${
+              menuOpen ? "bg-gray-100 text-gray-700" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            }`}
+            title="Actions"
+          >
+            <FiMoreVertical size={15} />
+          </button>
+          {menuOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setMenuOpen(false)}
+              />
+              <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (window.confirm("Are you sure you want to delete this issue?")) {
+                      onDeleteTask(task);
+                    }
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition flex items-center gap-2 font-medium"
+                >
+                  <FiTrash2 size={15} />
+                  Delete issue
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition shrink-0"
+        >
+          <MdClose size={20} />
+        </button>
+      </div>
     </div>
   );
 }

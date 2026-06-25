@@ -30,6 +30,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [projectKey]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
