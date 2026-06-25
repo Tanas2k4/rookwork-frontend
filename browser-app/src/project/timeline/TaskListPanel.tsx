@@ -62,7 +62,7 @@ export function TaskListPanel({
                       isSelected ? "bg-indigo-50 border-l-2 border-l-indigo-500" : "hover:bg-slate-50"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
                     <span
                       className="text-[13px] text-slate-600 truncate flex-1 leading-tight"
                       style={{ fontWeight: isSelected ? 600 : 400 }}
@@ -70,7 +70,7 @@ export function TaskListPanel({
                       {task.name}
                     </span>
                     {task.assignees && task.assignees.length > 0 && (
-                      <div className="flex items-center flex-shrink-0" style={{ marginLeft: 6 }}>
+                      <div className="flex items-center shrink-0" style={{ marginLeft: 6 }}>
                         {task.assignees.slice(0, 2).map((a, i) => (
                           <img
                             key={a.id}

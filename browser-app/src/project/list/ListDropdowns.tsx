@@ -68,10 +68,11 @@ export function ListDropdowns({
             </button>
             <div className="border-t border-gray-200 my-1" />
             {users.map((u) => {
+              const typedU = u as User & { _uuid?: string; uuid?: string };
               const assignedArr = (currentTask?.assigned_to ?? []) as (User & { _uuid?: string; uuid?: string })[];
-              const userUuid = (u as any)._uuid ?? (u as any).uuid ?? u.avt;
+              const userUuid = typedU._uuid ?? typedU.uuid ?? typedU.avt;
               const isSelected = assignedArr.some(
-                (a) => ((a as any)._uuid ?? (a as any).uuid ?? a.avt) === userUuid,
+                (a) => (a._uuid ?? a.uuid ?? a.avt) === userUuid,
               );
               return (
                 <button key={u.avt} onClick={() => onAssignUser(taskId, u)}
