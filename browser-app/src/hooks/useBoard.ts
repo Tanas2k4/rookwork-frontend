@@ -216,11 +216,14 @@ export function useBoard(projectId: string | null) {
 
   function changeAssignee(users: User[]) {
     if (!selectedTask) return;
-    const currentUuids = ((selectedTask as any)._assigneeUuids as string[] | undefined) ?? [];
-    const newUuids = users.map((u) => (u as any)._uuid ?? (u as any).uuid ?? "").filter(Boolean);
+    const currentUuids = (selectedTask as Task & { _assigneeUuids?: string[] })._assigneeUuids ?? [];
+    const newUuids = users.map((u) => {
+      const typedU = u as User & { _uuid?: string; uuid?: string };
+      return typedU._uuid ?? typedU.uuid ?? "";
+    }).filter(Boolean);
     // shallow compare
     if (JSON.stringify([...currentUuids].sort()) === JSON.stringify([...newUuids].sort())) return;
-    updateTaskLocal(selectedTask.id, { assigned_to: users, _assigneeUuids: newUuids } as any);
+    updateTaskLocal(selectedTask.id, { assigned_to: users, _assigneeUuids: newUuids } as Partial<Task & { _assigneeUuids?: string[] }>);
     pushToast(users.length > 0 ? `Assigned to ${users.map((u) => u.display_name).join(", ")}` : "Unassigned");
     patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
   }

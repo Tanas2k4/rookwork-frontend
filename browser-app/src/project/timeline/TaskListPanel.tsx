@@ -66,7 +66,7 @@ export function TaskListPanel({
                     </span>
                     {/* Assignee avatars */}
                     {task.assignees && task.assignees.length > 0 && (
-                      <div className="flex items-center flex-shrink-0" style={{ marginLeft: 6 }}>
+                      <div className="flex items-center shrink-0" style={{ marginLeft: 6 }}>
                         {task.assignees.slice(0, 2).map((a, i) => (
                           <img
                             key={a.id}

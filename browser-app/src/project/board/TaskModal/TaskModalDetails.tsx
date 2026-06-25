@@ -66,7 +66,7 @@ export function TaskModalDetails({
   // Current assignee UUIDs
   const currentAssignees = (task.assigned_to ?? []) as (User & { _uuid?: string; uuid?: string })[];
   const currentUuids = new Set(
-    currentAssignees.map((u) => (u as any)._uuid ?? (u as any).uuid ?? ""),
+    currentAssignees.map((u) => u._uuid ?? u.uuid ?? ""),
   );
 
   function toggleMember(member: (typeof memberUsers)[0]) {
@@ -74,7 +74,7 @@ export function TaskModalDetails({
     let newList: User[];
     if (currentUuids.has(uuid)) {
       newList = currentAssignees.filter(
-        (u) => ((u as any)._uuid ?? (u as any).uuid) !== uuid,
+        (u) => (u._uuid ?? u.uuid) !== uuid,
       );
     } else {
       newList = [...currentAssignees, member];
