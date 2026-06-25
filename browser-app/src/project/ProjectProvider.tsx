@@ -9,7 +9,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const { projectKey } = useParams<{ projectKey: string }>();
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [issueUpdateTick, setIssueUpdateTick] = useState(0);
   const reloadIssuesRef = useRef<() => void>(() => {});
+  const openIssueModalRef = useRef<(uuid: string) => void>(() => {});
 
   const load = useCallback(async () => {
     if (!projectKey) return;
@@ -49,6 +51,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     ),
   });
 
+  const notifyIssueUpdated = useCallback(() => {
+    setIssueUpdateTick((n) => n + 1);
+  }, []);
+
   return (
     <ProjectContext.Provider
       value={{
@@ -62,6 +68,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         setReloadIssues: (fn) => {
           reloadIssuesRef.current = fn;
         },
+        openIssueModal: (uuid) => openIssueModalRef.current(uuid),
+        setOpenIssueModal: (fn) => {
+          openIssueModalRef.current = fn;
+        },
+        issueUpdateTick,
+        notifyIssueUpdated,
       }}
     >
       {children}

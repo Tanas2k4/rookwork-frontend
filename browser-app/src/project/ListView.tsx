@@ -2,11 +2,13 @@ import { IoSearchSharp } from "react-icons/io5";
 import { LiaSortSolid } from "react-icons/lia";
 import { FaCaretDown, FaTasks, FaBook, FaRocket } from "react-icons/fa";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { useContext } from "react";
 import { useListView } from "../hooks/useListView";
 import { ListFilterPanel } from "./list/ListFilterPanel";
 import { ListDropdowns } from "./list/ListDropdowns";
 import { ToastContainer } from "../components/common/ToastContainer";
 import { Button } from "../components/common/Button";
+import { ProjectContext } from "../context/ProjectContext";
 
 const typeOptions = [
   { label: "Task",  value: "task",  icon: <FaTasks  size={12} />, color: "bg-blue-100 text-blue-700" },
@@ -22,6 +24,7 @@ const statusOptions = [
 
 export default function ListView() {
   const lv = useListView();
+  const { openIssueModal } = useContext(ProjectContext);
 
   const getTypeOption   = (type: string)   => typeOptions.find((t) => t.value === type)   ?? typeOptions[0];
   const getStatusOption = (status: string) => statusOptions.find((s) => s.value === status) ?? statusOptions[0];
@@ -102,7 +105,13 @@ export default function ListView() {
                       <tr key={task._uuid} className="hover:bg-gray-50 transition-colors">
                         {/* Title */}
                         <td className="px-4 py-3 border-r border-gray-200">
-                          <span className="text-[13px] text-gray-700 font-medium">{task.title}</span>
+                          <button
+                            onClick={() => openIssueModal((task as any)._uuid)}
+                            className="text-[13px] text-gray-700 font-medium hover:text-purple-700 hover:underline transition-colors text-left"
+                            title="Click để xem chi tiết"
+                          >
+                            {task.title}
+                          </button>
                         </td>
 
                         {/* Type */}

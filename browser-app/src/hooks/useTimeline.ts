@@ -4,12 +4,13 @@
  * @author Warmdrobe
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { issueApi } from "../api/services/issueApi";
 import { taskToGantt } from "../project/timeline/timelineUtils";
 import type { GanttTask } from "../project/timeline/timelineUtils";
 import type { IssueResponse } from "../api/contracts/issue";
 import { issueToTask } from "../utils/issueMapper";
+import { ProjectContext } from "../context/ProjectContext";
 
 const TYPE_DURATION: Record<IssueResponse["issueType"], number> = {
   TASK: 7,
@@ -42,7 +43,7 @@ function issueToGantt(issue: IssueResponse): GanttTask {
   return { ...gantt, id: issue.id, start, end };
 }
 
-//  Hook 
+//  Hook
 
 export interface UseTimelineReturn {
   ganttTasks: GanttTask[];
@@ -52,9 +53,11 @@ export interface UseTimelineReturn {
 
 /**
  * Hook useTimeline tải danh sách các sự vụ của dự án và chuyển đổi chúng thành dạng dữ liệu Timeline Gantt.
+ * Subscribe vào issueUpdateTick để tự động reload khi có thao tác cập nhật từ TaskModal.
  * @param projectId ID định danh dự án hiện tại
  */
 export function useTimeline(projectId: string | null): UseTimelineReturn {
+  const { issueUpdateTick } = useContext(ProjectContext);
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -74,7 +77,8 @@ export function useTimeline(projectId: string | null): UseTimelineReturn {
       });
 
     return () => { cancelled = true; };
-  }, [projectId, tick]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload
+  }, [projectId, tick, issueUpdateTick]);
 
   const reload = () => setTick((n) => n + 1);
 
