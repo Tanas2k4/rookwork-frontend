@@ -60,7 +60,7 @@ export function TaskListPanel({
                     title="Click để xem chi tiết"
                     className="flex items-center gap-2 px-4 pl-7 cursor-pointer transition-all duration-150 border-b border-gray-200 hover:bg-indigo-50 group"
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
                     <span className="text-[13px] text-slate-600 truncate flex-1 leading-tight group-hover:text-indigo-700 transition-colors">
                       {task.name}
                     </span>

@@ -29,10 +29,10 @@ import {
 import {
   MdFormatListNumbered,
   MdStrikethroughS,
-  MdOutlineCode,
-  MdFormatColorText,
+  MdOutlineFormatColorText,
   MdFormatColorFill,
 } from "react-icons/md";
+import { FaCode } from "react-icons/fa6";
 
 interface RichTextEditorProps {
   initialValue: string;
@@ -311,8 +311,7 @@ export function RichTextEditor({
               }`}
               title="Text Color"
             >
-              <MdFormatColorText size={17} />
-              <span className="text-[9px] font-bold">A</span>
+              <MdOutlineFormatColorText size={17} />
             </button>
             {textColorOpen && (
               <div className="absolute left-0 mt-1 p-1.5 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex gap-1">
@@ -408,7 +407,7 @@ export function RichTextEditor({
             }`}
             title="Inline Code"
           >
-            <MdOutlineCode size={17} />
+            <FaCode size={17} />
           </button>
 
           {/* Code Block */}
