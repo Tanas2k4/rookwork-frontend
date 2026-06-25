@@ -34,7 +34,7 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick } = useContext(ProjectContext);
 
   const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -77,10 +77,11 @@ export function useListView() {
         });
         setUsers(assignees);
       })
-      .catch(() => addToast("Failed to load issues", "error"));
+      .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  }, [projectId, tick, addToast]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+  }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
 
@@ -143,8 +144,8 @@ export function useListView() {
     try {
       await issueApi.update(projectId, taskId, data);
       addToast(successMsg, "success");
-    } catch {
-      addToast("Update failed. Please try again.", "error");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Update failed. Please try again.", "error");
       // Rollback: reload from server
       setTick((n) => n + 1);
     }

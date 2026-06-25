@@ -4,7 +4,7 @@
  * @author Warmdrobe
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useContext } from "react";
 import type {
   Task,
   Status,
@@ -24,6 +24,7 @@ import {
   issueToTask,
 } from "../utils/issueMapper";
 import { useToast } from "../hooks/useToast";
+import { ProjectContext } from "../context/ProjectContext";
 
 //  Hook 
 
@@ -35,6 +36,7 @@ import { useToast } from "../hooks/useToast";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
+  const { issueUpdateTick } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -55,7 +57,7 @@ export function useBoard(projectId: string | null) {
       setTasks(issues.map((i) => issueToTask(i, issues)));
     } catch (err) {
       console.error("Failed to load issues", err);
-      pushToast("Failed to load tasks", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to load tasks", "error");
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,8 @@ export function useBoard(projectId: string | null) {
     return () => {
       active = false;
     };
-  }, [loadIssues]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → board tự reload
+  }, [loadIssues, issueUpdateTick]);
 
   //  Optimistic task updater 
 
@@ -128,9 +131,9 @@ export function useBoard(projectId: string | null) {
       setTasks((p) => p.map((t) => (t.id === tempId ? realTask : t)));
       pushToast("Task created");
       return realTask;
-    } catch {
+    } catch (err) {
       setTasks((p) => p.filter((t) => t.id !== tempId));
-      pushToast("Failed to create task", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to create task", "error");
     }
   }
 
@@ -148,10 +151,10 @@ export function useBoard(projectId: string | null) {
 
     try {
       await issueApi.delete(projectId, uuid);
-    } catch {
+    } catch (err) {
       // Rollback
       setTasks((p) => [...p, task]);
-      pushToast("Failed to delete task", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to delete task", "error");
     }
   }
 
@@ -167,7 +170,7 @@ export function useBoard(projectId: string | null) {
       await issueApi.update(projectId, uuid, patch);
     } catch (err) {
       console.error("Failed to update issue", err);
-      pushToast("Failed to save change", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to save change", "error");
     }
   }
 
@@ -301,7 +304,7 @@ export function useBoard(projectId: string | null) {
         );
       }
 
-      pushToast("Failed to link - Changes reverted", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to link - Changes reverted", "error");
     }
   }
 
@@ -341,7 +344,7 @@ export function useBoard(projectId: string | null) {
       pushToast("Unlinked successfully", "info");
     } catch (err) {
       console.error("Unlink child API error:", err);
-      pushToast("Failed to unlink", "error");
+      pushToast(err instanceof Error ? err.message : "Failed to unlink", "error");
     }
   }
 
