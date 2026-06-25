@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { ImPencil } from "react-icons/im";
-import { FaLink } from "react-icons/fa6";
+import { TbUserEdit } from "react-icons/tb";
 import { IoAdd, IoClose } from "react-icons/io5";
+import InviteModal from "./shared/InviteModal";
 import { FaCheck } from "react-icons/fa6";
-import { RiUserAddLine } from "react-icons/ri";
 import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
 import { useProject } from "../hooks/useProject";
 import { issueApi } from "../api/services/issueApi";
@@ -54,14 +54,8 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
   const { project, members, projectId, reloadIssues, refresh } = useProject();
   const { toasts, addToast, removeToast } = useToast();
 
-  const [showAddUser, setShowAddUser] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
-
-  // Invite states
-  const [email, setEmail] = useState("");
-  const [inviting, setInviting] = useState(false);
-  const [inviteError, setInviteError] = useState("");
-  const [inviteSuccess, setInviteSuccess] = useState("");
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Create task states
   const [selectedType, setSelectedType] = useState<TaskType>("task");
@@ -76,44 +70,12 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
 
   useEffect(() => {
     document.body.style.overflow = showCreateTask ? "hidden" : "unset";
-    return () => { document.body.style.overflow = "unset"; };
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [showCreateTask]);
 
-  //  Send invite 
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !projectId) return;
-
-    setInviting(true);
-    setInviteError("");
-    setInviteSuccess("");
-
-    try {
-      await invitationApi.send(projectId, email.trim());
-      addToast(`Sent invitation to ${email.trim()}`, "success");
-      setInviteSuccess(`Sent to ${email.trim()}`);
-      setEmail("");
-      setTimeout(() => {
-        setShowAddUser(false);
-        setInviteSuccess("");
-      }, 1500);
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to send invitation";
-      addToast(errMsg, "error");
-      setInviteError(errMsg);
-    } finally {
-      setInviting(false);
-    }
-  };
-
-  const closeInvitePanel = () => {
-    setShowAddUser(false);
-    setEmail("");
-    setInviteError("");
-    setInviteSuccess("");
-  };
-
-  //  Create task 
+  //  Create task
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskTitle.trim() || !projectId) return;
@@ -130,13 +92,16 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
         status,
       });
       if (assigneeId && created.id) {
-        await issueApi.update(projectId, created.id, { assigneeIds: [assigneeId] });
+        await issueApi.update(projectId, created.id, {
+          assigneeIds: [assigneeId],
+        });
       }
       addToast(`Created task "${taskTitle.trim()}" successfully!`, "success");
       resetTaskForm();
       reloadIssues();
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to create task";
+      const errMsg =
+        err instanceof Error ? err.message : "Failed to create task";
       addToast(errMsg, "error");
       setCreateError(errMsg);
     } finally {
@@ -184,7 +149,8 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
       addToast("Project title updated successfully!", "success");
       setIsEditingTitle(false);
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to update project title";
+      const errMsg =
+        err instanceof Error ? err.message : "Failed to update project title";
       addToast(errMsg, "error");
       setSaveTitleError(errMsg);
     } finally {
@@ -240,7 +206,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                 </button>
               </div>
               {saveTitleError && (
-                <span className="text-xs text-red-500 font-medium px-1">{saveTitleError}</span>
+                <span className="text-xs text-red-500 font-medium px-1">
+                  {saveTitleError}
+                </span>
               )}
             </div>
           ) : (
@@ -261,8 +229,12 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
               </button>
             </>
           )}
-          <button className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition">
-            <FaLink size={14} />
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition"
+            title="Invite members"
+          >
+            <TbUserEdit size={15} />
           </button>
         </div>
 
@@ -277,16 +249,6 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Toggle invite panel */}
-            <button
-              onClick={() => setShowAddUser((p) => !p)}
-              className={`flex items-center justify-center w-8 h-8 text-gray-700
-              border border-gray-500 hover:bg-gray-200 rounded-full transition
-              ${showAddUser ? "bg-gray-100" : ""}`}
-            >
-              <RiUserAddLine size={18} />
-            </button>
-
             {/* Member avatars */}
             <div className="flex -space-x-2">
               {members.length > 0 ? (
@@ -306,41 +268,6 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                 <span className="text-xs text-gray-400 italic">No members</span>
               )}
             </div>
-
-            {/* Invite input panel */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out
-              ${showAddUser ? "w-80 opacity-100" : "w-0 opacity-0"}`}
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddUser(e)}
-                  placeholder="example@email.com"
-                  className="w-full px-3 py-1.5 text-sm border border-gray-500 rounded-md
-                    focus:outline-none focus:ring-1 focus:ring-purple-500 transition"
-                  autoFocus={showAddUser}
-                />
-                <button
-                  onClick={handleAddUser}
-                  disabled={inviting}
-                  className="px-3 py-1.5 text-sm font-medium text-gray-200
-                    bg-purple-900 hover:bg-purple-700 disabled:opacity-50
-                    rounded-md transition whitespace-nowrap"
-                >
-                  {inviting ? "Sending…" : "Send"}
-                </button>
-                <button
-                  onClick={closeInvitePanel}
-                  className="p-1.5 text-gray-500 hover:text-gray-600 bg-gray-200 rounded-full transition"
-                >
-                  <IoClose size={18} />
-                </button>
-              </div>
-              {inviteError && <p className="text-xs text-red-500 mt-1 px-1">{inviteError}</p>}
-              {inviteSuccess && <p className="text-xs text-green-600 mt-1 px-1">{inviteSuccess}</p>}
-            </div>
           </div>
         </div>
       </div>
@@ -354,7 +281,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
           />
           <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Create new Item</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                Create new Item
+              </h2>
               <button
                 onClick={resetTaskForm}
                 className="p-1.5 text-gray-400 bg-gray-200 hover:text-gray-600 rounded-full transition"
@@ -363,25 +292,35 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="flex-1 overflow-y-auto">
+            <form
+              onSubmit={handleCreateTask}
+              className="flex-1 overflow-y-auto"
+            >
               <div className="px-6 py-5 space-y-5">
                 {/* Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Type
+                  </label>
                   <div className="grid grid-cols-3 gap-3">
                     {TYPE_OPTIONS.map((option) => (
                       <button
                         key={option.value}
                         type="button"
                         onClick={() => setSelectedType(option.value)}
-                        className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition ${selectedType === option.value
-                          ? option.activeColor
-                          : `${option.color} border-transparent hover:border-gray-300`
-                          }`}
+                        className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition ${
+                          selectedType === option.value
+                            ? option.activeColor
+                            : `${option.color} border-transparent hover:border-gray-300`
+                        }`}
                       >
                         <div className="text-2xl">{option.icon}</div>
-                        <div className="text-sm font-semibold">{option.label}</div>
-                        <div className="text-xs text-gray-600 text-center">{option.description}</div>
+                        <div className="text-sm font-semibold">
+                          {option.label}
+                        </div>
+                        <div className="text-xs text-gray-600 text-center">
+                          {option.description}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -405,7 +344,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
                   <textarea
                     value={taskDescription}
                     onChange={(e) => setTaskDescription(e.target.value)}
@@ -419,7 +360,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                 {/* Assignee + Priority */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Assignee</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Assignee
+                    </label>
                     <select
                       value={assigneeId}
                       onChange={(e) => setAssigneeId(e.target.value)}
@@ -428,15 +371,21 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                     >
                       <option value="">Unassigned</option>
                       {members.map((m) => (
-                        <option key={m.id} value={m.id}>{m.profileName}</option>
+                        <option key={m.id} value={m.id}>
+                          {m.profileName}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Priority
+                    </label>
                     <select
                       value={priority}
-                      onChange={(e) => setPriority(e.target.value as PriorityType)}
+                      onChange={(e) =>
+                        setPriority(e.target.value as PriorityType)
+                      }
                       className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg
                         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
@@ -451,7 +400,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                 {/* Due date + Status */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Due date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Due date
+                    </label>
                     <input
                       type="datetime-local"
                       value={dueDate}
@@ -461,7 +412,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
                     <select
                       value={status}
                       onChange={(e) => setStatus(e.target.value as ApiStatus)}
@@ -476,7 +429,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                 </div>
 
                 {createError && (
-                  <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{createError}</p>
+                  <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+                    {createError}
+                  </p>
                 )}
               </div>
 
@@ -501,6 +456,17 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
         </div>
       )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <InviteModal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        project={project}
+        members={members}
+        onInvite={async (email) => {
+          if (!projectId) return;
+          await invitationApi.send(projectId, email);
+          refresh();
+        }}
+      />
     </>
   );
 }

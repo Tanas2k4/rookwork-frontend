@@ -17,15 +17,15 @@ export default function PreferencesSettings({ user }: { user: UserSummary | null
   const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const systemLanguage = navigator.language.split("-")[0]; // "en-US" → "en"
 
-  const [language, setLanguage] = useState(systemLanguage || user?.language || i18n.language || "en");
-  const [timezone, setTimezone] = useState(systemTimezone || user?.timezone || "Asia/Ho_Chi_Minh");
+  const [language, setLanguage] = useState(systemLanguage || "en");
+  const [timezone, setTimezone] = useState(systemTimezone || "Asia/Ho_Chi_Minh");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await userApi.updatePreferences({ language, timezone });
+      // System preferences are read-only and not saved to the backend
       i18n.changeLanguage(language);
       alert(t('preferences.success'));
     } catch (err) {

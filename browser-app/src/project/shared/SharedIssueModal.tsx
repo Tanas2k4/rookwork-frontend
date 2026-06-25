@@ -18,7 +18,9 @@ export function SharedIssueModal() {
   const { projectId, setOpenIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
   const board = useBoard(projectId);
   const boardRef = useRef(board);
-  boardRef.current = board;
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
 
   // Tìm hoặc fetch task theo UUID rồi mở modal
   const handleOpenByUuid = useCallback(
