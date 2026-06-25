@@ -128,7 +128,7 @@ export function idToUuid(id: number): string | undefined {
 export function issueToTask(
   issue: IssueResponse,
   allIssues: IssueResponse[] = [],
-): Task & { _uuid: string; _assigneeUuids: string[] } {
+): Task & { _uuid: string; _projectId: string; _assigneeUuids: string[] } {
   const children = allIssues
     .filter((i) => i.parentId === issue.id)
     .map((i) => uuidToId(i.id));
@@ -138,6 +138,7 @@ export function issueToTask(
   return {
     id: uuidToId(issue.id),
     _uuid: issue.id,
+    _projectId: issue.projectId,
     _assigneeUuids: (issue.assignees ?? []).map((u) => u.id),
     title: issue.issueName,
     description: issue.description ?? undefined,
@@ -149,5 +150,6 @@ export function issueToTask(
     subtasks: [],
     parentId: issue.parentId ? uuidToId(issue.parentId) : null,
     childIds: children,
+    attachments: issue.attachments,
   };
 }

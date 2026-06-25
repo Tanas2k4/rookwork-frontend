@@ -15,6 +15,7 @@ import type {
 } from "../types/project";
 import { statusMap, priorityLabelMap } from "../types/project";
 import { issueApi } from "../api/services/issueApi";
+import type { AttachmentResponse } from "../api/contracts/attachment";
 import {
   uiTypeToApi,
   uiStatusToApi,
@@ -402,6 +403,10 @@ export function useBoard(projectId: string | null) {
     pushToast("Subtask removed", "info");
   }
 
+  function updateAttachments(taskId: number, attachments: AttachmentResponse[]) {
+    updateTaskLocal(taskId, { attachments });
+  }
+
   return {
     tasks,
     selectedTask,
@@ -426,6 +431,7 @@ export function useBoard(projectId: string | null) {
     addSubtask,
     deleteSubtask,
     removeToast,
+    updateAttachments,
     reload: loadIssues,
   };
 }

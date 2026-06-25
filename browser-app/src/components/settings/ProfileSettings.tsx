@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { formatInTimeZone } from "date-fns-tz";
 import { FiGlobe, FiLock } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
+import { avatarUrl } from "../../utils/avatar";
 
 export default function ProfileSettings({ user, onUnsavedChanges }: { user: UserSummary | null; onUnsavedChanges?: (val: boolean) => void }) {
   const { t } = useTranslation();
@@ -18,6 +19,49 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
   const [locationPublic, setLocationPublic] = useState(user?.locationPublic ?? true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatar, setAvatar] = useState(user?.picture || "");
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setAvatar(user.picture || "");
+      setProfileName(user.profileName || "");
+      setEmail(user.email || "");
+      setJobTitle(user.jobTitle || "");
+      setOrganization(user.organization || "");
+      setLocation(user.location || "");
+      setEmailPublic(user.emailPublic ?? false);
+      setJobTitlePublic(user.jobTitlePublic ?? true);
+      setOrganizationPublic(user.organizationPublic ?? true);
+      setLocationPublic(user.locationPublic ?? true);
+    }
+  }, [user]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Kích thước ảnh đại diện không được vượt quá 5MB.");
+        return;
+      }
+      setIsUploading(true);
+      try {
+        const response = await userApi.uploadAvatar(file);
+        setAvatar(response.avatarUrl);
+        window.dispatchEvent(new CustomEvent("profileUpdated"));
+      } catch (err) {
+        console.error("Lỗi tải lên ảnh đại diện:", err);
+        alert("Không thể tải lên ảnh đại diện. Vui lòng thử lại.");
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -44,6 +88,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
       });
       alert(t('profile.success'));
       onUnsavedChanges?.(false);
+      window.dispatchEvent(new CustomEvent("profileUpdated"));
     } catch (err) {
       alert(t('profile.error'));
     } finally {
@@ -70,12 +115,33 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
 
         {/* Avatar Section */}
         <div className="flex items-center space-x-6">
-          <div className="h-20 w-20 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-2xl font-bold">
-            {profileName.charAt(0).toUpperCase() || "U"}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarChange}
+            accept="image/*"
+            className="hidden"
+          />
+          <div className="relative group cursor-pointer shrink-0" onClick={handleAvatarClick}>
+            <img
+              src={avatarUrl(profileName || "User", avatar)}
+              alt="Avatar"
+              className="h-20 w-20 rounded-full object-cover border border-gray-200 group-hover:opacity-80 transition-opacity"
+            />
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
           </div>
           <div>
-            <button type="button" className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
-              {t('profile.change_avatar')}
+            <button
+              type="button"
+              onClick={handleAvatarClick}
+              disabled={isUploading}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+            >
+              {isUploading ? "Uploading..." : t('profile.change_avatar')}
             </button>
             <p className="mt-2 text-xs text-gray-500">{t('profile.avatar_hint')}</p>
           </div>
