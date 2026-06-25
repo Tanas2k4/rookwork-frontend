@@ -4,8 +4,8 @@ import { MdOutlineExpandMore } from "react-icons/md";
 import { IoIosArrowBack } from "react-icons/io";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
-import { SubtasksSection } from "../project/board/TaskPanel/SubtasksSection";
-import { ActivitySection } from "../project/board/TaskPanel/ActivitySection";
+import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
+import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
 import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
 import {
@@ -19,10 +19,7 @@ import {
   typeColorMap,
 } from "../types/project";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-
+// helper components
 function PriorityBars({ priority }: { priority: Priority }) {
   const idx = priorities.indexOf(priority);
   return (
@@ -209,7 +206,7 @@ export default function IssueDetailPage() {
                 rows={4}
                 onBlur={() => { patchIssue({ description: editDescValue }); setEditingDesc(false); }}
                 onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
-                className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-600 transition" />
+                className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-700 transition" />
             ) : (
               <p onDoubleClick={() => { setEditingDesc(true); setEditDescValue(issue.description ?? ""); }}
                 className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-1 hover:bg-gray-50 transition min-h-6 leading-relaxed"
@@ -254,12 +251,19 @@ export default function IssueDetailPage() {
             </DetailRow>
 
             <DetailRow label="Assigned to">
-              {issue.assignedTo ? (
-                <span className="flex items-center gap-1.5">
-                  <img src={avatarUrl(issue.assignedTo.profileName, issue.assignedTo.picture)}
-                    className="w-4 h-4 rounded-full shrink-0" alt="" />
-                  <span className="text-gray-700">{issue.assignedTo.profileName}</span>
-                </span>
+              {issue.assignees && issue.assignees.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {issue.assignees.map((a) => (
+                    <div key={a.id} className="flex items-center gap-1.5">
+                      <img
+                        src={avatarUrl(a.profileName, a.picture)}
+                        className="w-4 h-4 rounded-full shrink-0 object-cover"
+                        alt=""
+                      />
+                      <span className="text-gray-700 text-sm">{a.profileName}</span>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <span className="text-gray-400 italic">Unassigned</span>
               )}

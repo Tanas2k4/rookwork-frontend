@@ -86,7 +86,7 @@ export function uiPriorityToApi(p: Priority): PriorityType {
  */
 export function apiUserToUI(u: UserSummary): User & { uuid?: string } {
   return {
-    id: 0,
+    id: uuidToId(u.id),
     email: "",
     display_name: u.profileName,
     avt: u.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(u.profileName)}&background=7c3aed&color=fff`,
@@ -128,19 +128,22 @@ export function idToUuid(id: number): string | undefined {
 export function issueToTask(
   issue: IssueResponse,
   allIssues: IssueResponse[] = [],
-): Task & { _uuid: string } {
+): Task & { _uuid: string; _assigneeUuids: string[] } {
   const children = allIssues
     .filter((i) => i.parentId === issue.id)
     .map((i) => uuidToId(i.id));
 
+  const assignees = (issue.assignees ?? []).map(apiUserToUI);
+
   return {
     id: uuidToId(issue.id),
     _uuid: issue.id,
+    _assigneeUuids: (issue.assignees ?? []).map((u) => u.id),
     title: issue.issueName,
     description: issue.description ?? undefined,
     type: apiTypeToUI(issue.issueType),
     priority: apiPriorityToUI(issue.priority),
-    assigned_to: issue.assignedTo ? apiUserToUI(issue.assignedTo) : null,
+    assigned_to: assignees,
     deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
     status: apiStatusToUI(issue.status),
     subtasks: [],

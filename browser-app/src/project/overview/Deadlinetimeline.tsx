@@ -105,13 +105,30 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
                       </div>
                       <p className="text-[12px] font-semibold text-gray-800 leading-snug mb-2">{item.issueName}</p>
                       <div className="flex items-center gap-1.5 mb-2">
-                        {item.assignedTo ? (
-                          <img src={avatarUrl(item.assignedTo.profileName, item.assignedTo.picture)}
-                            alt="" className="w-5 h-5 rounded-full object-cover" />
+                        {item.assignees && item.assignees.length > 0 ? (
+                          <>
+                            <div className="flex -space-x-1.5 overflow-hidden">
+                              {item.assignees.slice(0, 2).map((a, idx) => (
+                                <img
+                                  key={idx}
+                                  src={avatarUrl(a.profileName, a.picture)}
+                                  alt=""
+                                  className="w-5 h-5 rounded-full object-cover border border-white"
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-gray-500 truncate max-w-[140px]">
+                              {item.assignees.length === 1
+                                ? item.assignees[0].profileName
+                                : `${item.assignees.length} people`}
+                            </span>
+                          </>
                         ) : (
-                          <div className="w-5 h-5 bg-gray-200 rounded-full" />
+                          <>
+                            <div className="w-5 h-5 bg-gray-200 rounded-full" />
+                            <span className="text-[10px] text-gray-500">Unassigned</span>
+                          </>
                         )}
-                        <span className="text-[10px] text-gray-500">{item.assignedTo?.profileName ?? "Unassigned"}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <StatusBadge status={status} />

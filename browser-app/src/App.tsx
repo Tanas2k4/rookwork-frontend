@@ -127,7 +127,7 @@ function App() {
 
                     <Route
                       path="/projects/:projectKey"
-                      element={<ProjectPage />}
+                      element={<ProjectPage onProjectsChanged={reloadProjects} />}
                     >
                       <Route
                         index

@@ -54,13 +54,30 @@ export default function TaskSnapshot({ data }: { data: OverviewData }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-gray-800 truncate">{t.issueName}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    {t.assignedTo ? (
-                      <img src={t.assignedTo.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(t.assignedTo.profileName)}&background=7c3aed&color=fff`}
-                        alt="" className="w-5 h-5 rounded-full object-cover" />
+                    {t.assignees && t.assignees.length > 0 ? (
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                          {t.assignees.slice(0, 2).map((a, idx) => (
+                            <img
+                              key={idx}
+                              src={a.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(a.profileName)}&background=7c3aed&color=fff`}
+                              alt=""
+                              className="w-5 h-5 rounded-full object-cover border border-white"
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] text-gray-400 truncate max-w-[120px]">
+                          {t.assignees.length === 1
+                            ? t.assignees[0].profileName
+                            : `${t.assignees.length} people`}
+                        </span>
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 bg-gray-200 rounded-full shrink-0" />
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="w-5 h-5 bg-gray-200 rounded-full shrink-0" />
+                        <span className="text-[11px] text-gray-400">Unassigned</span>
+                      </div>
                     )}
-                    <span className="text-[11px] text-gray-400">{t.assignedTo?.profileName ?? "Unassigned"}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

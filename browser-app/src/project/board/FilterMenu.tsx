@@ -73,7 +73,7 @@ export function FilterMenu({
                     onTypeChange("");
                     onPriorityChange("");
                   }}
-                  className="text-xs text-purple-600 hover:text-purple-700"
+                  className="text-xs text-purple-800 hover:text-purple-900"
                 >
                   Clear all
                 </button>
@@ -97,7 +97,7 @@ export function FilterMenu({
                         type="checkbox"
                         checked={filterType === t}
                         onChange={() => onTypeChange(filterType === t ? "" : t)}
-                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                        className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700"
                       />
                       <span
                         className={`flex items-center gap-1.5 text-xs font-medium ${typeColorMap[t]}`}
@@ -128,7 +128,7 @@ export function FilterMenu({
                       onChange={() =>
                         onPriorityChange(filterPriority === p ? "" : p)
                       }
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                      className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700"
                     />
                     <span className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
                       <span

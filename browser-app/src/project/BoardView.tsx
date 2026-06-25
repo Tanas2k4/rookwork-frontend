@@ -11,7 +11,7 @@ import { useProject } from "../hooks/useProject";
 import { ToastContainer } from "../components/common/ToastContainer";
 import { BoardColumn } from "./board/BoardColumn";
 import { FilterMenu } from "./board/FilterMenu";
-import { TaskPanel } from "./board/TaskPanel";
+import { TaskModal } from "./board/TaskModal";
 import type { Priority, TaskType } from "../types/project";
 import { statuses } from "../types/project";
 
@@ -98,8 +98,8 @@ export default function BoardView() {
         ))}
       </div>
 
-      {/* Task detail panel */}
-      <TaskPanel
+      {/* Task detail modal */}
+      <TaskModal
         task={board.selectedTask}
         open={board.panelOpen}
         allTasks={board.tasks}
