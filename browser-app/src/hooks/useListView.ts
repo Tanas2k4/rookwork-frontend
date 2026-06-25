@@ -94,7 +94,10 @@ export function useListView() {
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
     const matchesUser =
       selectedUsers.length === 0 ||
-      task.assigned_to.some((u) => selectedUsers.includes((u as any)._uuid ?? (u as any).uuid ?? u.avt));
+      task.assigned_to.some((u) => {
+        const typedU = u as User & { _uuid?: string; uuid?: string };
+        return selectedUsers.includes(typedU._uuid ?? typedU.uuid ?? typedU.avt);
+      });
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
   });
@@ -166,8 +169,8 @@ export function useListView() {
     } else if (currentUuids.includes(clickedUuid)) {
       // toggle off
       newUuids = currentUuids.filter((id) => id !== clickedUuid);
-      newUsers = (task.assigned_to as User[]).filter(
-        (u) => ((u as any)._uuid ?? (u as any).uuid) !== clickedUuid,
+      newUsers = (task.assigned_to as (User & { _uuid?: string; uuid?: string })[]).filter(
+        (u) => (u._uuid ?? u.uuid) !== clickedUuid,
       );
     } else {
       // toggle on

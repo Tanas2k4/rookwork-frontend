@@ -212,7 +212,7 @@ export default function ListView() {
                 size="md"
                 onClick={lv.goToPrevPage}
                 disabled={lv.currentPage === 1}
-                className="!px-2.5 !py-2"
+                className="px-2.5! py-2!"
               >
                 <MdChevronLeft size={18} />
               </Button>
@@ -241,7 +241,7 @@ export default function ListView() {
                       variant={lv.currentPage === item ? "primary" : "secondary"}
                       size="md"
                       onClick={() => lv.goToPage(item as number)}
-                      className="!min-w-[38px] !px-2.5"
+                      className="min-w-9.5! px-2.5!"
                     >
                       {item}
                     </Button>
@@ -254,7 +254,7 @@ export default function ListView() {
                 size="md"
                 onClick={lv.goToNextPage}
                 disabled={lv.currentPage === lv.totalPages}
-                className="!px-2.5 !py-2"
+                className="px-2.5! py-2!"
               >
                 <MdChevronRight size={18} />
               </Button>

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import DOMPurify from "dompurify";
+import { RichTextEditor } from "../components/common/RichTextEditor";
 import { MdOutlineExpandMore } from "react-icons/md";
 import { IoIosArrowBack } from "react-icons/io";
 import { issueApi } from "../api/services/issueApi";
@@ -87,7 +89,7 @@ export default function IssueDetailPage() {
     // Check if the updates actually change any field in the issue
     const hasChange = Object.entries(updates).some(([key, val]) => {
       if (val === undefined) return false;
-      const currentVal = (issue as any)[key];
+      const currentVal = issue[key as keyof IssueResponse];
       const normalizedCurrent = currentVal === null || currentVal === undefined ? "" : currentVal;
       const normalizedNew = val === null || val === undefined ? "" : val;
       return normalizedCurrent !== normalizedNew;
@@ -199,20 +201,38 @@ export default function IssueDetailPage() {
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
           {/* Description */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Description</p>
             {editingDesc ? (
-              <textarea autoFocus value={editDescValue}
-                onChange={(e) => setEditDescValue(e.target.value)}
-                rows={4}
-                onBlur={() => { patchIssue({ description: editDescValue }); setEditingDesc(false); }}
-                onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
-                className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-700 transition" />
+              <RichTextEditor
+                initialValue={editDescValue}
+                onChange={(val) => setEditDescValue(val)}
+                onSave={(val) => {
+                  patchIssue({ description: val });
+                  setEditingDesc(false);
+                }}
+                onCancel={() => setEditingDesc(false)}
+                placeholder="Add a description... (Ctrl + Enter to save)"
+              />
             ) : (
-              <p onDoubleClick={() => { setEditingDesc(true); setEditDescValue(issue.description ?? ""); }}
-                className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-1 hover:bg-gray-50 transition min-h-6 leading-relaxed"
-                title="Double-click to edit">
-                {issue.description || <span className="italic text-gray-300">No description — double-click to add</span>}
-              </p>
+              <div
+                onDoubleClick={() => {
+                  setEditingDesc(true);
+                  setEditDescValue(issue.description ?? "");
+                }}
+                className="text-sm text-gray-700 cursor-text rounded-md px-2 py-1.5 hover:bg-gray-50/80 transition min-h-10 border border-transparent hover:border-gray-200"
+                title="Double-click to edit"
+              >
+                {issue.description ? (
+                  <div
+                    className="tiptap-content"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(issue.description) }}
+                  />
+                ) : (
+                  <span className="italic text-gray-300 select-none">
+                    No description — double-click to add
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

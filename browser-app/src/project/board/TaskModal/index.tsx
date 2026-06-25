@@ -20,6 +20,8 @@ import type { WorkLogResponse } from "../../../api/contracts/worklog";
 import { RiTimeLine } from "react-icons/ri";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime, toDatetimeLocal } from "../../../utils/date";
+import DOMPurify from "dompurify";
+import { RichTextEditor } from "../../../components/common/RichTextEditor";
 
 interface Props {
   task: Task | null;
@@ -50,12 +52,12 @@ interface Props {
  * hiển thị tổng thời gian đã làm và lịch sử chấm công của các thành viên.
  */
 function LogWorkSection({ task }: { task: Task }) {
-  const taskUuid = (task as any)._uuid ?? String(task.id);
+  const taskUuid = (task as Task & { _uuid?: string })._uuid ?? String(task.id);
   const currentUserId = tokenStorage.getUserId();
 
   // Check if the current user is one of the assignees of this task
   const isAssignee = (task.assigned_to ?? []).some(
-    (u: any) => (u.uuid || u._uuid || String(u.id)) === currentUserId,
+    (u: User & { uuid?: string; _uuid?: string }) => (u.uuid || u._uuid || String(u.id)) === currentUserId,
   );
 
   const nowStr = toDatetimeLocal(new Date());
@@ -138,12 +140,13 @@ function LogWorkSection({ task }: { task: Task }) {
       setSuccess(true);
       setShowLogForm(false);
       setTimeout(() => setSuccess(false), 2000);
-    } catch (err: any) {
+    } catch (err) {
+      const errorObj = err as Error;
       try {
-        const parsed = JSON.parse(err.message);
+        const parsed = JSON.parse(errorObj.message);
         setError(parsed.message || "Failed to log work");
       } catch {
-        setError(err.message || "Failed to log work");
+        setError(errorObj.message || "Failed to log work");
       }
     } finally {
       setLoading(false);
@@ -159,8 +162,7 @@ function LogWorkSection({ task }: { task: Task }) {
       {/* Title & Log Work Toggle */}
       <div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 uppercase tracking-wider">
-            <RiTimeLine size={14} />
+          <div className="flex items-center font-semibold gap-1.5 text-xs text-gray-400 uppercase tracking-wider">
             <span>Work Log</span>
           </div>
           <button
@@ -323,7 +325,7 @@ function LogWorkSection({ task }: { task: Task }) {
               <button
                 type="button"
                 onClick={() => setShowAll(!showAll)}
-                className="w-full text-center text-xs font-semibold text-purple-800 hover:text-purple-900 transition py-1.5 border border-dashed border-purple-200 rounded-lg hover:bg-purple-50/50"
+                className="w-full text-center text-xs font-semibold text-white bg-purple-900 hover:bg-purple-800 transition py-1.5 rounded-md"
               >
                 {showAll ? "Show Less" : `See All (${logs.length})`}
               </button>
@@ -360,7 +362,6 @@ export function TaskModal({
   onAddSubtask,
   onDeleteSubtask,
 }: Props) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
 
@@ -407,7 +408,7 @@ export function TaskModal({
       >
         {/* Modal Container */}
         <div
-          className={`bg-white rounded-md shadow-2xl w-full max-w-5xl h-[85vh] max-h-212.5 flex flex-col transition-all duration-300 transform ${
+          className={`bg-white rounded-md shadow-2xl w-full max-w-5xl h-[90vh] max-h-212.5 flex flex-col overflow-hidden transition-all duration-300 transform ${
             open ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -420,6 +421,7 @@ export function TaskModal({
                 onClose={onClose}
                 onSaveTitle={onSaveTitle}
                 onOpenTask={onOpenTask}
+                onDeleteTask={onDeleteTask}
               />
 
               {/* 2-Column Body */}
@@ -428,39 +430,40 @@ export function TaskModal({
                 <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 md:border-r md:border-gray-100">
                   {/* Description */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                       Description
                     </p>
                     {editingDesc ? (
-                      <textarea
-                        autoFocus
-                        value={editDescValue}
-                        onChange={(e) => setEditDescValue(e.target.value)}
-                        rows={3}
-                        onBlur={() => {
-                          onSaveDescription(editDescValue);
+                      <RichTextEditor
+                        initialValue={editDescValue}
+                        onChange={(val) => setEditDescValue(val)}
+                        onSave={(val) => {
+                          onSaveDescription(val);
                           setEditingDesc(false);
                         }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Escape") setEditingDesc(false);
-                        }}
-                        className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-700 transition"
+                        onCancel={() => setEditingDesc(false)}
+                        placeholder="Add a description... (Ctrl + Enter to save)"
                       />
                     ) : (
-                      <p
+                      <div
                         onDoubleClick={() => {
                           setEditingDesc(true);
                           setEditDescValue(task.description ?? "");
                         }}
-                        className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-0.5 hover:bg-gray-50 transition min-h-6"
+                        className="text-sm border border-gray-200 text-gray-700 cursor-text px-2 py-1.5 transition min-h-10 "
                         title="Double-click to edit"
                       >
-                        {task.description || (
-                          <span className="italic text-gray-300">
+                        {task.description ? (
+                          <div
+                            className="tiptap-content"
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                          />
+                        ) : (
+                          <span className="italic text-gray-300 select-none">
                             No description — double-click to add
                           </span>
                         )}
-                      </p>
+                      </div>
                     )}
                   </div>
 
@@ -500,45 +503,6 @@ export function TaskModal({
                   {/* Log Work */}
                   <LogWorkSection task={task} />
                 </div>
-              </div>
-
-              {/* Footer */}
-              <div className="shrink-0 border-t border-gray-100 px-6 py-4 flex justify-end gap-2 bg-white rounded-b-2xl">
-                {confirmDelete ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">
-                      Delete this issue?
-                    </span>
-                    <button
-                      onClick={() => {
-                        setConfirmDelete(false);
-                        onDeleteTask(task);
-                      }}
-                      className="text-sm px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                    >
-                      Yes, delete
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(false)}
-                      className="text-sm px-3 py-1.5 border border-gray-400 text-gray-600 rounded-lg transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDelete(true)}
-                    className="text-sm px-4 py-2 border border-gray-500 text-gray-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition"
-                  >
-                    Delete issue
-                  </button>
-                )}
-                <button
-                  onClick={onClose}
-                  className="text-sm px-4 py-2 border border-gray-200 bg-purple-900 hover:bg-purple-800 text-gray-200 rounded-lg transition"
-                >
-                  Close
-                </button>
               </div>
             </>
           )}

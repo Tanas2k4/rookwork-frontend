@@ -66,7 +66,7 @@ export default function TaskSnapshot({ data }: { data: OverviewData }) {
                             />
                           ))}
                         </div>
-                        <span className="text-[11px] text-gray-400 truncate max-w-[120px]">
+                        <span className="text-[11px] text-gray-400 truncate max-w-30">
                           {t.assignees.length === 1
                             ? t.assignees[0].profileName
                             : `${t.assignees.length} people`}
