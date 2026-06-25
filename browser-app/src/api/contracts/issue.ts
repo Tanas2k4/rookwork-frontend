@@ -6,7 +6,19 @@ export interface UserSummary {
   id: string;
   profileName: string;
   picture: string | null;
-  email?: string;
+  email: string;
+  jobTitle?: string | null;
+  organization?: string | null;
+  location?: string | null;
+  emailPublic?: boolean;
+  jobTitlePublic?: boolean;
+  organizationPublic?: boolean;
+  locationPublic?: boolean;
+
+  notifyIssueAssigned?: boolean;
+  notifyMentioned?: boolean;
+  notifyProjectUpdates?: boolean;
+  notifyDailyDigest?: boolean;
   role?: string;
 }
 
