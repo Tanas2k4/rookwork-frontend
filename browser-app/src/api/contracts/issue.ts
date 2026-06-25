@@ -6,6 +6,8 @@ export interface UserSummary {
   id: string;
   profileName: string;
   picture: string | null;
+  email?: string;
+  role?: string;
 }
 
 export interface CreateIssueRequest {

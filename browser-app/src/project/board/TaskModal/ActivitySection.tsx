@@ -448,10 +448,11 @@ export function ActivitySection({
   }, []);
 
   const handleWsActivity = useCallback((payload: WsActivityPayload) => {
-    if (payload.type === "NEW_ACTIVITY" && payload.activity) {
+    const activity = payload.activity;
+    if (payload.type === "NEW_ACTIVITY" && activity) {
       setActivities((prev) => {
-        if (prev.some((a) => a.id === payload.activity.id)) return prev;
-        return [payload.activity, ...prev];
+        if (prev.some((a) => a.id === activity.id)) return prev;
+        return [activity, ...prev];
       });
     }
   }, []);
