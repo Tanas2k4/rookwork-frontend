@@ -15,8 +15,17 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || `Request failed: ${res.status}`);
+    const text = await res.text();
+    let errorMessage = "";
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === "object") {
+        errorMessage = parsed.message || parsed.error || "";
+      }
+    } catch {
+      // not JSON
+    }
+    throw new Error(errorMessage || text || `Request failed: ${res.status}`);
   }
 
   return res.json();

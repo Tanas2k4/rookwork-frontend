@@ -139,12 +139,7 @@ function LogWorkSection({ task }: { task: Task }) {
       setShowLogForm(false);
       setTimeout(() => setSuccess(false), 2000);
     } catch (err: any) {
-      try {
-        const parsed = JSON.parse(err.message);
-        setError(parsed.message || "Failed to log work");
-      } catch {
-        setError(err.message || "Failed to log work");
-      }
+      setError(err.message || "Failed to log work");
     } finally {
       setLoading(false);
     }
