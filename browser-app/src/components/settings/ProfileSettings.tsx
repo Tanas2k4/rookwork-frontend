@@ -166,7 +166,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+            className="px-6 py-2 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
           >
             {isSaving ? t('profile.saving') : t('profile.save')}
           </button>

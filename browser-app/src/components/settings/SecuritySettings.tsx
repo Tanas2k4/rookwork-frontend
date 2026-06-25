@@ -90,7 +90,7 @@ export default function SecuritySettings() {
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+            className="px-6 py-2 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
           >
             {isSaving ? t('security.saving') : t('security.save')}
           </button>
@@ -141,7 +141,7 @@ export default function SecuritySettings() {
                 <button
                   type="submit"
                   disabled={isDeleting || !deletePassword}
-                  className="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+                  className="px-4 py-2 text-white bg-purple-900 rounded-lg hover:bg-purple-800 transition-colors font-medium disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Confirm Delete"}
                 </button>
