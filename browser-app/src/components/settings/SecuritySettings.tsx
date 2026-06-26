@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import { FiCheck, FiX } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../common/ToastContainer";
 
 export default function SecuritySettings() {
-  const { t } = useTranslation();
+  const { toasts, addToast, removeToast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,12 +36,12 @@ export default function SecuritySettings() {
     setIsDeleting(true);
     try {
       await userApi.deleteAccount(deletePassword);
-      alert(t('security.delete_success') || "Account deleted successfully.");
+      addToast("Account deleted successfully.", "success");
       localStorage.clear();
       window.location.href = "/login";
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      alert(errorMessage || t('security.delete_error') || "Incorrect password or an error occurred.");
+      addToast(errorMessage || "Incorrect password or an error occurred.", "error");
     } finally {
       setIsDeleting(false);
     }
@@ -52,12 +53,12 @@ export default function SecuritySettings() {
     setIsSaving(true);
     try {
       await userApi.updatePassword({ currentPassword, newPassword });
-      alert(t('security.success'));
+      addToast("Password updated successfully!", "success");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
-      alert(t('security.error'));
+      addToast("Failed to update password.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -65,28 +66,28 @@ export default function SecuritySettings() {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">{t('security.title')}</h2>
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Account & Security</h2>
       
-      <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-4">{t('security.change_password')}</h3>
+      <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+        <h3 className="text-lg font-medium text-gray-800 mb-4">Change Password</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('security.current_password')}</label>
+            <label className="block text-[13px] font-bold text-gray-700 mb-2">Current Password</label>
             <input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('security.new_password')}</label>
+            <label className="block text-[13px] font-bold text-gray-700 mb-2">New Password</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
               required
             />
 
@@ -94,7 +95,7 @@ export default function SecuritySettings() {
             {newPassword.length > 0 && (
               <div className="mt-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-gray-500">Password strength</span>
+                   <span className="text-xs font-medium text-gray-500">Password strength</span>
                   <span className={`text-xs font-semibold ${strengthTextColor}`}>{strengthLabel}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5">
@@ -119,13 +120,13 @@ export default function SecuritySettings() {
               </div>
             )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('security.confirm_password')}</label>
+          <div >
+            <label className="block text-[13px] font-bold text-gray-700 mb-2">Confirm New Password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
               required
             />
             {confirmPassword.length > 0 && !passwordsMatch && (
@@ -145,34 +146,33 @@ export default function SecuritySettings() {
           <button
             type="submit"
             disabled={isSaving || !canSubmit}
-            className="px-3 py-1.5 bg-purple-900 text-white text-sm font-medium rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 bg-purple-900 text-white text-sm rounded-md hover:bg-purple-800 transition-colors"
           >
-            {isSaving ? t('security.saving') : t('security.save')}
+            Update
           </button>
         </div>
       </form>
 
       {/* Danger Zone */}
-      <div className="bg-red-50 p-6 rounded-xl border border-red-100 shadow-sm">
-        <h3 className="text-lg font-medium text-red-800 mb-2">{t('security.danger_zone')}</h3>
-        <p className="text-sm text-red-600 mb-4">
-          {t('security.danger_hint')}
+      <div className="bg-red-50 p-6 rounded-xl ">
+        <p className="text-xs text-red-600 mb-4">
+          Once you delete your account, there is no going back. Please be certain.
         </p>
         <button
           type="button"
           onClick={() => setShowDeleteModal(true)}
-          className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50"
+          className="px-3 py-1.5 border border-red-200 rounded-sm  text-sm font-medium text-white bg-red-700 hover:bg-red-800 transition disabled:opacity-50"
         >
-          {t('security.delete_account')}
+          Delete Account
         </button>
       </div>
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Account</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className="bg-white rounded-md w-full max-w-md p-6">
+            <h3 className="text-md font-bold text-gray-900 mb-2">Delete Account</h3>
+            <p className="text-xs text-gray-500 mb-6">
               This action cannot be undone. To verify, type your password below.
             </p>
             <form onSubmit={handleDeleteAccount}>
@@ -181,7 +181,7 @@ export default function SecuritySettings() {
                 placeholder="Enter your password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-500"
                 required
               />
               <div className="flex gap-3 w-full">
@@ -189,14 +189,14 @@ export default function SecuritySettings() {
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
                   disabled={isDeleting}
-                  className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition text-sm font-medium disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5  border border-gray-500 rounded-md text-gray-700 hover:bg-gray-100 transition text-sm disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isDeleting || !deletePassword}
-                  className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-sm font-medium shadow-sm shadow-red-200 disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded-md transition text-sm disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Confirm Delete"}
                 </button>
@@ -205,6 +205,8 @@ export default function SecuritySettings() {
           </div>
         </div>
       )}
+      {/* Toast notifications container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

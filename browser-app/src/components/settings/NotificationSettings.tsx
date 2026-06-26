@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../common/ToastContainer";
 
-export default function NotificationSettings({ user }: { user: UserSummary | null }) {
-  const { t } = useTranslation();
+export default function NotificationSettings({
+  user,
+}: {
+  user: UserSummary | null;
+}) {
+  const { toasts, addToast, removeToast } = useToast();
   const [notifications, setNotifications] = useState({
     notifyIssueAssigned: user?.notifyIssueAssigned ?? true,
     notifyMentioned: user?.notifyMentioned ?? true,
@@ -22,9 +27,9 @@ export default function NotificationSettings({ user }: { user: UserSummary | nul
     setIsSaving(true);
     try {
       await userApi.updateNotifications(notifications);
-      alert(t('notifications.success'));
+      addToast("Notification settings updated successfully!", "success");
     } catch {
-      alert(t('notifications.error'));
+      addToast("Failed to update notification settings.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -32,21 +37,31 @@ export default function NotificationSettings({ user }: { user: UserSummary | nul
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">{t('notifications.title')}</h2>
-      <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+        Notifications
+      </h2>
+      <form
+        onSubmit={handleSave}
+        className="bg-white p-6 rounded-xl border border-gray-200"
+      >
         <div className="space-y-6">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-800">{t('notifications.issue')}</h3>
-              <p className="text-sm text-gray-500 mt-1">{t('notifications.issue_hint')}</p>
+              <h3 className="text-sm font-medium text-gray-800">
+                Issue Assigned to Me
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Get notified when someone assigns an issue or task to you.
+              </p>
             </div>
             <button
               type="button"
               onClick={() => handleToggle("notifyIssueAssigned")}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${notifications.notifyIssueAssigned ? "bg-purple-600" : "bg-gray-200"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out  ${notifications.notifyIssueAssigned ? "bg-purple-700" : "bg-gray-200"}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.notifyIssueAssigned ? "translate-x-5" : "translate-x-0"}`} />
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white  ring-0 transition duration-200 ease-in-out ${notifications.notifyIssueAssigned ? "translate-x-5" : "translate-x-0"}`}
+              />
             </button>
           </div>
 
@@ -54,15 +69,21 @@ export default function NotificationSettings({ user }: { user: UserSummary | nul
 
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-800">{t('notifications.mentions')}</h3>
-              <p className="text-sm text-gray-500 mt-1">{t('notifications.mentions_hint')}</p>
+              <h3 className="text-sm font-medium text-gray-800">
+                Mentions (@)
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Get notified when someone mentions you in a comment or description.
+              </p>
             </div>
             <button
               type="button"
               onClick={() => handleToggle("notifyMentioned")}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${notifications.notifyMentioned ? "bg-purple-600" : "bg-gray-200"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${notifications.notifyMentioned ? "bg-purple-700" : "bg-gray-200"}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.notifyMentioned ? "translate-x-5" : "translate-x-0"}`} />
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${notifications.notifyMentioned ? "translate-x-5" : "translate-x-0"}`}
+              />
             </button>
           </div>
 
@@ -70,15 +91,21 @@ export default function NotificationSettings({ user }: { user: UserSummary | nul
 
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-800">{t('notifications.project')}</h3>
-              <p className="text-sm text-gray-500 mt-1">{t('notifications.project_hint')}</p>
+              <h3 className="text-sm font-medium text-gray-800">
+                Project Updates
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Receive alerts for major changes in projects you are part of.
+              </p>
             </div>
             <button
               type="button"
               onClick={() => handleToggle("notifyProjectUpdates")}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${notifications.notifyProjectUpdates ? "bg-purple-600" : "bg-gray-200"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out  ${notifications.notifyProjectUpdates ? "bg-purple-700" : "bg-gray-200"}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.notifyProjectUpdates ? "translate-x-5" : "translate-x-0"}`} />
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${notifications.notifyProjectUpdates ? "translate-x-5" : "translate-x-0"}`}
+              />
             </button>
           </div>
 
@@ -86,15 +113,21 @@ export default function NotificationSettings({ user }: { user: UserSummary | nul
 
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-800">{t('notifications.digest')}</h3>
-              <p className="text-sm text-gray-500 mt-1">{t('notifications.digest_hint')}</p>
+              <h3 className="text-sm font-medium text-gray-800">
+                Daily Digest Email
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Receive a daily summary email of your tasks and upcoming deadlines.
+              </p>
             </div>
             <button
               type="button"
               onClick={() => handleToggle("notifyDailyDigest")}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${notifications.notifyDailyDigest ? "bg-purple-600" : "bg-gray-200"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out  ${notifications.notifyDailyDigest ? "bg-purple-700" : "bg-gray-200"}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifications.notifyDailyDigest ? "translate-x-5" : "translate-x-0"}`} />
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${notifications.notifyDailyDigest ? "translate-x-5" : "translate-x-0"}`}
+              />
             </button>
           </div>
         </div>
@@ -103,12 +136,14 @@ export default function NotificationSettings({ user }: { user: UserSummary | nul
           <button
             type="submit"
             disabled={isSaving}
-            className="px-3 py-1.5 bg-purple-900 text-white text-sm font-medium rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 bg-purple-900 text-white text-sm  rounded-md hover:bg-purple-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSaving ? t('notifications.saving') : t('notifications.save')}
+            Update
           </button>
         </div>
       </form>
+      {/* Toast notifications container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
