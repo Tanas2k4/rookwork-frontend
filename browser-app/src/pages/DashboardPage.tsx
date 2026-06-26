@@ -10,6 +10,7 @@ import MiniCalendar from "../calendar/MiniCalendar";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse } from "../api/contracts/issue";
 import { avatarUrl } from "../utils/avatar";
+import { isOverdue } from "../utils/date";
 
 //  Helpers 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
@@ -155,7 +156,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   const totalIssues = issues.length;
   const doneIssues = issues.filter((i) => i.status === "DONE").length;
   const overdueIssues = issues.filter(
-    (i) => i.deadline && new Date(i.deadline) < now && i.status !== "DONE",
+    (i) => i.deadline && isOverdue(i.deadline, i.status),
   ).length;
 
   const STATS = [

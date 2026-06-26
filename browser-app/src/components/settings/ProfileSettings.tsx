@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiGlobe, FiLock, FiTrash2 } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";

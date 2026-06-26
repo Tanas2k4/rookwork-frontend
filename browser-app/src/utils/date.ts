@@ -14,6 +14,32 @@ export function formatNow(): string {
 }
 
 /**
+ * Tính số ngày còn lại từ hiện tại đến deadline.
+ * Trả về số ngày (có thể âm nếu đã quá hạn).
+ * So sánh dựa trên ngày lịch (calendar days) độc lập với giờ/phút/giây.
+ * 
+ * @param deadline Chuỗi ngày đến hạn (ISO hoặc YYYY-MM-DD)
+ * @returns Số ngày còn lại, hoặc null nếu không có deadline
+ */
+export function getDaysLeft(deadline: string | null | undefined): number | null {
+  if (!deadline) return null;
+  const deadlineStr = deadline.includes("T") ? deadline.split("T")[0] : deadline;
+  const parts = deadlineStr.split("-");
+  if (parts.length !== 3) return null;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const deadlineDate = new Date(year, month, day);
+
+  const today = new Date();
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const diffTime = deadlineDate.getTime() - todayDate.getTime();
+  const days = Math.round(diffTime / 86400000);
+  return days === 0 ? 0 : days;
+}
+
+/**
  * Kiểm tra xem một sự vụ đã quá hạn (deadline) hay chưa.
  * Một sự vụ được coi là quá hạn nếu trạng thái khác 'done' và ngày deadline nhỏ hơn thời điểm hiện tại.
  * 
@@ -21,9 +47,15 @@ export function formatNow(): string {
  * @param status Trạng thái hiện tại của sự vụ
  * @returns true nếu quá hạn, ngược lại false
  */
-export function isOverdue(deadline: string, status: string): boolean {
-  return status !== "done" && new Date(deadline) < new Date();
+export function isOverdue(deadline: string | null | undefined, status: string | null | undefined): boolean {
+  if (!deadline) return false;
+  const statusLower = status ? status.toLowerCase() : "";
+  if (statusLower === "done") return false;
+  const daysLeft = getDaysLeft(deadline);
+  return daysLeft !== null && daysLeft < 0;
 }
+
+
 
 /**
  * Thêm một số ngày nhất định vào đối tượng Date cho trước.
