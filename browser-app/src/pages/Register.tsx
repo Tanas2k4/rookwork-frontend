@@ -14,9 +14,29 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const checkEmail = async (val: string) => {
+    setEmailError("");
+    if (!val) return;
+    
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(val)) {
+      setEmailError("Chỉ chấp nhận email định dạng @gmail.com");
+      return;
+    }
+
+    try {
+      const exists = await authApi.checkEmail(val);
+      if (exists) {
+        setEmailError("Email này đã được đăng ký");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleRegister = async () => {
     setError("");
@@ -24,6 +44,10 @@ function Register() {
 
     if (!profileName || !email || !password || !confirm) {
       setError("Please fill all fields");
+      return;
+    }
+    if (emailError) {
+      setError("Vui lòng sửa các lỗi trước khi tiếp tục");
       return;
     }
     if (password !== confirm) {
@@ -75,9 +99,14 @@ function Register() {
               className="w-full bg-transparent text-[14px] outline-none"
               placeholder="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError("");
+              }}
+              onBlur={(e) => checkEmail(e.target.value)}
             />
           </div>
+          {emailError && <p className="text-xs text-red-500 mt-1 pl-1">{emailError}</p>}
         </div>
 
         {/* PASSWORD */}

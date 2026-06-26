@@ -141,11 +141,11 @@ export default function SecuritySettings() {
           </div>
         </div>
 
-        <div className="pt-6 flex justify-end">
+        <div className="pt-4 flex justify-end">
           <button
             type="submit"
             disabled={isSaving || !canSubmit}
-            className="px-6 py-2 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+            className="px-3 py-1.5 bg-purple-900 text-white text-sm font-medium rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? t('security.saving') : t('security.save')}
           </button>
@@ -161,7 +161,7 @@ export default function SecuritySettings() {
         <button
           type="button"
           onClick={() => setShowDeleteModal(true)}
-          className="px-4 py-2 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 font-medium"
+          className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50"
         >
           {t('security.delete_account')}
         </button>
@@ -184,19 +184,19 @@ export default function SecuritySettings() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 required
               />
-              <div className="flex justify-end gap-3">
+              <div className="flex gap-3 w-full">
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
                   disabled={isDeleting}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition text-sm font-medium disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isDeleting || !deletePassword}
-                  className="px-4 py-2 text-white bg-purple-900 rounded-lg hover:bg-purple-800 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-sm font-medium shadow-sm shadow-red-200 disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Confirm Delete"}
                 </button>

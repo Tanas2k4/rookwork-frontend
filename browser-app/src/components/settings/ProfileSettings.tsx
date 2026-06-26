@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { formatInTimeZone } from "date-fns-tz";
 import { FiGlobe, FiLock, FiTrash2 } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 import { avatarUrl } from "../../utils/avatar";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
+import ImageCropModal from "./ImageCropModal";
 
 const PrivacyToggle = ({ isPublic, onClick }: { isPublic: boolean; onClick: () => void }) => {
   const { t } = useTranslation();
@@ -37,12 +37,12 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
   const [jobTitlePublic, setJobTitlePublic] = useState(user?.jobTitlePublic ?? true);
   const [organizationPublic, setOrganizationPublic] = useState(user?.organizationPublic ?? true);
   const [locationPublic, setLocationPublic] = useState(user?.locationPublic ?? true);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState(user?.picture || "");
   const [isUploading, setIsUploading] = useState(false);
   const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
   const handleDeleteAvatar = async () => {
     setIsDeletingAvatar(true);
@@ -82,32 +82,41 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
     fileInputRef.current?.click();
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       if (file.size > 5 * 1024 * 1024) {
         addToast("Avatar file size cannot exceed 5MB.", "error");
         return;
       }
-      setIsUploading(true);
-      try {
-        const response = await userApi.uploadAvatar(file);
-        setAvatar(response.avatarUrl);
-        window.dispatchEvent(new CustomEvent("profileUpdated"));
-        addToast("Avatar uploaded successfully!", "success");
-      } catch (err) {
-        console.error("Lỗi tải lên ảnh đại diện:", err);
-        addToast("Failed to upload avatar. Please try again.", "error");
-      } finally {
-        setIsUploading(false);
-      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSelectedImageSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+    // reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setSelectedImageSrc(null);
+    setIsUploading(true);
+    try {
+      const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
+      const response = await userApi.uploadAvatar(file);
+      setAvatar(response.avatarUrl);
+      window.dispatchEvent(new CustomEvent("profileUpdated"));
+      addToast("Avatar uploaded successfully!", "success");
+    } catch (err) {
+      console.error("Lỗi tải lên ảnh đại diện:", err);
+      addToast("Failed to upload avatar. Please try again.", "error");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>) => {
     setter(e.target.value);
@@ -179,7 +188,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
                   type="button"
                   onClick={() => setShowConfirmDelete(true)}
                   disabled={isUploading || isDeletingAvatar}
-                  className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50"
+                  className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50"
                 >
                   {isDeletingAvatar ? "Removing..." : t('profile.remove_avatar')}
                 </button>
@@ -189,7 +198,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('profile.display_name')}</label>
             <input
@@ -216,7 +225,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-sm font-medium text-gray-700">{t('profile.job_title')}</label>
@@ -244,7 +253,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-sm font-medium text-gray-700">{t('profile.location')}</label>
@@ -258,23 +267,13 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
               placeholder="e.g. Ho Chi Minh City, VN"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('profile.local_time')}</label>
-            <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 text-gray-600 rounded-lg font-mono flex items-center">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-              {user?.timezone
-                ? formatInTimeZone(currentTime, user.timezone, 'HH:mm:ss')
-                : formatInTimeZone(currentTime, 'UTC', 'HH:mm:ss')}
-              <span className="ml-2 text-xs text-gray-400">({user?.timezone || 'UTC'})</span>
-            </div>
-          </div>
         </div>
 
         <div className="pt-4 flex justify-end">
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+            className="px-3 py-1.5 bg-purple-900 text-white text-sm font-medium rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? t('profile.saving') : t('profile.save')}
           </button>
@@ -311,7 +310,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
               <button
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
-                className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition text-xs font-semibold"
+                className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition text-sm font-medium"
               >
                 Cancel
               </button>
@@ -321,7 +320,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
                   setShowConfirmDelete(false);
                   handleDeleteAvatar();
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-xs font-semibold shadow-sm shadow-red-200"
+                className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-sm font-medium shadow-sm shadow-red-200"
               >
                 Remove
               </button>
@@ -332,6 +331,14 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
 
       {/* Toast notifications container */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {selectedImageSrc && (
+        <ImageCropModal
+          imageSrc={selectedImageSrc}
+          onClose={() => setSelectedImageSrc(null)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }
