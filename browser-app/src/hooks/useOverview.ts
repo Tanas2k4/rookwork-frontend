@@ -278,11 +278,19 @@ export function useOverview(): UseOverviewReturn {
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
+  const [prevProjectId, setPrevProjectId] = useState(projectId);
+  const [prevTick, setPrevTick] = useState(tick);
+
+  if (projectId !== prevProjectId || tick !== prevTick) {
+    setPrevProjectId(projectId);
+    setPrevTick(tick);
+    setData(null);
+    setError(null);
+  }
+
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
-    setData(null);
-    setError(null);
 
     Promise.all([
       issueApi.getAll(projectId),

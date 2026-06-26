@@ -245,7 +245,7 @@ function Header({
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setOpen((p) => !p)}
-                className="flex items-center gap-1.5 text-gray-600 border border-gray-300 rounded-full pl-1 pr-2.5 py-1 hover:bg-gray-50 hover:border-gray-400 transition"
+                className="flex items-center gap-1.5 text-gray-600 border border-gray-500 rounded-full pl-1 pr-2.5 py-1 hover:bg-gray-50 transition"
               >
                 <img
                   key={avatarUrl}
@@ -262,10 +262,22 @@ function Header({
               {open && (
                 <ul className="absolute right-0 mt-2 w-40 bg-white rounded-lg border border-gray-300 text-sm z-50 overflow-hidden">
                   <li className="px-4 py-2 border-b border-gray-200 hover:bg-gray-100 cursor-pointer">
-                    <Link to="/settings" className="block w-full h-full" onClick={() => setOpen(false)}>Profile</Link>
+                    <Link
+                      to="/settings"
+                      className="block w-full h-full"
+                      onClick={() => setOpen(false)}
+                    >
+                      Profile
+                    </Link>
                   </li>
                   <li className="px-4 py-2 border-b border-gray-200 hover:bg-gray-100 cursor-pointer">
-                    <Link to="/settings" className="block w-full h-full" onClick={() => setOpen(false)}>Settings</Link>
+                    <Link
+                      to="/settings"
+                      className="block w-full h-full"
+                      onClick={() => setOpen(false)}
+                    >
+                      Settings
+                    </Link>
                   </li>
                   <li
                     className="px-4 py-2 hover:bg-red-50 cursor-pointer text-red-500"
@@ -325,7 +337,7 @@ function Header({
               <span>No notifications</span>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-gray-200">
               {notifications.map((n) => {
                 const sender = n.sender;
                 const avatarPic = sender?.picture ?? null;
@@ -347,16 +359,19 @@ function Header({
                     }}
                     className={`group relative hover:bg-gray-100 px-5 py-4 transition
                       ${!isInvitation ? "cursor-pointer" : "cursor-default"}
-                      ${!n.isRead && !respondedAs ? "bg-purple-50/40" : "bg-white"}`}
+                      ${!n.isRead && !respondedAs ? "bg-gray-100" : "bg-white"}`}
                   >
                     <div className="flex gap-3">
                       <img
-                        src={getAvatarHelper(sender?.profileName ?? n.title, avatarPic)}
+                        src={getAvatarHelper(
+                          sender?.profileName ?? n.title,
+                          avatarPic,
+                        )}
                         alt={sender?.profileName ?? n.title}
                         className="shrink-0 w-9 h-9 rounded-full object-cover border border-gray-100"
                       />
                       <div className="flex-1 min-w-0 pr-6">
-                        <p className="text-sm font-semibold text-gray-700 leading-snug">
+                        <p className="text-sm font-bold text-gray-800 leading-snug">
                           {n.title}
                         </p>
                         <p className="text-sm text-gray-600 mt-0.5 leading-snug">
@@ -396,7 +411,7 @@ function Header({
                                     e.preventDefault();
                                     handleRespond(e, n.invitationId!, true);
                                   }}
-                                  className="px-3 py-1 text-xs font-semibold text-white
+                                  className="px-3 py-1 text-xs text-white
                                     bg-purple-900 hover:bg-purple-800 disabled:opacity-50 rounded-md transition"
                                 >
                                   {isResponding ? "..." : "Accept"}
@@ -408,18 +423,14 @@ function Header({
                                     e.preventDefault();
                                     handleRespond(e, n.invitationId!, false);
                                   }}
-                                  className="px-3 py-1 text-xs font-semibold text-gray-600
-                                    border border-gray-300 hover:bg-gray-100 disabled:opacity-50 rounded-md transition"
+                                  className="px-3 py-1 text-xs text-gray-600
+                                    border border-gray-500 hover:bg-gray-100 disabled:opacity-50 rounded-md transition"
                                 >
                                   {isResponding ? "…" : "Decline"}
                                 </button>
                               </div>
                             )}
                           </div>
-                        )}
-
-                        {!n.isRead && !respondedAs && (
-                          <span className="inline-block mt-1 w-2 h-2 bg-purple-500 rounded-full" />
                         )}
                       </div>
                     </div>
