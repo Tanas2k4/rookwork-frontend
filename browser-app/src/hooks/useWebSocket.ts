@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client, type IMessage } from "@stomp/stompjs";
 import { tokenStorage } from "../api/tokenStorage";
+import type { ActivityResponse } from "../api/contracts/activity";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
@@ -20,7 +21,7 @@ export interface WsCommentPayload {
 
 export interface WsActivityPayload {
   type: "NEW_ACTIVITY";
-  activity?: any;
+  activity?: ActivityResponse;
 }
 
 export interface WsNotificationPayload {

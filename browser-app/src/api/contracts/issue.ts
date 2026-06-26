@@ -1,3 +1,5 @@
+import type { AttachmentResponse } from "./attachment";
+
 export type IssueType = "EPIC" | "STORY" | "TASK";
 export type PriorityType = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type Status = "TO_DO" | "IN_PROGRESS" | "DONE";
@@ -14,12 +16,14 @@ export interface UserSummary {
   jobTitlePublic?: boolean;
   organizationPublic?: boolean;
   locationPublic?: boolean;
-  language?: string;
-  timezone?: string;
+  timezone?: string | null;
+
   notifyIssueAssigned?: boolean;
   notifyMentioned?: boolean;
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
+  role?: string;
+
 }
 
 export interface CreateIssueRequest {
@@ -55,4 +59,5 @@ export interface IssueResponse {
   deadline: string | null;
   createdAt: string;
   updatedAt: string;
+  attachments?: AttachmentResponse[];
 }

@@ -1,5 +1,6 @@
 import { type IconType } from "react-icons";
 import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import type { AttachmentResponse } from "../api/contracts/attachment";
 
 // Enums / literal types
 export type TaskType = "task" | "story" | "epic";
@@ -34,6 +35,7 @@ export interface Task {
   subtasks: Subtask[];
   parentId?: number | null;
   childIds?: number[];
+  attachments?: AttachmentResponse[];
 }
 
 export interface Comment {

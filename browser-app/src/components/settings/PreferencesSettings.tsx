@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 
 const LANGUAGES = [
@@ -12,17 +11,20 @@ const LANGUAGES = [
 
 const TIMEZONES = Intl.supportedValuesOf('timeZone');
 
-export default function PreferencesSettings({ user }: { user: UserSummary | null }) {
+export default function PreferencesSettings({ user: _user }: { user: UserSummary | null }) {
   const { t, i18n } = useTranslation();
-  const [language, setLanguage] = useState(user?.language || i18n.language || "en");
-  const [timezone, setTimezone] = useState(user?.timezone || "Asia/Ho_Chi_Minh");
+  const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const systemLanguage = navigator.language.split("-")[0]; // "en-US" → "en"
+
+  const [language, setLanguage] = useState(systemLanguage || "en");
+  const [timezone, setTimezone] = useState(systemTimezone || "Asia/Ho_Chi_Minh");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await userApi.updatePreferences({ language, timezone });
+      // System preferences are read-only and not saved to the backend
       i18n.changeLanguage(language);
       alert(t('preferences.success'));
     } catch (err) {
@@ -81,7 +83,7 @@ export default function PreferencesSettings({ user }: { user: UserSummary | null
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-purple-900 text-white font-medium rounded-lg hover:bg-purple-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? t('preferences.saving') : t('preferences.save')}
           </button>

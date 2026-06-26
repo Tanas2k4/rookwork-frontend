@@ -17,6 +17,7 @@ import { AttachmentsSection } from "./AttachmentsSection";
 import { workLogApi } from "../../../api/services/workLogApi";
 import { tokenStorage } from "../../../api/tokenStorage";
 import type { WorkLogResponse } from "../../../api/contracts/worklog";
+import type { AttachmentResponse } from "../../../api/contracts/attachment";
 import { RiTimeLine } from "react-icons/ri";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime, toDatetimeLocal } from "../../../utils/date";
@@ -41,9 +42,8 @@ interface Props {
   onToggleSubtask: (id: number) => void;
   onAddSubtask: (title: string) => void;
   onDeleteSubtask: (id: number) => void;
+  onUpdateAttachments?: (attachments: AttachmentResponse[]) => void;
 }
-
-
 
 //  Log Work Section
 
@@ -57,7 +57,8 @@ function LogWorkSection({ task }: { task: Task }) {
 
   // Check if the current user is one of the assignees of this task
   const isAssignee = (task.assigned_to ?? []).some(
-    (u: User & { uuid?: string; _uuid?: string }) => (u.uuid || u._uuid || String(u.id)) === currentUserId,
+    (u: User & { uuid?: string; _uuid?: string }) =>
+      (u.uuid || u._uuid || String(u.id)) === currentUserId,
   );
 
   const nowStr = toDatetimeLocal(new Date());
@@ -355,6 +356,7 @@ export function TaskModal({
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
+  onUpdateAttachments,
 }: Props) {
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
@@ -444,13 +446,15 @@ export function TaskModal({
                           setEditingDesc(true);
                           setEditDescValue(task.description ?? "");
                         }}
-                        className="text-sm border border-gray-200 text-gray-700 cursor-text px-2 py-1.5 transition min-h-10 "
+                        className="text-sm border border-gray-200 hover:border-gray-300 rounded-md text-gray-700 cursor-text px-2 py-1.5 transition-colors min-h-10"
                         title="Double-click to edit"
                       >
                         {task.description ? (
                           <div
                             className="tiptap-content"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                            dangerouslySetInnerHTML={{
+                              __html: DOMPurify.sanitize(task.description),
+                            }}
                           />
                         ) : (
                           <span className="italic text-gray-300 select-none">
@@ -460,8 +464,12 @@ export function TaskModal({
                       </div>
                     )}
                   </div>
-
-                  <AttachmentsSection />
+                  <AttachmentsSection
+                    projectId={(task as any)._projectId || ""}
+                    issueId={(task as any)._uuid || ""}
+                    initialAttachments={task.attachments || []}
+                    onUpdateAttachments={onUpdateAttachments}
+                  />
 
                   {childTypeMap[task.type] && (
                     <ChildrenSection

@@ -13,12 +13,15 @@ import { TaskModal } from "../board/TaskModal";
 import type { Task, Status, Priority, User } from "../../types/project";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask, uuidToId } from "../../utils/issueMapper";
+import type { AttachmentResponse } from "../../api/contracts/attachment";
 
 export function SharedIssueModal() {
   const { projectId, setOpenIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
   const board = useBoard(projectId);
   const boardRef = useRef(board);
-  boardRef.current = board;
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
 
   // Tìm hoặc fetch task theo UUID rồi mở modal
   const handleOpenByUuid = useCallback(
@@ -89,6 +92,13 @@ export function SharedIssueModal() {
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 
+  const updateAttachments = useCallback((attachments: AttachmentResponse[]) => {
+    if (board.selectedTask) {
+      board.updateAttachments(board.selectedTask.id, attachments);
+      notifyIssueUpdated();
+    }
+  }, [board, notifyIssueUpdated]);
+
   return (
     <TaskModal
       task={board.selectedTask}
@@ -108,6 +118,7 @@ export function SharedIssueModal() {
       onToggleSubtask={board.toggleSubtask}
       onAddSubtask={board.addSubtask}
       onDeleteSubtask={board.deleteSubtask}
+      onUpdateAttachments={updateAttachments}
     />
   );
 }
