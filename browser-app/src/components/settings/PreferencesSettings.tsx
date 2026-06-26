@@ -24,7 +24,7 @@ export default function PreferencesSettings({ user: _user }: { user: UserSummary
       // System preferences are read-only and not saved to the backend
       i18n.changeLanguage(language);
       alert(t('preferences.success'));
-    } catch (err) {
+    } catch {
       alert(t('preferences.error'));
     } finally {
       setIsSaving(false);

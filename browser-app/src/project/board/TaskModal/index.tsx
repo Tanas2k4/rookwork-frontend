@@ -141,8 +141,9 @@ function LogWorkSection({ task }: { task: Task }) {
       setSuccess(true);
       setShowLogForm(false);
       setTimeout(() => setSuccess(false), 2000);
-    } catch (err: any) {
-      setError(err.message || "Failed to log work");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -465,8 +466,8 @@ export function TaskModal({
                     )}
                   </div>
                   <AttachmentsSection
-                    projectId={(task as any)._projectId || ""}
-                    issueId={(task as any)._uuid || ""}
+                    projectId={(task as { _projectId?: string })._projectId || ""}
+                    issueId={(task as { _uuid?: string })._uuid || ""}
                     initialAttachments={task.attachments || []}
                     onUpdateAttachments={onUpdateAttachments}
                   />

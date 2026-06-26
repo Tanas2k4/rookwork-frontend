@@ -268,12 +268,6 @@ export interface UseOverviewReturn {
   reload: () => void;
 }
 
-const EMPTY: OverviewData = {
-  totalTasks: 0, doneTasks: 0,inProgressTasks: 0, overdueCount: 0, dueSoonCount: 0, overallProgress: 0,
-  timelineTasks: [], attentionTasks: [], milestones: [],
-  workload: [], maxWorkload: 1, activities: [],
-};
-
 /**
  * Hook useOverview tải thông tin tóm tắt dự án, bao gồm số liệu công việc hoàn thành,
  * quá hạn, sắp tới hạn, biểu đồ tải công việc thành viên và luồng hoạt động gần đây.
@@ -287,6 +281,8 @@ export function useOverview(): UseOverviewReturn {
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
+    setData(null);
+    setError(null);
 
     Promise.all([
       issueApi.getAll(projectId),
@@ -305,5 +301,5 @@ export function useOverview(): UseOverviewReturn {
 
   const reload = () => setTick((n) => n + 1);
 
-  return { data: data ?? EMPTY, error, reload };
+  return { data, error, reload };
 }

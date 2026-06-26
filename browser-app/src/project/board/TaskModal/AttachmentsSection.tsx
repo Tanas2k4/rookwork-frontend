@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   RiAttachment2,
   RiDeleteBin6Line,
@@ -31,10 +31,11 @@ export function AttachmentsSection({
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync state if initialAttachments changes
-  useEffect(() => {
+  const [prevInitial, setPrevInitial] = useState(initialAttachments);
+  if (initialAttachments !== prevInitial) {
+    setPrevInitial(initialAttachments);
     setAttachments(initialAttachments);
-  }, [initialAttachments]);
+  }
 
   // Format file size helper
   function formatBytes(bytes: number, decimals = 1) {
@@ -98,9 +99,10 @@ export function AttachmentsSection({
         }
         return updated;
       });
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
       setError(
-        err?.response?.data?.message || err?.message || "Failed to upload files."
+        error.response?.data?.message || error.message || "Failed to upload files."
       );
     } finally {
       setIsUploading(false);
@@ -143,9 +145,10 @@ export function AttachmentsSection({
         }
         return updated;
       });
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
       setError(
-        err?.response?.data?.message || err?.message || "Failed to delete file."
+        error.response?.data?.message || error.message || "Failed to delete file."
       );
     } finally {
       setIsDeletingId(null);
