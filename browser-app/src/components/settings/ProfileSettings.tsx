@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FiGlobe, FiLock} from "react-icons/fi";
+import { FiGlobe, FiLock } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 import { avatarUrl } from "../../utils/avatar";

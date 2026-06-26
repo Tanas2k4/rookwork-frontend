@@ -10,6 +10,7 @@ import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
 import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
+import { isOverdue as isOverdueUtil } from "../utils/date";
 import {
   type Priority,
   statusMap,
@@ -130,7 +131,7 @@ export default function IssueDetailPage() {
   const priority = apiPriorityToUI(issue.priority);
   const TypeIcon = typeIconMap[type];
   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
-  const isOverdue = deadline && new Date(deadline) < new Date() && issue.status !== "DONE";
+  const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
 
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">

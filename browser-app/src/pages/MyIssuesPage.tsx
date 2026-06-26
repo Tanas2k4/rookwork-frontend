@@ -17,6 +17,7 @@ import {
 } from "../types/project";
 import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
+import { isOverdue as isOverdueUtil } from "../utils/date";
 
 // Helpers
 
@@ -193,10 +194,7 @@ export default function MyIssuesPage() {
                   const priority = apiPriorityToUI(issue.priority);
                   const TypeIcon = typeIconMap[type];
                   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
-                  const isOverdue = deadline &&
-                    new Date(deadline) < new Date() &&
-                    issue.status !== "DONE" &&
-                    issue.status !== "TO_DO";
+                  const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
 
                   return (
                     <button key={issue.id}

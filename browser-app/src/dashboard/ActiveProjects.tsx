@@ -34,6 +34,36 @@ function AnimatedProgressBar({
   );
 }
 
+function getBadgeInfo(daysLeft: number | null, short: boolean = false) {
+  if (daysLeft === null || daysLeft === undefined) {
+    return {
+      bg: "#f3f4f6", // gray-100
+      color: "#4b5563", // gray-600
+      text: short ? "No limit" : "No deadline",
+    };
+  }
+  if (daysLeft < 0) {
+    const absDays = Math.abs(daysLeft);
+    return {
+      bg: "#fef2f2", // red-50
+      color: "#dc2626", // red-600
+      text: short ? `${absDays}d overdue` : `${absDays} days overdue`,
+    };
+  }
+  if (daysLeft <= 5) {
+    return {
+      bg: "#fffbeb", // amber-50
+      color: "#d97706", // amber-600
+      text: short ? `${daysLeft}d left` : `${daysLeft} days left`,
+    };
+  }
+  return {
+    bg: "#ecfdf5", // emerald-50
+    color: "#059669", // emerald-600
+    text: short ? `${daysLeft}d left` : `${daysLeft} days left`,
+  };
+}
+
 const ITEM_TYPE = "PROJECT";
 
 function MemberAvatars({
@@ -80,8 +110,7 @@ function MemberAvatars({
 }
 
 function CardDragPreview({ project }: { project: ProjectUI }) {
-  const badgeBg = project.daysLeft <= 5 ? "#ecfdf5" : "#fffbeb";
-  const badgeColor = project.daysLeft <= 5 ? "#16a34a" : "#d97706";
+  const badge = getBadgeInfo(project.daysLeft);
   return (
     <div
       className="bg-white rounded-2xl p-5 border border-violet-300 select-none w-64"
@@ -114,9 +143,9 @@ function CardDragPreview({ project }: { project: ProjectUI }) {
         <MemberAvatars members={project.members} size={7} />
         <span
           className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: badgeBg, color: badgeColor }}
+          style={{ background: badge.bg, color: badge.color }}
         >
-          {project.daysLeft} days left
+          {badge.text}
         </span>
       </div>
     </div>
@@ -124,8 +153,7 @@ function CardDragPreview({ project }: { project: ProjectUI }) {
 }
 
 function RowDragPreview({ project }: { project: ProjectUI }) {
-  const badgeBg = project.daysLeft <= 5 ? "#ecfdf5" : "#fffbeb";
-  const badgeColor = project.daysLeft <= 5 ? "#16a34a" : "#d97706";
+  const badge = getBadgeInfo(project.daysLeft, true);
   return (
     <div
       className="flex items-center gap-4 px-4 py-3 rounded-xl border border-violet-300 bg-white w-145"
@@ -165,9 +193,9 @@ function RowDragPreview({ project }: { project: ProjectUI }) {
       <MemberAvatars members={project.members} size={6} />
       <span
         className="text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
-        style={{ background: badgeBg, color: badgeColor }}
+        style={{ background: badge.bg, color: badge.color }}
       >
-        {project.daysLeft}d left
+        {badge.text}
       </span>
     </div>
   );
@@ -251,8 +279,7 @@ function DraggableProjectCard({
     }),
   });
 
-  const badgeBg = project.daysLeft <= 5 ? "#ecfdf5" : "#fffbeb";
-  const badgeColor = project.daysLeft <= 5 ? "#16a34a" : "#d97706";
+  const badge = getBadgeInfo(project.daysLeft);
 
   return (
     <div
@@ -317,9 +344,9 @@ function DraggableProjectCard({
           <MemberAvatars members={project.members} size={7} />
           <span
             className="text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
-            style={{ background: badgeBg, color: badgeColor }}
+            style={{ background: badge.bg, color: badge.color }}
           >
-            {project.daysLeft} days left
+            {badge.text}
           </span>
         </div>
       </Link>
@@ -366,8 +393,7 @@ function DraggableRow({
     }),
   });
 
-  const badgeBg = project.daysLeft <= 5 ? "#ecfdf5" : "#fffbeb";
-  const badgeColor = project.daysLeft <= 5 ? "#16a34a" : "#d97706";
+  const badge = getBadgeInfo(project.daysLeft, true);
 
   return (
     <div
@@ -441,9 +467,9 @@ function DraggableRow({
         {/* Days left */}
         <span
           className="text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
-          style={{ background: badgeBg, color: badgeColor }}
+          style={{ background: badge.bg, color: badge.color }}
         >
-          {project.daysLeft}d left
+          {badge.text}
         </span>
 
         {/* Created date */}
