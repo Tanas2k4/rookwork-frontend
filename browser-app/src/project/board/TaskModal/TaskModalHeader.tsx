@@ -112,7 +112,7 @@ export function TaskModalHeader({
                     setMenuOpen(false);
                     setShowConfirmDelete(true);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition flex items-center gap-2 font-medium"
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition flex items-center gap-2"
                 >
                   <FiTrash2 size={15} />
                   Delete issue
@@ -134,15 +134,12 @@ export function TaskModalHeader({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] transition-opacity duration-300"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
             onClick={() => setShowConfirmDelete(false)}
           />
           {/* Modal Container */}
-          <div className="relative bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-10 flex flex-col items-center text-center">
-            {/* Warning Icon */}
-            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-4 ring-8 ring-red-50/50">
-              <FiTrash2 size={22} />
-            </div>
+          <div className="relative bg-white rounded-md border border-slate-200 p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-10 flex flex-col ">
+            
             
             {/* Title */}
             <h3 className="text-base font-bold text-slate-800 mb-2">
@@ -159,7 +156,7 @@ export function TaskModalHeader({
               <button
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
-                className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition text-xs font-semibold"
+                className="flex-1 px-4 py-2 border border-gray-500 rounded-md text-gray-700 hover:bg-gray-100 transition text-sm"
               >
                 Cancel
               </button>
@@ -169,7 +166,7 @@ export function TaskModalHeader({
                   setShowConfirmDelete(false);
                   onDeleteTask(task);
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-xs font-semibold shadow-sm shadow-red-200"
+                className="flex-1 px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-md transition text-sm"
               >
                 Delete
               </button>

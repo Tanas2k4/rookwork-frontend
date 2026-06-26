@@ -4,7 +4,7 @@
  * @author Warmdrobe & Antigravity
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { LuComponent } from "react-icons/lu";
 import { IoClose } from "react-icons/io5";
 import { IoIosArrowDown } from "react-icons/io";
@@ -13,6 +13,10 @@ import { RxCopy } from "react-icons/rx";
 import type { ProjectResponse } from "../../api/contracts/project";
 import type { UserSummary } from "../../api/contracts/issue";
 import { userApi } from "../../api/services/userApi";
+import { invitationApi } from "../../api/services/invitationApi";
+import type { InvitationResponse } from "../../api/contracts/invitation";
+import { RiUserSearchLine } from "react-icons/ri";
+import { FaCheck, FaChevronDown } from "react-icons/fa6";
 
 const ROLES = ["Owner", "Contributor", "Viewer"] as const;
 type Role = (typeof ROLES)[number];
@@ -73,30 +77,18 @@ function RoleDropdown({
       <button
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 text-[13px] font-medium text-gray-800 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 transition-colors ${
+        className={`flex items-center gap-1.5 text-[13px] font-medium text-gray-800 bg-white border border-gray-200 rounded-lg px-2.5 py-1 transition-colors ${
           disabled
             ? "opacity-60 cursor-not-allowed bg-gray-50 text-gray-500"
-            : "hover:bg-gray-50 cursor-pointer"
+            : "hover:bg-gray-50 border border-gray-500 cursor-pointer"
         }`}
       >
         {role}
-        <svg
-          className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <FaChevronDown size={10} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+4px)] min-w-32.5 bg-white border border-gray-200 rounded-lg shadow-md z-10 p-1">
+        <div className="flex flex-col absolute right-0 top-[calc(100%+4px)] min-w-32.5 bg-white border border-gray-200 rounded-lg shadow-md  p-1">
           {ROLES.map((r) => (
             <button
               key={r}
@@ -107,21 +99,7 @@ function RoleDropdown({
               className="flex items-center justify-between w-full text-left text-[13px] font-medium px-2.5 py-1.5 rounded-md hover:bg-gray-50 text-gray-800 transition-colors"
             >
               {r}
-              {r === role && (
-                <svg
-                  className="w-3.5 h-3.5 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
+              {r === role && <FaCheck size={10} />}
             </button>
           ))}
         </div>
@@ -147,12 +125,27 @@ export default function InviteModal({
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [currentUser, setCurrentUser] = useState<UserSummary | null>(null);
+  const [pendingInvites, setPendingInvites] = useState<InvitationResponse[]>(
+    [],
+  );
+
+  const projectIdVal = project?.id;
+  const fetchPendingInvites = useCallback(() => {
+    if (!projectIdVal) return;
+    invitationApi
+      .getPendingForProject(projectIdVal)
+      .then(setPendingInvites)
+      .catch(console.error);
+  }, [projectIdVal]);
 
   useEffect(() => {
     if (open) {
       userApi.getMe().then(setCurrentUser).catch(console.error);
+      if (project?.id) {
+        fetchPendingInvites();
+      }
     }
-  }, [open]);
+  }, [open, project?.id, fetchPendingInvites]);
 
   const isCurrentUserOwner =
     project && currentUser
@@ -214,6 +207,18 @@ export default function InviteModal({
     ? `${window.location.host}/projects/${project.id}`
     : "uui.com/projects/powersurge";
 
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const filteredPending = pendingInvites.filter(
+    (p) =>
+      (p.invitedUserName || "").toLowerCase().includes(search.toLowerCase()) ||
+      (p.invitedUserEmail || "").toLowerCase().includes(search.toLowerCase()),
+  );
+
   const handleCopy = () => {
     navigator.clipboard.writeText(`${window.location.protocol}//${projectUrl}`);
     setCopied(true);
@@ -238,7 +243,8 @@ export default function InviteModal({
         type: "success",
       });
       setInviteEmail("");
-      // Reset thông báo sau 3 giây
+      fetchPendingInvites();
+      // Reset thông báo sau 4 giây
       setTimeout(() => setInviteMessage(null), 4000);
     } catch (err) {
       const errorMsg =
@@ -256,15 +262,15 @@ export default function InviteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45"
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs bg-black/50"
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-115 mx-4 overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-white  rounded-md shadow-sm w-full max-w-115 mx-4 overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 flex items-start justify-between">
           <div className="flex items-start gap-4">
             {/* App icon */}
-            <div className="w-12 h-12 rounded-xl text-white bg-sky-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-200">
+            <div className="items-center justify-center w-12 h-12 rounded-xl text-white bg-sky-700 flex  shrink-0">
               <LuComponent size={26} />
             </div>
             <div>
@@ -290,7 +296,7 @@ export default function InviteModal({
             <div className="flex items-center justify-between  border border-gray-200 rounded-xl px-4 py-3 bg-gray-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center shrink-0">
-                  <GiLinkedRings className="text-purple-800" />
+                  <GiLinkedRings />
                 </div>
                 <div className="min-w-0">
                   <div className="relative">
@@ -334,7 +340,7 @@ export default function InviteModal({
               </div>
               <button
                 onClick={handleCopy}
-                className="flex items-center justify-center gap-1.5 w-22.5 text-sm font-semibold text-gray-700 rounded-lg py-1.5 
+                className="flex items-center justify-center gap-1.5 w-22.5 text-sm text-gray-700 rounded-lg py-1.5 
                 border border-gray-200 bg-gray-100 hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
               >
                 <RxCopy />
@@ -354,13 +360,13 @@ export default function InviteModal({
                 placeholder="team-member@example.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-purple-800 placeholder:text-gray-400 bg-white"
+                className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-purple-800 placeholder:text-gray-400 bg-white"
                 required
               />
               <button
                 type="submit"
                 disabled={inviting || !inviteEmail.trim()}
-                className="px-4 py-2 text-sm font-semibold text-white bg-purple-800 hover:bg-purple-900 active:bg-purple-950 disabled:opacity-50 disabled:hover:bg-purple-800 rounded-lg transition shadow-sm shrink-0 cursor-pointer"
+                className="px-4 py-1.5 text-sm text-white bg-purple-800 hover:bg-purple-900 active:bg-purple-950 disabled:opacity-50 disabled:hover:bg-purple-800 rounded-lg transition shadow-sm shrink-0 cursor-pointer"
               >
                 {inviting ? "Inviting..." : "Invite"}
               </button>
@@ -393,46 +399,24 @@ export default function InviteModal({
 
             {/* Search */}
             <div className="relative mb-3">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <RiUserSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by name or email"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-800 placeholder:text-gray-400"
+                className="w-full pl-9 pr-4 py-1.5 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-800 placeholder:text-gray-400"
               />
             </div>
-
-            {/* User list */}
             <div className="space-y-1 h-40 overflow-y-auto pr-1">
-              {users.filter(
-                (u) =>
-                  u.name.toLowerCase().includes(search.toLowerCase()) ||
-                  u.email.toLowerCase().includes(search.toLowerCase()),
-              ).length === 0 ? (
+              {filteredUsers.length === 0 && filteredPending.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-gray-400">
                   No members found
                 </div>
               ) : (
-                users
-                  .filter(
-                    (u) =>
-                      u.name.toLowerCase().includes(search.toLowerCase()) ||
-                      u.email.toLowerCase().includes(search.toLowerCase()),
-                  )
-                  .map((user) => (
+                <>
+                  {/* Joined members */}
+                  {filteredUsers.map((user) => (
                     <div
                       key={user.id}
                       className="flex items-center justify-between py-2 px-1.5 rounded-lg hover:bg-gray-50 transition-colors"
@@ -452,7 +436,51 @@ export default function InviteModal({
                         disabled={!isCurrentUserOwner || user.role === "Owner"}
                       />
                     </div>
-                  ))
+                  ))}
+
+                  {/* Pending invitations */}
+                  {filteredPending.map((invite) => {
+                    const initial = invite.invitedUserName
+                      ? invite.invitedUserName[0].toUpperCase()
+                      : "?";
+                    return (
+                      <div
+                        key={invite.id}
+                        className="flex items-center justify-between py-2 px-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {invite.invitedUserPicture ? (
+                            <img
+                              src={invite.invitedUserPicture}
+                              alt={invite.invitedUserName}
+                              className="w-9 h-9 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0"
+                              style={{ backgroundColor: "#5b21b6" }}
+                            >
+                              {initial}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">
+                              {invite.invitedUserName}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {invite.invitedUserEmail}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <span className="text-xs font-semibold  text-emerald-700  pr-2.5 py-0.5 rounded-full tracking-wider shrink-0">
+                            Pending
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
               )}
             </div>
           </div>
@@ -463,7 +491,7 @@ export default function InviteModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 text-sm font-semibold text-gray-700 border border-gray-250 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+              className="flex items-center gap-2 text-sm  text-gray-700 border border-gray-250 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
             >
               <RxCopy />
               Copy link
@@ -471,7 +499,7 @@ export default function InviteModal({
           </div>
           <button
             onClick={onClose}
-            className="bg-purple-800 hover:bg-purple-900 active:bg-purple-950 text-white text-sm font-bold px-6 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
+            className="bg-purple-800 hover:bg-purple-900 active:bg-purple-950 text-white text-sm px-6 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
           >
             Done
           </button>

@@ -29,7 +29,7 @@ export interface Task {
   description?: string;
   type: TaskType;
   priority: Priority;
-  assigned_to: User[];   // multi-assignee
+  assigned_to: User[]; // multi-assignee
   deadline: string | null;
   status: Status;
   subtasks: Subtask[];
@@ -44,7 +44,7 @@ export interface Comment {
   userId: number;
   content: string;
   createdAt: string;
-  parentId?: number | null; 
+  parentId?: number | null;
   replies?: Comment[];
 }
 
@@ -92,22 +92,25 @@ export const statuses: Status[] = ["to_do", "in_progress", "done"];
 
 export const statusMap: Record<
   Status,
-  { label: string; headerColor: string; dotColor: string }
+  { label: string; headerColor: string; dotColor: string; badgeColor: string }
 > = {
   to_do: {
     label: "To Do",
-    headerColor: "border-gray-400",
+    headerColor: "border-gray-600",
     dotColor: "bg-gray-400",
+    badgeColor: "bg-gray-100 text-gray-800",
   },
   in_progress: {
     label: "In Progress",
     headerColor: "border-blue-500",
     dotColor: "bg-blue-500",
+    badgeColor: "bg-blue-100 text-blue-800",
   },
   done: {
     label: "Done",
     headerColor: "border-green-500",
     dotColor: "bg-green-500",
+    badgeColor: "bg-green-100 text-green-800",
   },
 };
 
