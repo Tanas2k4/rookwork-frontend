@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { OverviewData } from "../../hooks/useOverview";
+import { avatarUrl } from "../../utils/avatar";
 
 export default function ProjectCard({ data }: { data: OverviewData }) {
   const [tab, setTab] = useState<"activity" | "assignment">("activity");
@@ -26,7 +27,7 @@ export default function ProjectCard({ data }: { data: OverviewData }) {
             <div className="flex flex-col gap-3">
               {activities.slice(0, 5).map((a) => (
                 <div key={a.id} className="flex gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-white hover:border-gray-200 transition-all">
-                  <img src={a.actorPicture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(a.actorName)}&background=7c3aed&color=fff`}
+                  <img src={avatarUrl(a.actorName, a.actorPicture)}
                     alt="" className="w-7 h-7 rounded-full object-cover shrink-0 ring-2 ring-white" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">

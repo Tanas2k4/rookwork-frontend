@@ -292,7 +292,7 @@ function LogWorkSection({ task }: { task: Task }) {
               >
                 <img
                   src={avatarUrl(log.userProfileName, log.userPicture)}
-                  className="w-6 h-6 rounded-full shrink-0 mt-0.5"
+                  className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
                   alt=""
                 />
                 <div className="flex-1 min-w-0">

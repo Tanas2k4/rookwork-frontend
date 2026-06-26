@@ -1,5 +1,6 @@
 import type { OverviewData } from "../../hooks/useOverview";
 import type { IssueType, PriorityType } from "../../api/contracts/issue";
+import { avatarUrl } from "../../utils/avatar";
 
 type TaskType = "epic" | "story" | "task";
 type TaskPriority = "urgent" | "high" | "medium" | "low";
@@ -60,7 +61,7 @@ export default function TaskSnapshot({ data }: { data: OverviewData }) {
                           {t.assignees.slice(0, 2).map((a, idx) => (
                             <img
                               key={idx}
-                              src={a.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(a.profileName)}&background=7c3aed&color=fff`}
+                              src={avatarUrl(a.profileName, a.picture)}
                               alt=""
                               className="w-5 h-5 rounded-full object-cover border border-white"
                             />

@@ -19,4 +19,5 @@ export const userApi = {
     formData.append("file", file);
     return apiClient.postFormData<{ avatarUrl: string }>("/api/users/me/avatar", formData);
   },
+  deleteAvatar: () => apiClient.delete("/api/users/me/avatar"),
 };
