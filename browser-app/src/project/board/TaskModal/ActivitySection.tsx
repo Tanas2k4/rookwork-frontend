@@ -221,7 +221,7 @@ function CommentItem({
             comment.user?.profileName ?? "?",
             comment.user?.picture,
           )}
-          className={`rounded-full shrink-0 mt-0.5 ${isReply ? "w-5 h-5" : "w-6 h-6"}`}
+          className={`rounded-full object-cover shrink-0 mt-0.5 ${isReply ? "w-5 h-5" : "w-6 h-6"}`}
           alt=""
         />
         <div className="flex-1 min-w-0 ">
