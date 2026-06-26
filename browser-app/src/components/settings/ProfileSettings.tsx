@@ -8,6 +8,22 @@ import { avatarUrl } from "../../utils/avatar";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
 
+const PrivacyToggle = ({ isPublic, onClick }: { isPublic: boolean; onClick: () => void }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center text-xs px-2 py-1 rounded transition-colors ${isPublic ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}
+      title={isPublic ? t('profile.public_hint') : t('profile.private_hint')}
+    >
+      {isPublic ? <FiGlobe className="mr-1" /> : <FiLock className="mr-1" />}
+      {isPublic ? t('profile.public') : t('profile.private')}
+    </button>
+  );
+};
+
+
 export default function ProfileSettings({ user, onUnsavedChanges }: { user: UserSummary | null; onUnsavedChanges?: (val: boolean) => void }) {
   const { t } = useTranslation();
   const { toasts, addToast, removeToast } = useToast();
@@ -43,7 +59,10 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
     }
   };
 
-  useEffect(() => {
+  const [prevUser, setPrevUser] = useState(user);
+
+  if (user !== prevUser) {
+    setPrevUser(user);
     if (user) {
       setAvatar(user.picture || "");
       setProfileName(user.profileName || "");
@@ -56,7 +75,8 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
       setOrganizationPublic(user.organizationPublic ?? true);
       setLocationPublic(user.locationPublic ?? true);
     }
-  }, [user]);
+  }
+
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -110,24 +130,14 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
       addToast(t('profile.success'), "success");
       onUnsavedChanges?.(false);
       window.dispatchEvent(new CustomEvent("profileUpdated"));
-    } catch (err) {
+    } catch {
       addToast(t('profile.error'), "error");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const PrivacyToggle = ({ isPublic, onClick }: { isPublic: boolean, onClick: () => void }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center text-xs px-2 py-1 rounded transition-colors ${isPublic ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}
-      title={isPublic ? t('profile.public_hint') : t('profile.private_hint')}
-    >
-      {isPublic ? <FiGlobe className="mr-1" /> : <FiLock className="mr-1" />}
-      {isPublic ? t('profile.public') : t('profile.private')}
-    </button>
-  );
+
 
   return (
     <div className="max-w-2xl">

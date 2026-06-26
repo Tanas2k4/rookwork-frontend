@@ -22,7 +22,7 @@ export default function Overview() {
       <div className="flex items-center justify-center h-64 text-slate-500 flex-col gap-3">
         <span className="text-sm">{error}</span>
         <button onClick={reload}
-          className="size-10text-xs px-4 py-1.5 rounded-md bg-purple-700 text-white hover:bg-purple-800 transition-colors">
+          className="text-xs px-4 py-1.5 rounded-md bg-purple-700 text-white hover:bg-purple-800 transition-colors">
           Retry
         </button>
       </div>

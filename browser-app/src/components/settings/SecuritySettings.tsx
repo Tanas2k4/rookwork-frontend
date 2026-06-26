@@ -18,7 +18,7 @@ export default function SecuritySettings() {
     { label: "One uppercase letter (A-Z)", met: /[A-Z]/.test(newPassword) },
     { label: "One lowercase letter (a-z)", met: /[a-z]/.test(newPassword) },
     { label: "One digit (0-9)", met: /\d/.test(newPassword) },
-    { label: "One special character (!@#$...)", met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(newPassword) },
+    { label: "One special character (!@#$...)", met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword) },
   ], [newPassword]);
 
   const passedCount = passwordChecks.filter((c) => c.met).length;
@@ -38,8 +38,9 @@ export default function SecuritySettings() {
       alert(t('security.delete_success') || "Account deleted successfully.");
       localStorage.clear();
       window.location.href = "/login";
-    } catch (err: any) {
-      alert(err.message || t('security.delete_error') || "Incorrect password or an error occurred.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      alert(errorMessage || t('security.delete_error') || "Incorrect password or an error occurred.");
     } finally {
       setIsDeleting(false);
     }
@@ -55,7 +56,7 @@ export default function SecuritySettings() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err) {
+    } catch {
       alert(t('security.error'));
     } finally {
       setIsSaving(false);

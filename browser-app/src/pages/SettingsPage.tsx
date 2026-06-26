@@ -36,7 +36,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex flex-col md:flex-row h-full">
-        <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex-shrink-0 animate-pulse">
+        <aside className="w-full md:w-64 bg-white border-r border-gray-200 shrink-0 animate-pulse">
           <div className="p-6 h-16 bg-gray-100 mb-4 rounded mx-4"></div>
           <div className="px-4 space-y-2">
             <div className="h-10 bg-gray-100 rounded"></div>
@@ -54,7 +54,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col md:flex-row h-full">
       {/* Settings Sidebar */}
-      <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex-shrink-0">
+      <aside className="w-full md:w-64 bg-white border-r border-gray-200 shrink-0">
         <div className="p-6">
           <h1 className="text-xl font-bold text-gray-800">{t('settings.title')}</h1>
         </div>

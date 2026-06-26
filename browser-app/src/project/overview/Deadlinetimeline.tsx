@@ -6,7 +6,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import type { OverviewData } from "../../hooks/useOverview";
+import type { OverviewData, OverviewIssue } from "../../hooks/useOverview";
+import type { UserSummary } from "../../api/contracts/issue";
 import { apiTypeToUI, apiPriorityToUI, apiStatusToUI } from "../../utils/issueMapper";
 import { avatarUrl } from "../../utils/avatar";
 
@@ -33,7 +34,7 @@ function StatusBadge({ status }: { status: TaskStatus }) {
 
 export default function DeadlineTimeline({ data }: { data: OverviewData }) {
   // Use state to store the hovered item and its DOMRect for the portal
-  const [hoveredData, setHoveredData] = useState<{ id: string; rect: DOMRect; item: any } | null>(null);
+  const [hoveredData, setHoveredData] = useState<{ id: string; rect: DOMRect; item: OverviewIssue } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { timelineTasks, overdueCount, dueSoonCount } = data;
 
@@ -111,7 +112,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
             style={{ scrollBehavior: 'smooth' }}
           >
             {/* The continuous line background */}
-            <div className="absolute top-[41px] left-8 right-8 h-[2px] bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 z-0 pointer-events-none" />
+            <div className="absolute top-10.25 left-8 right-8 h-0.5 bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 z-0 pointer-events-none" />
 
             {timelineTasks.map((item) => {
               const isDone = item.status === "DONE";
@@ -143,7 +144,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
               return (
                 <div 
                   key={item.id} 
-                  className="flex flex-col items-center gap-2 cursor-pointer relative z-10 shrink-0 min-w-[80px] snap-center group/node"
+                  className="flex flex-col items-center gap-2 cursor-pointer relative z-10 shrink-0 min-w-20 snap-center group/node"
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setHoveredData({ id: item.id, rect, item });
@@ -163,7 +164,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
                   
                   {/* Bottom Info */}
                   <span className={`text-[11px] whitespace-nowrap mt-1 ${labelColor}`}>{daysLabel}</span>
-                  <span className="text-[10px] text-gray-600 font-medium text-center leading-tight w-[100px] line-clamp-2 mt-0.5 group-hover/node:text-purple-700 transition-colors">
+                  <span className="text-[10px] text-gray-600 font-medium text-center leading-tight w-25 line-clamp-2 mt-0.5 group-hover/node:text-purple-700 transition-colors">
                     {item.issueName}
                   </span>
                   <div className="mt-1">
@@ -175,8 +176,8 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
           </div>
           
           {/* Gradient Edges for scroll indication */}
-          <div className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none" />
-          <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+          <div className="absolute top-0 bottom-0 left-0 w-8 bg-linear-to-r from-white to-transparent pointer-events-none" />
+          <div className="absolute top-0 bottom-0 right-0 w-8 bg-linear-to-l from-white to-transparent pointer-events-none" />
         </div>
       )}
 
@@ -199,7 +200,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
             {hoveredData.item.assignees && hoveredData.item.assignees.length > 0 ? (
               <>
                 <div className="flex -space-x-1.5 overflow-hidden">
-                  {hoveredData.item.assignees.slice(0, 2).map((a: any, idx: number) => (
+                  {hoveredData.item.assignees.slice(0, 2).map((a: UserSummary, idx: number) => (
                     <img
                       key={idx}
                       src={avatarUrl(a.profileName, a.picture)}

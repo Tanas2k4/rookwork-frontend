@@ -11,13 +11,13 @@ const LANGUAGES = [
 
 const TIMEZONES = Intl.supportedValuesOf('timeZone');
 
-export default function PreferencesSettings({ user: _user }: { user: UserSummary | null }) {
+export default function PreferencesSettings({ user }: { user: UserSummary | null }) {
   const { t, i18n } = useTranslation();
   const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const systemLanguage = navigator.language.split("-")[0]; // "en-US" → "en"
 
   const [language, setLanguage] = useState(systemLanguage || "en");
-  const [timezone, setTimezone] = useState(systemTimezone || "Asia/Ho_Chi_Minh");
+  const [timezone, setTimezone] = useState(user?.timezone || systemTimezone || "Asia/Ho_Chi_Minh");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -27,7 +27,7 @@ export default function PreferencesSettings({ user: _user }: { user: UserSummary
       // System preferences are read-only and not saved to the backend
       i18n.changeLanguage(language);
       alert(t('preferences.success'));
-    } catch (err) {
+    } catch {
       alert(t('preferences.error'));
     } finally {
       setIsSaving(false);

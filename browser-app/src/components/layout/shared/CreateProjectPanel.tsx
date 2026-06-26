@@ -68,7 +68,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[80] bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-80 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -76,13 +76,13 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
 
       {/* Panel */}
       <div
-        className={`fixed top-0 right-0 z-[90] h-full w-full max-w-xl bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed top-0 right-0 z-90 h-full w-full max-w-xl bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white">
+        <div className="shrink-0 border-b border-gray-200 px-6 py-4 flex items-center justify-between bg-white">
           <h2 className="text-base font-bold text-gray-800">Create Project</h2>
           <button
             onClick={onClose}
@@ -196,7 +196,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                         })}
                       </p>
                     </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ml-3 flex-shrink-0 ${
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ml-3 shrink-0 ${
                       p.isPrivate ? "bg-gray-100 text-gray-500" : "bg-green-100 text-green-700"
                     }`}>
                       {p.isPrivate ? "Private" : "Public"}
