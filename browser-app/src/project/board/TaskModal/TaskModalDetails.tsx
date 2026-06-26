@@ -259,7 +259,7 @@ export function TaskModalDetails({
                       }`}>
                         {isSelected && <MdCheck size={11} className="text-white" />}
                       </span>
-                      <img src={u.avt} className="w-5 h-5 rounded-full shrink-0" />
+                      <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
                       <span className="truncate">{u.display_name}</span>
                     </button>
                   );
