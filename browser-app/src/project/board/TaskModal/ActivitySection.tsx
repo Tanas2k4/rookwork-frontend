@@ -253,7 +253,7 @@ function CommentItem({
           ) : (
             <>
               <div
-                className={`bg-gray-100/80 rounded-xl rounded-tl px-3 py-1 ${isReply ? "text-xs" : "text-sm"} text-gray-700 wrap-break-word leading-relaxed`}
+                className={`inline-block bg-gray-200 rounded-xl rounded-tl px-3 py-1 ${isReply ? "text-xs" : "text-sm"} text-gray-700 wrap-break-word leading-relaxed`}
               >
                 {comment.content}
               </div>

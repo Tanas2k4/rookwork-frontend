@@ -44,11 +44,10 @@ export function ChildrenSection({
       (t) =>
         t.type === childType &&
         !(task.childIds ?? []).includes(t.id) &&
-        t.parentId == null
+        t.parentId == null,
     );
   }, [allTasks, task.childIds, childType]);
 
-  
   if (!childType) {
     return null;
   }
@@ -143,11 +142,8 @@ export function ChildrenSection({
                   </button>
                   <div className="flex items-center gap-2 ml-auto shrink-0">
                     <span
-                      className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full font-medium ${statusMap[child.status].dotColor} bg-opacity-10 text-gray-600`}
+                      className={`flex items-center gap-1.5 text-xs px-2.5 py-0.75 rounded-full font-semibold ${statusMap[child.status].badgeColor}`}
                     >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${statusMap[child.status].dotColor}`}
-                      />
                       {statusMap[child.status].label}
                     </span>
                     {child.subtasks.length > 0 && (

@@ -144,7 +144,7 @@ export function RichTextEditor({
   }
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-200 focus-within:border-purple-800 transition-colors shadow-sm">
+    <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-200 focus-within:border-purple-800 transition-colors">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-1 p-2 bg-gray-50 border-b border-gray-200 select-none">
         <div className="flex flex-wrap items-center gap-1">
