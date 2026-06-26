@@ -136,7 +136,7 @@ export default function ListView() {
                               <div className="flex items-center gap-2">
                                 <div className="flex -space-x-2">
                                   {task.assigned_to.slice(0, 2).map((u, i) => (
-                                    <img key={i} src={u.avt} title={u.display_name} className="w-6 h-6 rounded-full border-2 border-white" />
+                                    <img key={i} src={u.avt} title={u.display_name} className="w-6 h-6 rounded-full object-cover border-2 border-white shrink-0" />
                                   ))}
                                   {task.assigned_to.length > 2 && (
                                     <span className="w-6 h-6 rounded-full bg-purple-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-purple-700">

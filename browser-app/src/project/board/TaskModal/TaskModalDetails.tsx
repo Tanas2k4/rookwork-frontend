@@ -203,7 +203,7 @@ export function TaskModalDetails({
                       key={i}
                       src={u.avt}
                       title={u.display_name}
-                      className="w-5 h-5 rounded-full border-2 border-white shrink-0"
+                      className="w-5 h-5 rounded-full object-cover border-2 border-white shrink-0"
                     />
                   ))}
                   {extraCount > 0 && (

@@ -19,6 +19,7 @@ import type {
   Status as ApiStatus,
   UserSummary,
 } from "../api/contracts/issue";
+import { avatarUrl } from "./avatar";
 
 /**
  * Chuyển đổi loại công việc từ API BE (viết hoa) sang loại công việc trên UI FE (viết thường).
@@ -89,7 +90,7 @@ export function apiUserToUI(u: UserSummary): User & { uuid?: string } {
     id: uuidToId(u.id),
     email: "",
     display_name: u.profileName,
-    avt: u.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(u.profileName)}&background=7c3aed&color=fff`,
+    avt: avatarUrl(u.profileName, u.picture),
     uuid: u.id,
   };
 }

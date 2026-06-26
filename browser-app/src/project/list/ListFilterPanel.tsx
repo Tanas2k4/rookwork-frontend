@@ -106,7 +106,7 @@ export function ListFilterPanel({
                       checked={selectedUsers.includes(u.avt /* used as stable key */)}
                       onChange={() => onToggleUser(u.avt)}
                       className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700" />
-                    <img src={u.avt} className="w-5 h-5 rounded-full" />
+                    <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
                     <span className="text-sm text-gray-700">{u.display_name}</span>
                   </label>
                 ))}

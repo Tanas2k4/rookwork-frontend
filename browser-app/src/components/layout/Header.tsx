@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { avatarUrl as getAvatarHelper } from "../../utils/avatar";
 import type { Dispatch, SetStateAction } from "react";
 import { FaChevronDown } from "react-icons/fa6";
 import { BsBell } from "react-icons/bs";
@@ -49,7 +50,6 @@ function Header({
     Record<string, "accepted" | "declined">
   >({});
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const [avatarBroken, setAvatarBroken] = useState(false);
 
   function normalize(all: NotificationResponse[]): NotificationResponse[] {
     return all.map((n) => ({
@@ -182,14 +182,6 @@ function Header({
   }
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-  const initials = displayName
-    ? displayName
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "T";
 
   return (
     <>
@@ -253,25 +245,18 @@ function Header({
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setOpen((p) => !p)}
-                className="flex items-center gap-2 text-gray-700 border border-gray-500 rounded-full px-1 py-1 hover:bg-gray-50 transition"
+                className="flex items-center gap-1.5 text-gray-600 border border-gray-300 rounded-full pl-1 pr-2.5 py-1 hover:bg-gray-50 hover:border-gray-400 transition"
               >
-                {avatarUrl && !avatarBroken ? (
-                  <img
-                    key={avatarUrl}
-                    src={avatarUrl}
-                    alt={displayName ?? "avatar"}
-                    referrerPolicy="no-referrer"
-                    className="border border-gray-400 size-6 rounded-full object-cover"
-                    onError={() => setAvatarBroken(true)}
-                  />
-                ) : (
-                  <div className="size-6 rounded-full bg-purple-200 text-purple-800 text-[10px] font-bold flex items-center justify-center">
-                    {initials}
-                  </div>
-                )}
+                <img
+                  key={avatarUrl}
+                  src={getAvatarHelper(displayName || "User", avatarUrl)}
+                  alt={displayName ?? "avatar"}
+                  referrerPolicy="no-referrer"
+                  className="w-7 h-7 rounded-full object-cover ring-1 ring-black/5 shrink-0"
+                />
                 <FaChevronDown
-                  size={11}
-                  className={`mr-1 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                  size={10}
+                  className={`text-gray-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
                 />
               </button>
               {open && (
@@ -343,12 +328,6 @@ function Header({
             <ul className="divide-y divide-gray-100">
               {notifications.map((n) => {
                 const sender = n.sender;
-                const avatarInitials = (sender?.profileName ?? n.title)
-                  .split(" ")
-                  .map((w: string) => w[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase();
                 const avatarPic = sender?.picture ?? null;
                 const isInvitation = n.title === "Project Invitation";
                 const isResponding = respondingId === n.invitationId;
@@ -371,17 +350,11 @@ function Header({
                       ${!n.isRead && !respondedAs ? "bg-purple-50/40" : "bg-white"}`}
                   >
                     <div className="flex gap-3">
-                      {avatarPic ? (
-                        <img
-                          src={avatarPic}
-                          alt={sender?.profileName}
-                          className="shrink-0 w-9 h-9 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="shrink-0 w-9 h-9 rounded-full bg-purple-200 text-purple-800 text-xs font-bold flex items-center justify-center">
-                          {avatarInitials}
-                        </div>
-                      )}
+                      <img
+                        src={getAvatarHelper(sender?.profileName ?? n.title, avatarPic)}
+                        alt={sender?.profileName ?? n.title}
+                        className="shrink-0 w-9 h-9 rounded-full object-cover border border-gray-100"
+                      />
                       <div className="flex-1 min-w-0 pr-6">
                         <p className="text-sm font-semibold text-gray-700 leading-snug">
                           {n.title}

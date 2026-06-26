@@ -115,7 +115,7 @@ export default function MyIssuesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <img src={myAvatar} className="w-7 h-7 rounded-full" alt="" />
+            <img src={myAvatar} className="w-7 h-7 rounded-full object-cover shrink-0" alt="" />
             <span className="text-sm text-gray-600">{myName}</span>
           </div>
         </div>

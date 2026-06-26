@@ -14,8 +14,8 @@
  * @returns Chuỗi URL ảnh đại diện
  */
 export function avatarUrl(name: string, pic: string | null | undefined): string {
-  return (
-    pic ??
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7c3aed&color=fff`
-  );
+  if (!pic || pic.trim() === "") {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7c3aed&color=fff`;
+  }
+  return pic;
 }
