@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { formatInTimeZone } from "date-fns-tz";
-import { FiGlobe, FiLock } from "react-icons/fi";
+import { FiGlobe, FiLock, FiTrash2 } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 import { avatarUrl } from "../../utils/avatar";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../common/ToastContainer";
 
 export default function ProfileSettings({ user, onUnsavedChanges }: { user: UserSummary | null; onUnsavedChanges?: (val: boolean) => void }) {
   const { t } = useTranslation();
+  const { toasts, addToast, removeToast } = useToast();
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [profileName, setProfileName] = useState(user?.profileName || "");
   const [email, setEmail] = useState(user?.email || "user@example.com");
   const [jobTitle, setJobTitle] = useState(user?.jobTitle || "");
@@ -22,6 +26,22 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState(user?.picture || "");
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+
+  const handleDeleteAvatar = async () => {
+    setIsDeletingAvatar(true);
+    try {
+      await userApi.deleteAvatar();
+      setAvatar("");
+      window.dispatchEvent(new CustomEvent("profileUpdated"));
+      addToast("Avatar removed successfully!", "success");
+    } catch (err) {
+      console.error("Lỗi khi xóa ảnh đại diện:", err);
+      addToast("Failed to remove avatar. Please try again.", "error");
+    } finally {
+      setIsDeletingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -46,7 +66,7 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       if (file.size > 5 * 1024 * 1024) {
-        alert("Kích thước ảnh đại diện không được vượt quá 5MB.");
+        addToast("Avatar file size cannot exceed 5MB.", "error");
         return;
       }
       setIsUploading(true);
@@ -54,9 +74,10 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
         const response = await userApi.uploadAvatar(file);
         setAvatar(response.avatarUrl);
         window.dispatchEvent(new CustomEvent("profileUpdated"));
+        addToast("Avatar uploaded successfully!", "success");
       } catch (err) {
         console.error("Lỗi tải lên ảnh đại diện:", err);
-        alert("Không thể tải lên ảnh đại diện. Vui lòng thử lại.");
+        addToast("Failed to upload avatar. Please try again.", "error");
       } finally {
         setIsUploading(false);
       }
@@ -86,11 +107,11 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
         profileName, jobTitle, organization, location,
         emailPublic, jobTitlePublic, organizationPublic, locationPublic
       });
-      alert(t('profile.success'));
+      addToast(t('profile.success'), "success");
       onUnsavedChanges?.(false);
       window.dispatchEvent(new CustomEvent("profileUpdated"));
     } catch (err) {
-      alert(t('profile.error'));
+      addToast(t('profile.error'), "error");
     } finally {
       setIsSaving(false);
     }
@@ -126,23 +147,34 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
             <img
               src={avatarUrl(profileName || "User", avatar)}
               alt="Avatar"
-              className="h-20 w-20 rounded-full object-cover border border-gray-200 group-hover:opacity-80 transition-opacity"
+              className="h-20 w-20 rounded-full object-cover border border-gray-200 transition-all duration-200 group-hover:brightness-75"
             />
-            {isUploading && (
+            {/* Camera Overlay on Hover */}
+            <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <svg className="w-6 h-6 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            {(isUploading || isDeletingAvatar) && (
               <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
           </div>
           <div>
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              disabled={isUploading}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-            >
-              {isUploading ? "Uploading..." : t('profile.change_avatar')}
-            </button>
+            <div className="flex items-center space-x-3">
+              {!!avatar && (
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmDelete(true)}
+                  disabled={isUploading || isDeletingAvatar}
+                  className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50"
+                >
+                  {isDeletingAvatar ? "Removing..." : t('profile.remove_avatar')}
+                </button>
+              )}
+            </div>
             <p className="mt-2 text-xs text-gray-500">{t('profile.avatar_hint')}</p>
           </div>
         </div>
@@ -238,6 +270,58 @@ export default function ProfileSettings({ user, onUnsavedChanges }: { user: User
           </button>
         </div>
       </form>
+
+      {/* Custom Delete Confirmation Modal */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] transition-opacity duration-300"
+            onClick={() => setShowConfirmDelete(false)}
+          />
+          {/* Modal Container */}
+          <div className="relative bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-10 flex flex-col items-center text-center">
+            {/* Warning Icon */}
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-4 ring-8 ring-red-50/50">
+              <FiTrash2 size={22} />
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-base font-bold text-slate-800 mb-2">
+              Remove Avatar
+            </h3>
+            
+            {/* Message */}
+            <p className="text-xs text-slate-500 leading-relaxed mb-6">
+              Are you sure you want to remove your avatar? This action cannot be undone.
+            </p>
+            
+            {/* Buttons */}
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDelete(false)}
+                className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmDelete(false);
+                  handleDeleteAvatar();
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-xs font-semibold shadow-sm shadow-red-200"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notifications container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

@@ -333,7 +333,7 @@ function ActivityLogItem({ log }: { log: ActivityResponse }) {
     <div className="flex gap-2.5 items-start">
       <img
         src={avatarUrl(log.actorName, log.actorPicture)}
-        className="w-6 h-6 rounded-full shrink-0 mt-0.5"
+        className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
         alt=""
       />
       <div className="flex-1 min-w-0 ">

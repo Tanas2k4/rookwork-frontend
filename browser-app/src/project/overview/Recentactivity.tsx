@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { OverviewData } from "../../hooks/useOverview";
+import { avatarUrl } from "../../utils/avatar";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -31,12 +32,7 @@ export default function RecentActivity({ data }: { data: OverviewData }) {
             {paginatedActivities.map((a) => (
               <div key={a.id} className="flex gap-3 py-2.5">
                 <img
-                  src={
-                    a.actorPicture ??
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      a.actorName
-                    )}&background=7c3aed&color=fff`
-                  }
+                  src={avatarUrl(a.actorName, a.actorPicture)}
                   alt={a.actorName}
                   className="w-7 h-7 rounded-full object-cover shrink-0 ring-2 ring-white"
                 />

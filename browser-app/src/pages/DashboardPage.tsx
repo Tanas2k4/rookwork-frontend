@@ -9,6 +9,7 @@ import type { TaskPriority, TaskStatus } from "../types/project";
 import MiniCalendar from "../calendar/MiniCalendar";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse } from "../api/contracts/issue";
+import { avatarUrl } from "../utils/avatar";
 
 //  Helpers 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
@@ -296,7 +297,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                               {issue.assignees.slice(0, 2).map((a, i) => (
                                 <img
                                   key={i}
-                                  src={a.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(a.profileName)}&background=7c3aed&color=fff`}
+                                  src={avatarUrl(a.profileName, a.picture)}
                                   alt={a.profileName}
                                   title={a.profileName}
                                   className="inline-block h-5 w-5 rounded-full ring-1 ring-white object-cover"

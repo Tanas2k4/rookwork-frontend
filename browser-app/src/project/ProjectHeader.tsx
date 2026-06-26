@@ -6,6 +6,7 @@ import InviteModal from "./shared/InviteModal";
 import { FaCheck } from "react-icons/fa6";
 import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
 import { useProject } from "../hooks/useProject";
+import { avatarUrl } from "../utils/avatar";
 import { issueApi } from "../api/services/issueApi";
 import { projectApi } from "../api/services/projectApi";
 import { invitationApi } from "../api/services/invitationApi";
@@ -255,12 +256,9 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                 members.map((member) => (
                   <img
                     key={member.id}
-                    src={
-                      member.picture ??
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(member.profileName)}&background=7c3aed&color=fff`
-                    }
+                    src={avatarUrl(member.profileName, member.picture)}
                     alt={member.profileName}
-                    className="w-8 h-8 rounded-full border-2 border-white"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-white shrink-0"
                     title={member.profileName}
                   />
                 ))

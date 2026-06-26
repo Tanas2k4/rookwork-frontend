@@ -21,6 +21,7 @@ const resources = {
 
       "profile.title": "Profile Settings",
       "profile.change_avatar": "Change avatar",
+      "profile.remove_avatar": "Remove avatar",
       "profile.avatar_hint": "JPG, GIF or PNG. 1MB max.",
       "profile.display_name": "Display Name",
       "profile.email": "Email Address",
@@ -86,6 +87,7 @@ const resources = {
 
       "profile.title": "Cài đặt Hồ sơ",
       "profile.change_avatar": "Đổi ảnh đại diện",
+      "profile.remove_avatar": "Xóa ảnh đại diện",
       "profile.avatar_hint": "JPG, GIF hoặc PNG. Tối đa 1MB.",
       "profile.display_name": "Tên hiển thị",
       "profile.email": "Địa chỉ Email",
