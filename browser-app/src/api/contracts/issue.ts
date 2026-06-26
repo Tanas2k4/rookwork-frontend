@@ -16,7 +16,6 @@ export interface UserSummary {
   jobTitlePublic?: boolean;
   organizationPublic?: boolean;
   locationPublic?: boolean;
-  timezone?: string | null;
 
   notifyIssueAssigned?: boolean;
   notifyMentioned?: boolean;

@@ -9,15 +9,12 @@ const LANGUAGES = [
   { code: "fr", name: "Français (French)" },
 ];
 
-const TIMEZONES = Intl.supportedValuesOf('timeZone');
-
 export default function PreferencesSettings({ user: _user }: { user: UserSummary | null }) {
   const { t, i18n } = useTranslation();
-  const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   const systemLanguage = navigator.language.split("-")[0]; // "en-US" → "en"
 
   const [language, setLanguage] = useState(systemLanguage || "en");
-  const [timezone, setTimezone] = useState(systemTimezone || "Asia/Ho_Chi_Minh");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -57,33 +54,13 @@ export default function PreferencesSettings({ user: _user }: { user: UserSummary
             <p className="mt-1 text-xs text-gray-500 font-medium">
               * Language selection is temporarily disabled.
             </p>
-          </div>
+          </div>        </div>
 
-          <div className="opacity-60">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('preferences.timezone')}</label>
-            <select
-              value={timezone}
-              disabled={true}
-              onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-200 disabled:cursor-not-allowed"
-            >
-              {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500 font-medium">
-              * Timezone selection is temporarily disabled.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 flex justify-end">
+        <div className="pt-4 flex justify-end">
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2.5 bg-purple-900 text-white font-medium rounded-lg hover:bg-purple-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 bg-purple-900 text-white text-sm font-medium rounded-lg hover:bg-purple-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? t('preferences.saving') : t('preferences.save')}
           </button>
