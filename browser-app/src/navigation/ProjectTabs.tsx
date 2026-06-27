@@ -3,6 +3,7 @@ import { IoBarChartOutline } from "react-icons/io5"; //Overview icon
 import { BsCollection } from "react-icons/bs"; //Board icon
 import { TfiTimer } from "react-icons/tfi"; //Timeline icon
 import { TfiViewListAlt } from "react-icons/tfi"; //List icon
+import { RiAttachment2 } from "react-icons/ri"; //Files icon
 
 function ProjectTabs() {
   const { projectKey } = useParams();
@@ -12,6 +13,7 @@ function ProjectTabs() {
     { key: "board", label: "Board", icon: BsCollection },
     { key: "timeline", label: "Timeline", icon: TfiTimer },
     { key: "list", label: "List", icon: TfiViewListAlt },
+    { key: "files", label: "Storage", icon: RiAttachment2 },
   ];
 
   return (
@@ -28,10 +30,9 @@ function ProjectTabs() {
                 relative py-2 
                 after:content-[attr(data-text)]
                 after:font-semibold after:invisible after:absolute
-                ${
-                  isActive
-                    ? "font-semibold text-purple-800 border-b-[3px] border-purple-800"
-                    : "text-gray-800"
+                ${isActive
+                  ? "font-semibold text-purple-800 border-b-[3px] border-purple-800"
+                  : "text-gray-800"
                 }
               `
               }
