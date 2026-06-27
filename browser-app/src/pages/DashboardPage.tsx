@@ -11,8 +11,31 @@ import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse } from "../api/contracts/issue";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue } from "../utils/date";
+import { priorityColorMap } from "../types/project";
+import { apiPriorityToUI } from "../utils/issueMapper";
+import { eventApi } from "../api/services/eventApi";
+import type { CalendarEvent } from "../types/calendar";
+import { mapToCalendarEvent } from "../types/calendar";
+import { HiOutlineClock, HiOutlineLocationMarker } from "react-icons/hi";
 
 //  Helpers 
+const getPresetHex = (colorValue: string) => {
+  if (colorValue === "bg-violet-800/70") return "#8b5cf6";
+  if (colorValue === "bg-sky-800/70") return "#0ea5e9";
+  if (colorValue === "bg-emerald-800/70") return "#10b981";
+  if (colorValue === "bg-amber-800/70") return "#f59e0b";
+  if (colorValue === "bg-pink-800/70") return "#ec4899";
+  if (colorValue === "bg-rose-800/70") return "#f43f5e";
+  if (colorValue === "bg-indigo-800/70") return "#6366f1";
+  
+  if (colorValue === "bg-gray-400") return "#9ca3af";
+  if (colorValue === "bg-blue-500") return "#3b82f6";
+  if (colorValue === "bg-amber-600") return "#d97706";
+  if (colorValue === "bg-rose-600") return "#e11d48";
+  
+  return colorValue;
+};
+
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
   low: "#22c55e", medium: "#f59e0b", high: "#f43f5e", urgent: "#7c3aed",
 };
@@ -138,9 +161,10 @@ interface DashboardPageProps {
 
 export default function DashboardPage({ projects, profileName }: DashboardPageProps) {
   const [issues, setIssues] = useState<IssueResponse[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   // const [loading, setLoading] = useState(true);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const [calMonth, setCalMonth] = useState(now.getMonth());
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -149,8 +173,13 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   useEffect(() => {
     issueApi.getAssigned()
       .then(setIssues)
-      .catch(console.error)
-      // .finally(() => setLoading(false));
+      .catch(console.error);
+
+    eventApi.getMyEvents()
+      .then((res) => {
+        setEvents(res.map(mapToCalendarEvent));
+      })
+      .catch(console.error);
   }, []);
 
   const totalIssues = issues.length;
@@ -170,16 +199,68 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
     { label: "Overdue", value: overdueIssues, delta: "need attention", color: "#d97706" },
   ];
 
-  const todayTasks = issues.filter((i) => i.status !== "DONE").slice(0, 4);
+  const todayItems = useMemo(() => {
+    const todayStr = now.toISOString().split("T")[0];
 
-  const markedDates = useMemo(
-    () => new Set(
-      issues
-        .filter((i) => i.deadline && i.status !== "DONE")
-        .map((i) => i.deadline!.split("T")[0]),
-    ),
-    [issues],
-  );
+    // 1. Get events happening today
+    const todayEvents = events.filter((ev) => {
+      const year = ev.date.getFullYear();
+      const month = String(ev.date.getMonth() + 1).padStart(2, "0");
+      const day = String(ev.date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}` === todayStr;
+    });
+
+    // 2. Get tasks due today, fallback to general active tasks if none
+    let filteredTasks = issues.filter((i) => {
+      if (i.status === "DONE" || !i.deadline) return false;
+      return i.deadline.split("T")[0] === todayStr;
+    });
+    
+    if (filteredTasks.length === 0) {
+      filteredTasks = issues.filter((i) => i.status !== "DONE").slice(0, 4);
+    }
+
+    const items = [
+      ...todayEvents.map((ev) => ({
+        id: ev.id,
+        type: "event" as const,
+        event: ev,
+      })),
+      ...filteredTasks.map((i) => ({
+        id: i.id,
+        type: "task" as const,
+        issue: i,
+      })),
+    ];
+
+    return items;
+  }, [events, issues, now]);
+
+  const markedDates = useMemo(() => {
+    const dates: Record<string, string[]> = {};
+
+    // Add event dots
+    events.forEach((ev) => {
+      const year = ev.date.getFullYear();
+      const month = String(ev.date.getMonth() + 1).padStart(2, "0");
+      const day = String(ev.date.getDate()).padStart(2, "0");
+      const dateKey = `${year}-${month}-${day}`;
+      if (!dates[dateKey]) dates[dateKey] = [];
+      dates[dateKey].push(ev.color);
+    });
+
+    // Add issue deadline dots
+    issues
+      .filter((i) => i.deadline && i.status !== "DONE")
+      .forEach((i) => {
+        const dateKey = i.deadline!.split("T")[0];
+        if (!dates[dateKey]) dates[dateKey] = [];
+        const uiPriority = apiPriorityToUI(i.priority);
+        dates[dateKey].push(priorityColorMap[uiPriority]);
+      });
+
+    return dates;
+  }, [events, issues]);
 
   // if (loading) {
   //   return (
@@ -255,7 +336,43 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
             <div className="relative pl-4">
               <div className="absolute left-1.75 top-2 bottom-2 w-px bg-gray-200" />
               <div className="space-y-3">
-                {todayTasks.map((issue) => {
+                {todayItems.map((item) => {
+                  if (item.type === "event") {
+                    const event = item.event;
+                    return (
+                      <div key={event.id} className="flex gap-3">
+                        <div
+                          className="relative z-10 mt-1.5 w-3.5 h-3.5 -ml-4 rounded-full border-2 shrink-0 flex items-center justify-center bg-white"
+                          style={{ borderColor: getPresetHex(event.color) }}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: getPresetHex(event.color) }}
+                          />
+                        </div>
+                        <div className="flex-1 rounded-xl p-3 border border-gray-100 bg-gray-50 min-w-0 block">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-semibold truncate text-gray-700">{event.title}</p>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 border border-purple-200 bg-purple-50 text-purple-700">
+                              Event
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+                            <HiOutlineClock className="text-gray-400 shrink-0" size={12} />
+                            <span>{event.time} - {event.endTime}</span>
+                          </p>
+                          {event.location && (
+                            <p className="text-[10px] text-gray-400 truncate mt-1 flex items-center gap-1">
+                              <HiOutlineLocationMarker className="text-gray-400 shrink-0" size={12} />
+                              <span>{event.location}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const issue = item.issue;
                   const status = toTaskStatus(issue.status);
                   const priority = toTaskPriority(issue.priority);
                   const isDone = status === "done";
@@ -322,9 +439,9 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                   );
                 })}
 
-                {todayTasks.length === 0 && (
+                {todayItems.length === 0 && (
                   <div className="text-center py-8 text-gray-400">
-                    <p className="text-xs font-medium">All tasks done for today! 🎉</p>
+                    <p className="text-xs font-medium">All tasks and events done for today! 🎉</p>
                   </div>
                 )}
               </div>
