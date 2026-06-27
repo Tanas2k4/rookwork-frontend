@@ -3,6 +3,8 @@ import { FiCheck, FiX } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
+import { FaCheckCircle } from "react-icons/fa";
+import { AiFillCloseCircle } from "react-icons/ai";
 
 export default function SecuritySettings() {
   const { toasts, addToast, removeToast } = useToast();
@@ -110,8 +112,8 @@ export default function SecuritySettings() {
                   {passwordChecks.map((check) => (
                     <li key={check.label} className="flex items-center gap-2 text-xs">
                       {check.met
-                        ? <FiCheck className="text-green-500 shrink-0" size={14} />
-                        : <FiX className="text-red-400 shrink-0" size={14} />
+                        ? <FaCheckCircle className="text-green-700 shrink-0" size={14} />
+                        : <AiFillCloseCircle   className="text-red-600 shrink-0" size={15} />
                       }
                       <span className={check.met ? "text-green-700" : "text-gray-500"}>{check.label}</span>
                     </li>
