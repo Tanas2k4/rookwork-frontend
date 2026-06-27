@@ -25,7 +25,7 @@ export interface GanttTask {
 }
 
 // Constants
-export const COL_WIDTH_DAY = 36;
+export const COL_WIDTH_DAY = 60;
 export const COL_WIDTH_WEEK = 120;
 export const COL_WIDTH_MONTH = 200;
 export const ROW_HEIGHT = 52;
@@ -42,9 +42,9 @@ export const STATUS_CONFIG: Record<
 
 // Adapter
 const TYPE_COLOR: Record<TaskType, string> = {
-  task: "#6366f1",
-  story: "#10b981",
-  epic: "#f59e0b",
+  task: "#1d4ed8",
+  story: "#15803d",
+  epic: "#7e22ce",
 };
 
 const USER_COLORS = [

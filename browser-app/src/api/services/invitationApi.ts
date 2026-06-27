@@ -20,4 +20,8 @@ export const invitationApi = {
       `/api/invitations/${invitationId}/respond?accept=${accept}`,
       null,
     ),
+
+  // DELETE /api/invitations/:id
+  cancel: (invitationId: string) =>
+    apiClient.delete<void>(`/api/invitations/${invitationId}`),
 };
