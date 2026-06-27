@@ -3,6 +3,7 @@ import { IoBarChartOutline } from "react-icons/io5"; //Overview icon
 import { BsCollection } from "react-icons/bs"; //Board icon
 import { TfiTimer } from "react-icons/tfi"; //Timeline icon
 import { TfiViewListAlt } from "react-icons/tfi"; //List icon
+import { BsCalendar2Event } from "react-icons/bs"; //Events icon
 
 function ProjectTabs() {
   const { projectKey } = useParams();
@@ -12,6 +13,7 @@ function ProjectTabs() {
     { key: "board", label: "Board", icon: BsCollection },
     { key: "timeline", label: "Timeline", icon: TfiTimer },
     { key: "list", label: "List", icon: TfiViewListAlt },
+    { key: "events", label: "Events", icon: BsCalendar2Event },
   ];
 
   return (

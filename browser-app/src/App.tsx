@@ -4,6 +4,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import CalendarView from "./user/CalendarView";
+import EventsView from "./user/EventsView";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 import Titlebar from "./components/layout/Titlebar";
@@ -147,8 +148,10 @@ function App() {
                       <Route path="board" element={<BoardView />} />
                       <Route path="timeline" element={<TimelineView />} />
                       <Route path="list" element={<ListView />} />
+                      <Route path="events" element={<EventsView />} />
                     </Route>
 
+                    <Route path="/events" element={<EventsView />} />
                     <Route path="/calendars" element={<CalendarView />} />
                     <Route path="/my-issues" element={<MyIssuesPage />} />
                     <Route

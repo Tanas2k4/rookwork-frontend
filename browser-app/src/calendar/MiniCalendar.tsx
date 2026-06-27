@@ -19,7 +19,24 @@ type MiniCalendarProps = {
   onDoubleClickDate: (date: Date) => void;
   onChangeMonth: (month: number) => void;
   onChangeYear: (year: number) => void;
-  markedDates?: Set<string>;
+  markedDates?: Set<string> | Record<string, string[]>;
+};
+
+const getPresetHex = (colorValue: string) => {
+  if (colorValue === "bg-violet-800/70") return "#8b5cf6";
+  if (colorValue === "bg-sky-800/70") return "#0ea5e9";
+  if (colorValue === "bg-emerald-800/70") return "#10b981";
+  if (colorValue === "bg-amber-800/70") return "#f59e0b";
+  if (colorValue === "bg-pink-800/70") return "#ec4899";
+  if (colorValue === "bg-rose-800/70") return "#f43f5e";
+  if (colorValue === "bg-indigo-800/70") return "#6366f1";
+  
+  if (colorValue === "bg-gray-400") return "#9ca3af";
+  if (colorValue === "bg-blue-500") return "#3b82f6";
+  if (colorValue === "bg-amber-600") return "#d97706";
+  if (colorValue === "bg-rose-600") return "#e11d48";
+  
+  return colorValue;
 };
 
 export default function MiniCalendar({
@@ -140,7 +157,22 @@ export default function MiniCalendar({
           const dateKey = isCurrentMonth
             ? `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`
             : null;
-          const isMarked = dateKey ? markedDates.has(dateKey) : false;
+
+          let dayColors: string[] = [];
+          if (dateKey && markedDates) {
+            if (markedDates instanceof Set) {
+              if (markedDates.has(dateKey)) {
+                dayColors = ["bg-violet-800/70"];
+              }
+            } else if (typeof markedDates === "object") {
+              const val = (markedDates as Record<string, string[]>)[dateKey];
+              if (Array.isArray(val)) {
+                dayColors = val;
+              } else if (val) {
+                dayColors = [String(val)];
+              }
+            }
+          }
 
           return (
             <div
@@ -168,11 +200,18 @@ export default function MiniCalendar({
                 .join(" ")}
             >
               {isCurrentMonth ? dayNum : ""}
-              {isMarked && !isToday && !isSelected && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-violet-400" />
-              )}
-              {isMarked && isSelected && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-violet-600" />
+              {dayColors.length > 0 && (
+                <div className="absolute bottom-0.75 left-0 right-0 flex items-center justify-center gap-0.5 px-0.5">
+                  {dayColors.slice(0, 3).map((col, idx) => (
+                    <span
+                      key={idx}
+                      className="w-1 h-1 rounded-full shrink-0"
+                      style={{
+                        backgroundColor: isToday ? "#ffffff" : getPresetHex(col),
+                      }}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           );

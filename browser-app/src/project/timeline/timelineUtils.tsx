@@ -124,8 +124,8 @@ export function buildTimelineColumns(
   start: Date,
   totalDays: number,
   mode: ViewMode,
-): { label: string; start: Date; days: number }[] {
-  const cols: { label: string; start: Date; days: number }[] = [];
+): { label: string; start: Date; days: number; monthText: string; dayText: string }[] {
+  const cols: { label: string; start: Date; days: number; monthText: string; dayText: string }[] = [];
   let cursor = new Date(start);
 
   if (mode === "day") {
@@ -137,6 +137,8 @@ export function buildTimelineColumns(
         }),
         start: new Date(cursor),
         days: 1,
+        monthText: cursor.toLocaleDateString("en-US", { weekday: "short" }),
+        dayText: cursor.toLocaleDateString("en-US", { day: "numeric" }),
       });
       cursor = addDays(cursor, 1);
     }
@@ -148,6 +150,8 @@ export function buildTimelineColumns(
         label: `W${getWeekNumber(weekStart)} ${weekStart.toLocaleDateString("en-US", { month: "short" })}`,
         start: new Date(cursor),
         days,
+        monthText: weekStart.toLocaleDateString("en-US", { month: "short" }),
+        dayText: weekStart.toLocaleDateString("en-US", { day: "numeric" }),
       });
       cursor = addDays(cursor, 7);
       weekStart = new Date(cursor);
@@ -166,6 +170,8 @@ export function buildTimelineColumns(
         }),
         start: new Date(cursor),
         days,
+        monthText: cursor.toLocaleDateString("en-US", { year: "numeric" }),
+        dayText: cursor.toLocaleDateString("en-US", { month: "long" }),
       });
       cursor = new Date(year, month + 1, 1);
     }

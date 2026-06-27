@@ -14,7 +14,6 @@ import { avatarUrl } from "../utils/avatar";
 import { isOverdue as isOverdueUtil } from "../utils/date";
 import {
   type Priority,
-  type Subtask,
   statusMap,
   statuses,
   priorityColorMap,
