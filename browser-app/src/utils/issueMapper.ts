@@ -148,7 +148,14 @@ export function issueToTask(
     assigned_to: assignees,
     deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
     status: apiStatusToUI(issue.status),
-    subtasks: [],
+    subtasks: (issue.subtasks ?? []).map((sub) => {
+      uuidToId(sub.id);
+      return {
+        id: uuidToId(sub.id),
+        title: sub.subtaskName,
+        done: sub.isDone,
+      };
+    }),
     parentId: issue.parentId ? uuidToId(issue.parentId) : null,
     childIds: children,
     attachments: issue.attachments,
