@@ -3,16 +3,34 @@ import { FiCheck, FiX } from "react-icons/fi";
 import { userApi } from "../../api/services/userApi";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
+import type { UserSummary } from "../../api/contracts/issue";
 
-export default function SecuritySettings() {
+interface SecuritySettingsProps {
+  user: UserSummary | null;
+}
+
+export default function SecuritySettings({ user }: SecuritySettingsProps) {
   const { toasts, addToast, removeToast } = useToast();
+  
+  // Trạng thái Đổi mật khẩu thường
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Trạng thái Thiết lập mật khẩu qua OTP
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [isSettingUp, setIsSettingUp] = useState(false);
+
+  // Trạng thái Xóa tài khoản
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Mặc định cho phép hiển thị "Đổi mật khẩu" nếu chưa tải xong user
+  const hasPassword = user?.hasPassword !== false;
 
   const passwordChecks = useMemo(() => [
     { label: "At least 8 characters", met: newPassword.length >= 8 },
@@ -25,7 +43,9 @@ export default function SecuritySettings() {
   const passedCount = passwordChecks.filter((c) => c.met).length;
   const allPassed = passedCount === passwordChecks.length;
   const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
-  const canSubmit = allPassed && passwordsMatch && currentPassword.length > 0;
+  
+  // Có password -> bắt buộc phải có currentPassword. Không có password -> không cần.
+  const canSubmit = allPassed && passwordsMatch && (hasPassword ? currentPassword.length > 0 : true);
 
   const strengthLabel = passedCount <= 1 ? "Very weak" : passedCount === 2 ? "Weak" : passedCount === 3 ? "Fair" : passedCount === 4 ? "Strong" : "Very strong";
   const strengthColor = passedCount <= 1 ? "bg-red-500" : passedCount === 2 ? "bg-orange-500" : passedCount === 3 ? "bg-yellow-500" : passedCount === 4 ? "bg-blue-500" : "bg-green-500";
@@ -35,7 +55,8 @@ export default function SecuritySettings() {
     e.preventDefault();
     setIsDeleting(true);
     try {
-      await userApi.deleteAccount(deletePassword);
+      // Tài khoản không có password chỉ cần gửi string rỗng
+      await userApi.deleteAccount(hasPassword ? deletePassword : "");
       addToast("Account deleted successfully.", "success");
       localStorage.clear();
       window.location.href = "/login";
@@ -57,101 +78,154 @@ export default function SecuritySettings() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch {
-      addToast("Failed to update password.", "error");
+    } catch (err) {
+      const msg = (err as any)?.response?.data?.message || "Failed to update password.";
+      addToast(msg, "error");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleRequestOtp = async () => {
+    setIsRequestingOtp(true);
+    try {
+      await userApi.requestPasswordSetupOtp();
+      setShowSetupModal(true);
+      addToast("OTP has been sent to your email.", "success");
+    } catch (err) {
+      addToast("Failed to send OTP.", "error");
+    } finally {
+      setIsRequestingOtp(false);
+    }
+  };
+
+  const handleSetupPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit || !otp) return;
+    setIsSettingUp(true);
+    try {
+      await userApi.setupPasswordWithOtp({ otp, newPassword });
+      addToast("Password set successfully!", "success");
+      setShowSetupModal(false);
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
+      // Refresh lại trang để cập nhật trạng thái có mật khẩu
+      window.location.reload(); 
+    } catch (err) {
+      const msg = (err as any)?.response?.data?.message || "Failed to setup password. Invalid OTP?";
+      addToast(msg, "error");
+    } finally {
+      setIsSettingUp(false);
+    }
+  };
+
+  // Helper render các input mật khẩu mới (tránh lặp lại code)
+  const renderPasswordInputGroup = () => (
+    <>
+      <div>
+        <label className="block text-[13px] font-bold text-gray-700 mb-2">New Password</label>
+        <input
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
+          required
+        />
+
+        {newPassword.length > 0 && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1.5">
+               <span className="text-xs font-medium text-gray-500">Password strength</span>
+              <span className={`text-xs font-semibold ${strengthTextColor}`}>{strengthLabel}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${strengthColor}`}
+                style={{ width: `${(passedCount / passwordChecks.length) * 100}%` }}
+              />
+            </div>
+            <ul className="mt-3 space-y-1">
+              {passwordChecks.map((check) => (
+                <li key={check.label} className="flex items-center gap-2 text-xs">
+                  {check.met
+                    ? <FiCheck className="text-green-500 shrink-0" size={14} />
+                    : <FiX className="text-red-400 shrink-0" size={14} />
+                  }
+                  <span className={check.met ? "text-green-700" : "text-gray-500"}>{check.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-[13px] font-bold text-gray-700 mb-2">Confirm New Password</label>
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
+          required
+        />
+        {confirmPassword.length > 0 && !passwordsMatch && (
+          <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+            <FiX size={12} /> Passwords do not match
+          </p>
+        )}
+        {passwordsMatch && (
+          <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
+            <FiCheck size={12} /> Passwords match
+          </p>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className="max-w-2xl">
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">Account & Security</h2>
       
-      <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-4">Change Password</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[13px] font-bold text-gray-700 mb-2">Current Password</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
-              required
-            />
+      {hasPassword ? (
+        <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Change Password</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[13px] font-bold text-gray-700 mb-2">Current Password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
+                required
+              />
+            </div>
+            {renderPasswordInputGroup()}
           </div>
-          <div>
-            <label className="block text-[13px] font-bold text-gray-700 mb-2">New Password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
-              required
-            />
-
-            {/* Strength bar */}
-            {newPassword.length > 0 && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-1.5">
-                   <span className="text-xs font-medium text-gray-500">Password strength</span>
-                  <span className={`text-xs font-semibold ${strengthTextColor}`}>{strengthLabel}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full transition-all duration-300 ${strengthColor}`}
-                    style={{ width: `${(passedCount / passwordChecks.length) * 100}%` }}
-                  />
-                </div>
-
-                {/* Requirements checklist */}
-                <ul className="mt-3 space-y-1">
-                  {passwordChecks.map((check) => (
-                    <li key={check.label} className="flex items-center gap-2 text-xs">
-                      {check.met
-                        ? <FiCheck className="text-green-500 shrink-0" size={14} />
-                        : <FiX className="text-red-400 shrink-0" size={14} />
-                      }
-                      <span className={check.met ? "text-green-700" : "text-gray-500"}>{check.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <div className="pt-4 flex justify-end">
+            <button
+              type="submit"
+              disabled={isSaving || !canSubmit}
+              className="px-3 py-1.5 bg-purple-900 text-white text-sm rounded-md hover:bg-purple-800 transition-colors disabled:opacity-50"
+            >
+              Update
+            </button>
           </div>
-          <div >
-            <label className="block text-[13px] font-bold text-gray-700 mb-2">Confirm New Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
-              required
-            />
-            {confirmPassword.length > 0 && !passwordsMatch && (
-              <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
-                <FiX size={12} /> Passwords do not match
-              </p>
-            )}
-            {passwordsMatch && (
-              <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
-                <FiCheck size={12} /> Passwords match
-              </p>
-            )}
-          </div>
+        </form>
+      ) : (
+        <div className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
+           <h3 className="text-lg font-medium text-gray-800 mb-2">Setup Password</h3>
+           <p className="text-sm text-gray-600 mb-4">You are currently logged in with a Google account. You can set up a password to log in directly with your email.</p>
+           <button 
+             type="button"
+             onClick={handleRequestOtp}
+             disabled={isRequestingOtp}
+             className="px-4 py-2 bg-purple-900 text-white text-sm rounded-md hover:bg-purple-800 transition-colors disabled:opacity-50"
+           >
+             {isRequestingOtp ? "Sending OTP..." : "Setup Password"}
+           </button>
         </div>
-
-        <div className="pt-4 flex justify-end">
-          <button
-            type="submit"
-            disabled={isSaving || !canSubmit}
-            className="px-3 py-1.5 bg-purple-900 text-white text-sm rounded-md hover:bg-purple-800 transition-colors"
-          >
-            Update
-          </button>
-        </div>
-      </form>
+      )}
 
       {/* Danger Zone */}
       <div className="bg-red-50 p-6 rounded-xl ">
@@ -161,29 +235,95 @@ export default function SecuritySettings() {
         <button
           type="button"
           onClick={() => setShowDeleteModal(true)}
-          className="px-3 py-1.5 border border-red-200 rounded-sm  text-sm font-medium text-white bg-red-700 hover:bg-red-800 transition disabled:opacity-50"
+          className="px-3 py-1.5 border border-red-200 rounded-sm text-sm font-medium text-white bg-red-700 hover:bg-red-800 transition disabled:opacity-50"
         >
           Delete Account
         </button>
       </div>
+
+      {/* Setup Password Modal */}
+      {showSetupModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-md w-full max-w-md p-6">
+            <h3 className="text-md font-bold text-gray-900 mb-2">Setup Password</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              We've sent a 6-digit OTP to your email. Please enter it below along with your new password.
+            </p>
+            <form onSubmit={handleSetupPassword} className="space-y-4">
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-2">Verification Code (OTP)</label>
+                <input
+                  type="text"
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600"
+                  required
+                />
+              </div>
+
+              {renderPasswordInputGroup()}
+              
+              <div className="flex gap-3 w-full pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowSetupModal(false)}
+                  disabled={isSettingUp}
+                  className="flex-1 px-3 py-1.5 border border-gray-500 rounded-md text-gray-700 hover:bg-gray-100 transition text-sm disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSettingUp || !canSubmit || !otp}
+                  className="flex-1 px-3 py-1.5 bg-purple-900 hover:bg-purple-800 text-white rounded-md transition text-sm disabled:opacity-50"
+                >
+                  {isSettingUp ? "Saving..." : "Set Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-md w-full max-w-md p-6">
             <h3 className="text-md font-bold text-gray-900 mb-2">Delete Account</h3>
-            <p className="text-xs text-gray-500 mb-6">
-              This action cannot be undone. To verify, type your password below.
-            </p>
+            
+            {hasPassword ? (
+               <p className="text-xs text-gray-500 mb-6">
+                 This action cannot be undone. To verify, type your password below.
+               </p>
+            ) : (
+               <p className="text-xs text-gray-500 mb-6">
+                 This action cannot be undone. To verify, type <span className="font-bold text-red-600">DELETE</span> below.
+               </p>
+            )}
+
             <form onSubmit={handleDeleteAccount}>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-500"
-                required
-              />
+              {hasPassword ? (
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-500"
+                  required
+                />
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Type DELETE"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  pattern="DELETE"
+                  className="w-full text-sm px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-500"
+                  required
+                />
+              )}
+              
               <div className="flex gap-3 w-full">
                 <button
                   type="button"
@@ -195,7 +335,7 @@ export default function SecuritySettings() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isDeleting || !deletePassword}
+                  disabled={isDeleting || !deletePassword || (!hasPassword && deletePassword !== "DELETE")}
                   className="flex-1 px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded-md transition text-sm disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Confirm Delete"}
@@ -205,7 +345,6 @@ export default function SecuritySettings() {
           </div>
         </div>
       )}
-      {/* Toast notifications container */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );

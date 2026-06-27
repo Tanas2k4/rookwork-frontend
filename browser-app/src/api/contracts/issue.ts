@@ -22,7 +22,7 @@ export interface UserSummary {
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
   role?: string;
-
+  hasPassword?: boolean;
 }
 
 export interface CreateIssueRequest {

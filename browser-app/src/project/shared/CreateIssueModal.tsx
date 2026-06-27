@@ -181,6 +181,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
       // Removed file upload
 
       addToast(`Created issue "${issueTitle.trim()}" successfully!`, "success");
+      onSuccess?.();
       resetForm();
       reloadIssues();
     } catch (err: unknown) {

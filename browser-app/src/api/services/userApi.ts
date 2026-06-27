@@ -13,6 +13,8 @@ export const userApi = {
 
   updateNotifications: (data: UpdateNotificationsRequest) => apiClient.put("/api/users/me/notifications", data),
   updatePassword: (data: UpdatePasswordRequest) => apiClient.put("/api/users/me/password", data),
+  requestPasswordSetupOtp: () => apiClient.post<void>("/api/users/me/password/setup-otp", undefined),
+  setupPasswordWithOtp: (data: { otp: string; newPassword: string }) => apiClient.post("/api/users/me/password/setup", data),
   deleteAccount: (password: string) => apiClient.delete("/api/users/me", { password }),
   uploadAvatar: (file: File) => {
     const formData = new FormData();

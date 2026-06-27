@@ -5,18 +5,21 @@ import { useNavigate } from "react-router-dom";
 import { LuUser } from "react-icons/lu";
 import { IoMailOutline } from "react-icons/io5";
 import { TbLock } from "react-icons/tb";
+import { MdError } from "react-icons/md";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 
 function Register() {
   const [profileName, setProfileName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toasts, addToast, removeToast } = useToast();
   const navigate = useNavigate();
 
   const checkEmail = async (val: string) => {
@@ -39,19 +42,18 @@ function Register() {
   };
 
   const handleRegister = async () => {
-    setError("");
-    setSuccess("");
-
+    setFormError("");
+    
     if (!profileName || !email || !password || !confirm) {
-      setError("Please fill all fields");
+      setFormError("Please fill all fields");
       return;
     }
     if (emailError) {
-      setError("Vui lòng sửa các lỗi trước khi tiếp tục");
+      setFormError("Please fix errors before continuing");
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match");
+      setFormError("Passwords do not match");
       return;
     }
 
@@ -59,11 +61,12 @@ function Register() {
     try {
       const data = await authApi.register({ profileName, email, password });
       tokenStorage.save(data.accessToken, data.refreshToken);
-      setSuccess("Register success!");
-      navigate("/dashboard");
+      addToast("Register success! Redirecting...", "success");
+      setTimeout(() => navigate("/dashboard"), 800);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Register failed");
-    } finally {
+      const msg = err instanceof Error ? err.message : "Register failed";
+      setFormError(msg);
+      addToast(msg, "error");
       setLoading(false);
     }
   };
@@ -77,6 +80,13 @@ function Register() {
         <h1 className="mb-4 text-2xl text-gray-800 font-semibold font-mono text-center tracking-widest">
           REGISTER
         </h1>
+
+        {formError && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100 animate-in fade-in slide-in-from-top-2">
+            <span className="flex-shrink-0"><MdError size={18} /></span>
+            <span>{formError}</span>
+          </div>
+        )}
 
         {/* PROFILE NAME */}
         <div className="py-2">
@@ -147,13 +157,6 @@ function Register() {
           </button>
         </div>
 
-        {/* ERROR / SUCCESS */}
-        <div className="h-5 mt-2 flex items-center justify-center">
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {!error && success && (
-            <p className="text-sm text-green-600">{success}</p>
-          )}
-        </div>
 
         {/* REGISTER BUTTON */}
         <div className="pt-6">
@@ -170,6 +173,7 @@ function Register() {
           </button>
         </div>
       </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

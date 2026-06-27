@@ -3,9 +3,12 @@ import LoginBackground from "../assets/login-background.jpg";
 import { IoIosLogIn } from "react-icons/io";
 import { IoMailOutline } from "react-icons/io5";
 import { TbLock } from "react-icons/tb";
+import { MdError } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 
 interface CredentialResponse {
   credential: string;
@@ -50,8 +53,9 @@ declare global {
 function Login({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { toasts, addToast, removeToast } = useToast();
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -63,7 +67,9 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       window.electron?.loginSuccess();
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
+      addToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -78,11 +84,13 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       window.electron?.loginSuccess();
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google login failed");
+      const msg = err instanceof Error ? err.message : "Google login failed";
+      setError(msg);
+      addToast(msg, "error");
     } finally {
       setLoading(false);
     }
-  }, [onSuccess]);
+  }, [onSuccess, addToast]);
 
   useEffect(() => {
     const initializeGoogle = () => {
@@ -121,6 +129,13 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
           LOGIN
         </h1>
 
+        {error && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100 animate-in fade-in slide-in-from-top-2">
+            <span className="flex-shrink-0"><MdError size={18} /></span>
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* EMAIL */}
         <div className="py-2">
           <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
@@ -158,10 +173,6 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
           </button>
         </div>
 
-        {/* ERROR */}
-        <div className="h-5 mt-2 flex items-center justify-center">
-          {error && <p className="text-sm text-red-500">{error}</p>}
-        </div>
 
         {/* LOGIN BUTTON */}
         <div className="pt-6">
@@ -190,6 +201,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
           <div id="google-signin-btn" className="w-full flex justify-center"></div>
         </div>
       </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
