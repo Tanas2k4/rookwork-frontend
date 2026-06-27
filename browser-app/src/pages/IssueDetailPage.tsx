@@ -8,11 +8,13 @@ import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
-import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
+import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid } from "../utils/issueMapper";
+import { subtaskApi } from "../api/services/subtaskApi";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue as isOverdueUtil } from "../utils/date";
 import {
   type Priority,
+  type Subtask,
   statusMap,
   statuses,
   priorityColorMap,
@@ -117,6 +119,91 @@ export default function IssueDetailPage() {
         </button>
       </div>
     );
+  }
+
+  async function handleToggleSubtask(subtaskId: number) {
+    if (!issue) return;
+    const subtaskUuid = idToUuid(subtaskId);
+    if (!subtaskUuid) return;
+    const sub = issue.subtasks?.find((s) => s.id === subtaskUuid);
+    if (!sub) return;
+
+    const nextDone = !sub.isDone;
+    const originalSubtasks = issue.subtasks ?? [];
+
+    // Optimistic update
+    setIssue((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        subtasks: (prev.subtasks ?? []).map((s) =>
+          s.id === subtaskUuid ? { ...s, isDone: nextDone } : s
+        ),
+      };
+    });
+
+    try {
+      await subtaskApi.update(issue.projectId, issue.id, subtaskUuid, { isDone: nextDone });
+    } catch (err) {
+      // rollback
+      setIssue((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: originalSubtasks,
+        };
+      });
+      console.error(err);
+    }
+  }
+
+  async function handleAddSubtask(title: string) {
+    if (!issue || !title.trim()) return;
+    try {
+      const created = await subtaskApi.create(issue.projectId, issue.id, {
+        subtaskName: title.trim(),
+      });
+      uuidToId(created.id); // register
+      setIssue((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: [...(prev.subtasks ?? []), created],
+        };
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleDeleteSubtask(subtaskId: number) {
+    if (!issue) return;
+    const subtaskUuid = idToUuid(subtaskId);
+    if (!subtaskUuid) return;
+
+    const originalSubtasks = issue.subtasks ?? [];
+    // Optimistic update
+    setIssue((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        subtasks: (prev.subtasks ?? []).filter((s) => s.id !== subtaskUuid),
+      };
+    });
+
+    try {
+      await subtaskApi.delete(issue.projectId, issue.id, subtaskUuid);
+    } catch (err) {
+      // rollback
+      setIssue((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: originalSubtasks,
+        };
+      });
+      console.error(err);
+    }
   }
 
   if (!issue) return null;
@@ -238,7 +325,19 @@ export default function IssueDetailPage() {
           </div>
 
           {/* Subtasks */}
-          <SubtasksSection subtasks={[]} onToggle={() => { }} onAdd={() => { }} onDelete={() => { }} />
+          <SubtasksSection
+            subtasks={(issue.subtasks ?? []).map((sub) => {
+              uuidToId(sub.id);
+              return {
+                id: uuidToId(sub.id),
+                title: sub.subtaskName,
+                done: sub.isDone,
+              };
+            })}
+            onToggle={handleToggleSubtask}
+            onAdd={handleAddSubtask}
+            onDelete={handleDeleteSubtask}
+          />
 
           {/* Activity — pass projectId trực tiếp từ issue vì không có ProjectProvider ở route này */}
           <ActivitySection
