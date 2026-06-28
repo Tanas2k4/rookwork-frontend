@@ -92,23 +92,6 @@ export default function CreateEventModal({
     }
   }, [isOpen, currentUser]);
 
-  // Filter out guests who are not members of the selected project when project selection changes
-  useEffect(() => {
-    if (form.projectId) {
-      const selectedProj = userProjects.find((p) => p.id === form.projectId);
-      if (selectedProj && selectedProj.members) {
-        setForm((f) => {
-          const filtered = f.guests.filter((g) =>
-            selectedProj.members.some(
-              (m) =>
-                m.email && m.email.toLowerCase() === g.email?.toLowerCase(),
-            ),
-          );
-          return { ...f, guests: filtered };
-        });
-      }
-    }
-  }, [form.projectId, userProjects]);
 
   // Close project dropdown on outside click
   useEffect(() => {
@@ -382,7 +365,23 @@ export default function CreateEventModal({
                       key={p.id}
                       type="button"
                       onClick={() => {
-                        setForm((f) => ({ ...f, projectId: p.id }));
+                        setForm((f) => {
+                          const filteredGuests = p.members
+                            ? f.guests.filter((g) =>
+                                p.members!.some(
+                                  (m) =>
+                                    m.email &&
+                                    m.email.toLowerCase() ===
+                                      g.email?.toLowerCase(),
+                                ),
+                              )
+                            : f.guests;
+                          return {
+                            ...f,
+                            projectId: p.id,
+                            guests: filteredGuests,
+                          };
+                        });
                         setShowProjectDropdown(false);
                       }}
                       className={`w-full text-left px-4 py-2.5 text-sm font-heading transition-colors ${
