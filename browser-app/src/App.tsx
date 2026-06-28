@@ -16,6 +16,7 @@ import OverView from "./project/OverView";
 import BoardView from "./project/BoardView";
 import TimelineView from "./project/TimelineView";
 import ListView from "./project/ListView";
+import ProjectFilesView from "./project/storage/ProjectFilesView";
 import Loading from "./components/common/Loading";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
@@ -148,6 +149,7 @@ function App() {
                       <Route path="board" element={<BoardView />} />
                       <Route path="timeline" element={<TimelineView />} />
                       <Route path="list" element={<ListView />} />
+                      <Route path="files" element={<ProjectFilesView />} />
                       <Route path="events" element={<EventsView />} />
                     </Route>
 
