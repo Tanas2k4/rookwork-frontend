@@ -4,6 +4,7 @@ import { BsCollection } from "react-icons/bs"; //Board icon
 import { TfiTimer } from "react-icons/tfi"; //Timeline icon
 import { TfiViewListAlt } from "react-icons/tfi"; //List icon
 import { RiAttachment2 } from "react-icons/ri"; //Files icon
+import { BsCalendar2Event } from "react-icons/bs"; //Events icon
 
 function ProjectTabs() {
   const { projectKey } = useParams();
@@ -14,6 +15,7 @@ function ProjectTabs() {
     { key: "timeline", label: "Timeline", icon: TfiTimer },
     { key: "list", label: "List", icon: TfiViewListAlt },
     { key: "files", label: "Storage", icon: RiAttachment2 },
+    { key: "events", label: "Events", icon: BsCalendar2Event },
   ];
 
   return (

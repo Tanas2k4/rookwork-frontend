@@ -41,4 +41,10 @@ export const issueApi = {
     apiClient.delete<void>(
       `/api/projects/${projectId}/issues/${issueId}/attachments/${fileId}`
     ),
+
+  moveAttachment: (projectId: string, currentIssueId: string, fileId: string, targetIssueId: string) =>
+    apiClient.put<AttachmentResponse>(
+      `/api/projects/${projectId}/issues/${currentIssueId}/attachments/${fileId}/move/${targetIssueId}`,
+      null
+    ),
 };

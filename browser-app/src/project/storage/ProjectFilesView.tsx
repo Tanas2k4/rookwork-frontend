@@ -1,210 +1,34 @@
 import { useState, useEffect, useContext } from "react";
-import { ProjectContext } from "../context/ProjectContext";
-import { issueApi } from "../api/services/issueApi";
-import { issueToTask } from "../utils/issueMapper";
-import type { Task } from "../types/project";
+import { ProjectContext } from "../../context/ProjectContext";
+import { issueApi } from "../../api/services/issueApi";
+import { issueToTask } from "../../utils/issueMapper";
+import type { Task } from "../../types/project";
 import {
   RiAttachment2,
-  RiFilePdfLine,
-  RiFileExcelLine,
-  RiFileTextLine,
-  RiImageLine,
-  RiFileZipLine,
-  RiFileWordLine,
   RiDownload2Line,
   RiFolder2Fill,
   RiStarLine,
   RiStarFill,
 } from "react-icons/ri";
 import { IoSearchOutline } from "react-icons/io5";
-import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
-import { useToast } from "../hooks/useToast";
-import { ToastContainer } from "../components/common/ToastContainer";
-
-interface FlatFile {
-  id: string;
-  originalName: string;
-  storedName: string;
-  mimeType: string;
-  sizeBytes: number;
-  uploadedBy: string;
-  createdAt: string;
-  presignedUrl: string;
-  taskUuid: string;
-  taskTitle: string;
-  taskType: string;
-}
-
-// Reusable Google Drive-style File Card
-interface DriveFileCardProps {
-  file: FlatFile;
-  isStarred: boolean;
-  onToggleStar: (id: string) => void;
-  getFileIcon: (name: string) => React.ReactNode;
-  getFileLargeIcon: (name: string) => React.ReactNode;
-  isImageFile: (name: string) => boolean;
-  formatBytes: (bytes: number) => string;
-  getUserAvatar: (name: string) => React.ReactNode;
-  openIssueModal?: (uuid: string) => void;
-  showFolderBadge?: boolean;
-  onClickCard?: (file: FlatFile) => void;
-  isSelected?: boolean;
-}
-
-function DriveFileCard({
-  file,
-  isStarred,
-  onToggleStar,
-  getFileIcon,
-  getFileLargeIcon,
-  isImageFile,
-  formatBytes,
-  getUserAvatar,
-  openIssueModal,
-  showFolderBadge = false,
-  onClickCard,
-  isSelected = false,
-}: DriveFileCardProps) {
-  const isImg = isImageFile(file.originalName);
-  const ext = file.originalName.split(".").pop()?.toLowerCase() || "";
-
-  // Render simulated page lines/grids
-  const renderSimulatedLines = () => {
-    if (["xls", "xlsx", "csv"].includes(ext)) {
-      return (
-        <div className="w-full space-y-1.5 mt-2.5">
-          <div className="h-1.5 w-full flex gap-1">
-            <div className="h-full bg-gray-200/70 rounded-xs w-1/4"></div>
-            <div className="h-full bg-gray-150 rounded-xs w-2/4"></div>
-            <div className="h-full bg-gray-150 rounded-xs w-1/4"></div>
-          </div>
-          <div className="h-1.5 w-full flex gap-1">
-            <div className="h-full bg-gray-150 rounded-xs w-1/3"></div>
-            <div className="h-full bg-gray-200/70 rounded-xs w-1/3"></div>
-            <div className="h-full bg-gray-150 rounded-xs w-1/3"></div>
-          </div>
-          <div className="h-1.5 w-full flex gap-1">
-            <div className="h-full bg-gray-150 rounded-xs w-1/4"></div>
-            <div className="h-full bg-gray-150 rounded-xs w-1/4"></div>
-            <div className="h-full bg-gray-200/40 rounded-xs w-2/4"></div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="w-full space-y-1.5 mt-2.5">
-        <div className="h-1.5 bg-gray-150 rounded-xs w-[90%]"></div>
-        <div className="h-1.5 bg-gray-100 rounded-xs w-[70%]"></div>
-        <div className="h-1.5 bg-gray-100 rounded-xs w-[45%]"></div>
-      </div>
-    );
-  };
-
-  return (
-    <div
-      onClick={() => onClickCard?.(file)}
-      className={`group bg-white border ${isSelected ? "border-purple-600 ring-2 ring-purple-600/30" : "border-gray-200 hover:border-purple-300"} rounded-xl overflow-hidden shadow-3xs hover:shadow-md transition-all flex flex-col h-52 relative cursor-pointer`}
-    >
-      {/* Card Header (File Name & Star) */}
-      <div className="h-11 bg-gray-50 border-b border-gray-150 px-3 flex items-center gap-2 select-none">
-        {getFileIcon(file.originalName)}
-        <a
-          href={file.presignedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="text-[11px] font-bold text-gray-700 truncate flex-1 hover:text-purple-700 hover:underline"
-          title={file.originalName}
-        >
-          {file.originalName}
-        </a>
-
-        {/* Toggle Star */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleStar(file.id);
-          }}
-          className="text-gray-300 hover:text-amber-400 transition"
-        >
-          {isStarred ? (
-            <RiStarFill size={14} className="text-amber-400" />
-          ) : (
-            <RiStarLine size={14} />
-          )}
-        </button>
-      </div>
-
-      {/* Card Preview Body */}
-      <div className="flex-1 bg-gray-100/50 flex items-center justify-center p-3 relative overflow-hidden">
-        {isImg && file.presignedUrl ? (
-          <img
-            src={file.presignedUrl}
-            alt={file.originalName}
-            className="w-full h-full object-cover rounded border border-gray-200/50 shadow-3xs"
-          />
-        ) : (
-          /* Simulated doc page preview */
-          <div className="w-[85%] h-full bg-white rounded border border-gray-200 shadow-3xs p-2.5 flex flex-col items-center justify-center relative overflow-hidden">
-            {getFileLargeIcon(file.originalName)}
-            <span className="text-[8px] text-gray-400 font-bold bg-gray-50 border border-gray-200/80 px-1.5 py-0.2 rounded-xs uppercase tracking-wide mt-1.5">
-              {ext}
-            </span>
-            {renderSimulatedLines()}
-          </div>
-        )}
-
-        {/* Download Hover Overlay */}
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <a
-            href={file.presignedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="w-8 h-8 rounded-full bg-white text-gray-700 hover:text-purple-700 hover:scale-105 shadow-md flex items-center justify-center transition-all"
-            title="Tải xuống tệp tin"
-          >
-            <RiDownload2Line size={15} />
-          </a>
-        </div>
-      </div>
-
-      {/* Card Footer (Uploader avatar & name) */}
-      <div className="h-10 px-3 bg-white border-t border-gray-100 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {getUserAvatar(file.uploadedBy)}
-          <span className="text-[10px] text-gray-500 font-semibold truncate" title={file.uploadedBy}>
-            {file.uploadedBy}
-          </span>
-        </div>
-        {showFolderBadge && openIssueModal && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              openIssueModal(file.taskUuid);
-            }}
-            className="text-[9px] text-purple-750 border border-purple-200 bg-purple-50/40 px-1.5 py-0.5 rounded hover:bg-purple-50 transition truncate max-w-[90px]"
-            title={`Xem thư mục: ${file.taskTitle}`}
-          >
-            ../{file.taskTitle.substring(0, 8)}/
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../../components/common/ToastContainer";
+import { DriveFileCard } from "./DriveFileCard";
+import type { FlatFile } from "./DriveFileCard";
+import { FileDetailSidebar } from "./FileDetailSidebar";
+import { formatBytes, getFileIcon, getFileLargeIcon, isImageFile } from "./storageUtils";
 
 export default function ProjectFilesView() {
-  const { projectId, project, issueUpdateTick, openIssueModal } = useContext(ProjectContext);
+  const { projectId, project, issueUpdateTick, openIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<(Task & { _uuid: string })[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "largest" | "smallest">("newest");
-  const { toasts, addToast, removeToast } = useToast();
-
-  const [starredFiles, setStarredFiles] = useState<Record<string, boolean>>({});
-  const [starredFolders, setStarredFolders] = useState<Record<string, boolean>>({});
   const [selectedFolderUuid, setSelectedFolderUuid] = useState<string | null>(null);
   const [selectedFileDetail, setSelectedFileDetail] = useState<FlatFile | null>(null);
+  const [draggedOverFolderUuid, setDraggedOverFolderUuid] = useState<string | null>(null);
+  const [draggedOverContent, setDraggedOverContent] = useState<boolean>(false);
+  const [starredFiles, setStarredFiles] = useState<Record<string, boolean>>({});
+  const [starredFolders, setStarredFolders] = useState<Record<string, boolean>>({});
+  const { toasts, addToast, removeToast } = useToast();
 
   useEffect(() => {
     if (!projectId) return;
@@ -235,63 +59,6 @@ export default function ProjectFilesView() {
       }
     });
   });
-
-  // Helpers
-  function formatBytes(bytes: number, decimals = 1) {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
-  }
-
-  function getFileIcon(fileName: string) {
-    const ext = fileName.split(".").pop()?.toLowerCase();
-    const size = 16;
-    if (ext === "pdf") {
-      return <RiFilePdfLine size={size} className="text-red-500 shrink-0" />;
-    }
-    if (["xls", "xlsx", "csv"].includes(ext || "")) {
-      return <RiFileExcelLine size={size} className="text-green-600 shrink-0" />;
-    }
-    if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext || "")) {
-      return <RiImageLine size={size} className="text-blue-500 shrink-0" />;
-    }
-    if (["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) {
-      return <RiFileZipLine size={size} className="text-amber-600 shrink-0" />;
-    }
-    if (["doc", "docx"].includes(ext || "")) {
-      return <RiFileWordLine size={size} className="text-blue-600 shrink-0" />;
-    }
-    return <RiFileTextLine size={size} className="text-gray-500 shrink-0" />;
-  }
-
-  function getFileLargeIcon(fileName: string) {
-    const ext = fileName.split(".").pop()?.toLowerCase();
-    const size = 36;
-    if (ext === "pdf") {
-      return <RiFilePdfLine size={size} className="text-red-400" />;
-    }
-    if (["xls", "xlsx", "csv"].includes(ext || "")) {
-      return <RiFileExcelLine size={size} className="text-green-500" />;
-    }
-    if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext || "")) {
-      return <RiImageLine size={size} className="text-blue-400" />;
-    }
-    if (["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) {
-      return <RiFileZipLine size={size} className="text-amber-500" />;
-    }
-    if (["doc", "docx"].includes(ext || "")) {
-      return <RiFileWordLine size={size} className="text-blue-500" />;
-    }
-    return <RiFileTextLine size={size} className="text-gray-400" />;
-  }
-
-  function isImageFile(fileName: string) {
-    const ext = fileName.split(".").pop()?.toLowerCase();
-    return ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext || "");
-  }
 
   function getUserAvatar(username: string) {
     if (!username) return null;
@@ -333,18 +100,52 @@ export default function ProjectFilesView() {
     );
   }
 
-  const typeIcons: Record<string, React.ReactNode> = {
-    task: <FaTasks size={12} className="text-blue-500 shrink-0" />,
-    story: <FaBook size={12} className="text-green-500 shrink-0" />,
-    epic: <FaRocket size={12} className="text-purple-500 shrink-0" />,
-  };
-
   const toggleStarFile = (id: string) => {
     setStarredFiles((p) => ({ ...p, [id]: !p[id] }));
   };
 
   const toggleStarFolder = (uuid: string) => {
     setStarredFolders((p) => ({ ...p, [uuid]: !p[uuid] }));
+  };
+
+  const handleDropOnFolder = async (e: React.DragEvent, targetIssueUuid: string) => {
+    e.preventDefault();
+    setDraggedOverFolderUuid(null);
+
+    if (!projectId) return;
+
+    // 1. Check if dragging files from the computer (local files)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      addToast(`Uploading ${filesArray.length} file(s) to folder...`, "info");
+      
+      try {
+        await issueApi.uploadAttachments(projectId, targetIssueUuid, filesArray);
+        addToast("Files uploaded successfully!", "success");
+        notifyIssueUpdated();
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to upload files", "error");
+      }
+      return;
+    }
+
+    // 2. Dragging a file within the app
+    const fileId = e.dataTransfer.getData("text/plain");
+    const sourceTaskUuid = e.dataTransfer.getData("application/source-task-uuid");
+
+    if (!fileId || !sourceTaskUuid) return;
+
+    // If source and target are the same, do nothing
+    if (sourceTaskUuid === targetIssueUuid) return;
+
+    addToast("Moving file to target folder...", "info");
+    try {
+      await issueApi.moveAttachment(projectId, sourceTaskUuid, fileId, targetIssueUuid);
+      addToast("File moved successfully!", "success");
+      notifyIssueUpdated();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to move file", "error");
+    }
   };
 
   // Group and sort logic
@@ -382,7 +183,7 @@ export default function ProjectFilesView() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-6 px-8 flex flex-col select-none">
       {/* Search top bar */}
-      <div className="flex items-center gap-4 mb-6 bg-white p-3.5  rounded-xl shadow-2xs">
+      <div className="flex items-center gap-4 mb-6 bg-white p-3.5 rounded-xl shadow-2xs">
         <div className="relative w-80">
           <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
           <input
@@ -394,7 +195,7 @@ export default function ProjectFilesView() {
               focus:outline-none focus:ring-1 focus:ring-purple-500 focus:bg-white transition"
           />
         </div>
-
+        
         {/* Storage progress bar */}
         <div className="ml-auto flex flex-col gap-1.5 w-64 select-none">
           <div className="flex justify-between text-[11px] text-gray-500 font-medium">
@@ -441,7 +242,19 @@ export default function ProjectFilesView() {
 
           {selectedFolderUuid && selectedFolder ? (
             /* Folder Content Grid */
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-3xs min-h-[360px] space-y-4">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDraggedOverContent(true);
+              }}
+              onDragLeave={() => setDraggedOverContent(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDropOnFolder(e, selectedFolderUuid);
+                setDraggedOverContent(false);
+              }}
+              className={`bg-white border ${draggedOverContent ? "border-purple-500 bg-purple-50/10 ring-2 ring-purple-500/20 shadow-md" : "border-gray-200"} rounded-2xl p-6 shadow-3xs min-h-[360px] space-y-4 transition duration-200`}
+            >
               <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">File List</span>
               </div>
@@ -463,10 +276,6 @@ export default function ProjectFilesView() {
                       }}
                       isStarred={!!starredFiles[file.id]}
                       onToggleStar={toggleStarFile}
-                      getFileIcon={getFileIcon}
-                      getFileLargeIcon={getFileLargeIcon}
-                      isImageFile={isImageFile}
-                      formatBytes={formatBytes}
                       getUserAvatar={getUserAvatar}
                       onClickCard={setSelectedFileDetail}
                       isSelected={selectedFileDetail?.id === file.id}
@@ -485,7 +294,13 @@ export default function ProjectFilesView() {
                     <div
                       key={group._uuid}
                       onClick={() => setSelectedFolderUuid(group._uuid)}
-                      className="bg-white border border-gray-200 hover:border-amber-400 rounded-xl p-4 flex flex-col relative hover:shadow-xs transition cursor-pointer shadow-3xs group"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDraggedOverFolderUuid(group._uuid);
+                      }}
+                      onDragLeave={() => setDraggedOverFolderUuid(null)}
+                      onDrop={(e) => handleDropOnFolder(e, group._uuid)}
+                      className={`bg-white border ${draggedOverFolderUuid === group._uuid ? "border-purple-500 bg-purple-50/50 scale-[1.02] ring-2 ring-purple-500/20 shadow-md" : "border-gray-200 hover:border-amber-400"} rounded-xl p-4 flex flex-col relative hover:shadow-xs transition duration-200 cursor-pointer shadow-3xs group`}
                     >
                       <button
                         onClick={(e) => {
@@ -542,6 +357,12 @@ export default function ProjectFilesView() {
                     <div
                       key={file.id}
                       onClick={() => setSelectedFileDetail(file)}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", file.id);
+                        e.dataTransfer.setData("application/source-task-uuid", file.taskUuid);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
                       className={`group bg-white border ${selectedFileDetail?.id === file.id ? "border-purple-600 ring-2 ring-purple-600/30" : "border-gray-200 hover:border-purple-300"} rounded-xl p-3.5 flex items-center justify-between shadow-3xs transition relative overflow-visible cursor-pointer`}
                     >
                       <div className="flex items-center gap-3.5 min-w-0 flex-1">
@@ -565,6 +386,7 @@ export default function ProjectFilesView() {
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0 px-4">
+                        {getUserAvatar(file.uploadedBy)}
                         <span className="text-[11px] text-gray-600 font-semibold hidden sm:inline" title={file.uploadedBy}>
                           {file.uploadedBy}
                         </span>
@@ -659,81 +481,12 @@ export default function ProjectFilesView() {
             </div>
           </div>
 
-          {/* File Details */}
-          <div className="space-y-4 pt-4 border-t border-gray-200">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">File Details</h2>
-            {selectedFileDetail ? (
-              <div className="bg-white border border-purple-200 rounded-xl p-4 shadow-3xs space-y-4">
-                <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-                  <div className="p-2.5 bg-purple-50 rounded-xl shrink-0 text-purple-600">
-                    {getFileIcon(selectedFileDetail.originalName)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-xs font-bold text-gray-800 break-all" title={selectedFileDetail.originalName}>
-                      {selectedFileDetail.originalName}
-                    </h3>
-                    <span className="text-[10px] text-gray-400 block mt-0.5 uppercase font-semibold">
-                      {selectedFileDetail.originalName.split(".").pop() || "unknown"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between items-center gap-2">
-                    <span className="text-gray-400 shrink-0">Uploaded by:</span>
-                    <span className="font-semibold text-gray-750 flex items-center gap-1.5 min-w-0">
-                      <span className="truncate">{selectedFileDetail.uploadedBy}</span>
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Uploaded on:</span>
-                    <span className="font-semibold text-gray-700">
-                      {new Date(selectedFileDetail.createdAt).toLocaleString("en-US")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Size:</span>
-                    <span className="font-semibold text-gray-700">
-                      {formatBytes(selectedFileDetail.sizeBytes)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1 pt-1.5 border-t border-gray-150">
-                    <span className="text-gray-400">Task folder:</span>
-                    <span className="font-bold text-purple-900 italic block truncate" title={selectedFileDetail.taskTitle}>
-                      {selectedFileDetail.taskTitle}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <a
-                    href={selectedFileDetail.presignedUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-purple-600 hover:bg-purple-750 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 transition shadow-sm"
-                  >
-                    <RiDownload2Line size={14} />
-                    <span>Download</span>
-                  </a>
-                  {openIssueModal && (
-                    <button
-                      onClick={() => openIssueModal(selectedFileDetail.taskUuid)}
-                      className="flex-1 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 transition"
-                    >
-                      <span>View Task</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white border border-gray-200/65 rounded-xl p-5 text-center shadow-3xs flex flex-col items-center justify-center py-7">
-                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 mb-2 border border-dashed border-gray-200">
-                  <RiAttachment2 size={18} />
-                </div>
-                <p className="text-[11px] text-gray-400 italic">Select an attachment to view details.</p>
-              </div>
-            )}
-          </div>
+          {/* File Details Sidebar Component */}
+          <FileDetailSidebar
+            selectedFileDetail={selectedFileDetail}
+            openIssueModal={openIssueModal}
+            getUserAvatar={getUserAvatar}
+          />
         </div>
         <ToastContainer toasts={toasts} onRemove={removeToast} />
       </div>
