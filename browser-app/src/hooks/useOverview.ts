@@ -122,15 +122,38 @@ function computeProgress(issue: IssueResponse): number {
  * Xử lý chuỗi nhãn hành động hiển thị cho nhật ký hoạt động.
  */
 function actionLabel(a: ActivityResponse): string {
-  const type = a.actionType?.toLowerCase() ?? "";
-  const entity = a.entityName ?? "";
-  if (type.includes("create")) return `created issue "${entity}"`;
-  if (type.includes("update")) return `updated "${entity}"`;
-  if (type.includes("delete")) return `deleted "${entity}"`;
-  if (type.includes("comment")) return `commented on "${entity}"`;
-  if (type.includes("status")) return `changed status of "${entity}"`;
-  if (type.includes("assign")) return `assigned "${entity}"`;
-  return `${a.actionType ?? "acted on"} "${entity}"`;
+  const meta = a.metadata
+    ? (() => { try { return JSON.parse(a.metadata); } catch { return {}; } })()
+    : {};
+
+  if (a.entityType === "COMMENT") {
+    switch (a.actionType) {
+      case "COMMENTED": return `commented on issue "${a.entityName}"`;
+      case "DELETED":   return `deleted a comment on issue "${a.entityName}"`;
+      default:          return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
+    }
+  }
+
+  if (a.entityType === "SUBTASK") {
+    switch (a.actionType) {
+      case "CREATED":   return `created subtask "${a.entityName}"`;
+      case "COMPLETED": return `completed subtask "${a.entityName}"`;
+      case "UPDATED":   return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
+      case "DELETED":   return `deleted subtask "${a.entityName}"`;
+      default:          return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
+    }
+  }
+
+  const typeLabel = a.entityType === "ISSUE" ? "issue" : a.entityType.toLowerCase();
+  switch (a.actionType) {
+    case "CREATED":   return `created ${typeLabel} "${a.entityName}"`;
+    case "COMPLETED": return `completed ${typeLabel} "${a.entityName}"`;
+    case "MOVED":     return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
+    case "ASSIGNED":  return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
+    case "UPDATED":   return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
+    case "DELETED":   return `deleted ${typeLabel} "${a.entityName}"`;
+    default:          return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
+  }
 }
 
 /**
@@ -194,18 +217,20 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
   // Workload — count per assignee
   const workloadMap = new Map<string, WorkloadItem>();
   issues.forEach((i) => {
-    if (!i.assignedTo) return;
-    const { id, profileName, picture } = i.assignedTo;
-    if (!workloadMap.has(id)) {
-      workloadMap.set(id, {
-        id,
-        name: profileName,
-        picture: avatarUrl(profileName, picture),
-        email: "",
-        count: 0,
-      });
-    }
-    workloadMap.get(id)!.count += 1;
+    if (!i.assignees) return;
+    i.assignees.forEach((assignee) => {
+      const { id, profileName, picture } = assignee;
+      if (!workloadMap.has(id)) {
+        workloadMap.set(id, {
+          id,
+          name: profileName,
+          picture: avatarUrl(profileName, picture),
+          email: "",
+          count: 0,
+        });
+      }
+      workloadMap.get(id)!.count += 1;
+    });
   });
   const workload = Array.from(workloadMap.values()).sort((a, b) => b.count - a.count);
   const maxWorkload = Math.max(...workload.map((w) => w.count), 1);
@@ -243,12 +268,6 @@ export interface UseOverviewReturn {
   reload: () => void;
 }
 
-const EMPTY: OverviewData = {
-  totalTasks: 0, doneTasks: 0,inProgressTasks: 0, overdueCount: 0, dueSoonCount: 0, overallProgress: 0,
-  timelineTasks: [], attentionTasks: [], milestones: [],
-  workload: [], maxWorkload: 1, activities: [],
-};
-
 /**
  * Hook useOverview tải thông tin tóm tắt dự án, bao gồm số liệu công việc hoàn thành,
  * quá hạn, sắp tới hạn, biểu đồ tải công việc thành viên và luồng hoạt động gần đây.
@@ -258,6 +277,16 @@ export function useOverview(): UseOverviewReturn {
   const [data, setData] = useState<OverviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+
+  const [prevProjectId, setPrevProjectId] = useState(projectId);
+  const [prevTick, setPrevTick] = useState(tick);
+
+  if (projectId !== prevProjectId || tick !== prevTick) {
+    setPrevProjectId(projectId);
+    setPrevTick(tick);
+    setData(null);
+    setError(null);
+  }
 
   useEffect(() => {
     if (!projectId) return;
@@ -272,7 +301,7 @@ export function useOverview(): UseOverviewReturn {
       })
       .catch((err) => {
         console.error("useOverview: failed to load", err);
-        if (!cancelled) setError("Failed to load overview");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load overview");
       });
 
     return () => { cancelled = true; };
@@ -280,5 +309,5 @@ export function useOverview(): UseOverviewReturn {
 
   const reload = () => setTick((n) => n + 1);
 
-  return { data: data ?? EMPTY, error, reload };
+  return { data, error, reload };
 }

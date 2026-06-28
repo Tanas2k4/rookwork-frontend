@@ -1,11 +1,12 @@
 import { TfiTrash } from "react-icons/tfi";
-import { COLOR_MAP, getColorName } from "../types/calendar";
+import { getEventColorStyles } from "../types/calendar";
 import type { CalendarEvent } from "../types/calendar";
+import { avatarUrl } from "../utils/avatar";
 
 type ItemsDetailProps = {
   selectedDate: Date | undefined;
   events: CalendarEvent[];
-  onDeleteEvent: (id: number) => void;
+  onDeleteEvent: (id: string) => void;
 };
 
 function EventCard({
@@ -13,17 +14,16 @@ function EventCard({
   onDelete,
 }: {
   ev: CalendarEvent;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }) {
-  const c = COLOR_MAP[getColorName(ev.color)] ?? COLOR_MAP.violet;
+  const colorStyles = getEventColorStyles(ev.color);
   return (
     <div
-      className={`${c.bg} ${c.border} rounded-xl p-3 flex flex-col gap-2 group cursor-pointer hover:shadow-sm transition-shadow`}
+      className={`rounded-xl p-3 flex flex-col gap-2 group cursor-pointer hover:shadow-sm transition-shadow ${colorStyles.className}`}
+      style={colorStyles.style}
     >
       <div className="flex items-start gap-2">
-        <p
-          className={`px-3 text-base font-heading font-medium tracking-wide ${c.text} leading-snug flex-1`}
-        >
+        <p className="px-3 text-base font-heading font-medium tracking-wide leading-snug flex-1">
           {ev.title}
         </p>
         <button
@@ -37,7 +37,7 @@ function EventCard({
           <TfiTrash size={16} />
         </button>
       </div>
-      <div className={`flex items-center gap-1 pl-3.5 ${c.time}`}>
+      <div className="flex items-center gap-1 pl-3.5 text-gray-600">
         <svg
           width="10"
           height="10"
@@ -54,7 +54,7 @@ function EventCard({
         </span>
       </div>
       {ev.location && (
-        <div className={`flex items-center gap-1 pl-3.5 ${c.time}`}>
+        <div className="flex items-center gap-1 pl-3.5 text-gray-600">
           <svg
             width="10"
             height="10"
@@ -75,19 +75,17 @@ function EventCard({
         <div className="pl-3.5 flex items-center gap-1 mt-0.5">
           <div className="flex -space-x-1.5">
             {ev.guests.slice(0, 4).map((g, i) => (
-              <div
+              <img
                 key={g.name}
                 title={g.name}
                 style={{ zIndex: 10 - i }}
-                className={`relative w-5 h-5 rounded-full ${c.dot} bg-opacity-20 border-2 border-white flex items-center justify-center`}
-              >
-                <span className={`text-[7px] font-heading font-bold ${c.text}`}>
-                  {g.avatar}
-                </span>
-              </div>
+                src={avatarUrl(g.name, g.picture)}
+                alt={g.name}
+                className="relative w-5 h-5 rounded-full overflow-hidden border border-white object-cover bg-gray-100 shrink-0"
+              />
             ))}
           </div>
-          <span className={`text-[9px] font-heading ${c.time} ml-1`}>
+          <span className="text-[9px] font-heading text-gray-600 ml-1">
             {ev.guests.length} guest{ev.guests.length > 1 ? "s" : ""}
           </span>
         </div>
@@ -153,7 +151,7 @@ export default function ItemsDetail({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
+        <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 min-h-0">
           {dayEvents.map((ev) => (
             <EventCard key={ev.id} ev={ev} onDelete={onDeleteEvent} />
           ))}

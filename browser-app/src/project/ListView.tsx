@@ -1,10 +1,14 @@
 import { IoSearchSharp } from "react-icons/io5";
 import { LiaSortSolid } from "react-icons/lia";
 import { FaCaretDown, FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { useContext } from "react";
 import { useListView } from "../hooks/useListView";
 import { ListFilterPanel } from "./list/ListFilterPanel";
 import { ListDropdowns } from "./list/ListDropdowns";
 import { ToastContainer } from "../components/common/ToastContainer";
+import { Button } from "../components/common/Button";
+import { ProjectContext } from "../context/ProjectContext";
 
 const typeOptions = [
   { label: "Task",  value: "task",  icon: <FaTasks  size={12} />, color: "bg-blue-100 text-blue-700" },
@@ -20,6 +24,7 @@ const statusOptions = [
 
 export default function ListView() {
   const lv = useListView();
+  const { openIssueModal } = useContext(ProjectContext);
 
   const getTypeOption   = (type: string)   => typeOptions.find((t) => t.value === type)   ?? typeOptions[0];
   const getStatusOption = (status: string) => statusOptions.find((s) => s.value === status) ?? statusOptions[0];
@@ -93,14 +98,20 @@ export default function ListView() {
                     </td>
                   </tr>
                 ) : (
-                  lv.filteredTasks.map((task) => {
+                  lv.pagedTasks.map((task) => {
                     const typeOpt   = getTypeOption(task.type);
                     const statusOpt = getStatusOption(task.status);
                     return (
                       <tr key={task._uuid} className="hover:bg-gray-50 transition-colors">
                         {/* Title */}
                         <td className="px-4 py-3 border-r border-gray-200">
-                          <span className="text-[13px] text-gray-700 font-medium">{task.title}</span>
+                          <button
+                            onClick={() => openIssueModal(task._uuid)}
+                            className="text-[13px] text-gray-700 font-medium hover:text-purple-700 hover:underline transition-colors text-left"
+                            title="Click để xem chi tiết"
+                          >
+                            {task.title}
+                          </button>
                         </td>
 
                         {/* Type */}
@@ -121,10 +132,23 @@ export default function ListView() {
                         <td className="px-4 py-3 border-r border-gray-200">
                           <div className="flex items-center justify-between cursor-pointer group"
                             onDoubleClick={(e) => lv.openDropdownWithPosition(e, "user", task._uuid)}>
-                            {task.assigned_to ? (
+                            {task.assigned_to.length > 0 ? (
                               <div className="flex items-center gap-2">
-                                <img src={task.assigned_to.avt} className="w-6 h-6 rounded-full" />
-                                <span className="text-[13px] text-gray-700">{task.assigned_to.display_name}</span>
+                                <div className="flex -space-x-2">
+                                  {task.assigned_to.slice(0, 2).map((u, i) => (
+                                    <img key={i} src={u.avt} title={u.display_name} className="w-6 h-6 rounded-full object-cover border-2 border-white shrink-0" />
+                                  ))}
+                                  {task.assigned_to.length > 2 && (
+                                    <span className="w-6 h-6 rounded-full bg-purple-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-purple-700">
+                                      +{task.assigned_to.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[13px] text-gray-700">
+                                  {task.assigned_to.length === 1
+                                    ? task.assigned_to[0].display_name
+                                    : `${task.assigned_to.length} people`}
+                                </span>
                               </div>
                             ) : (
                               <span className="text-sm text-gray-400 italic">Unassigned</span>
@@ -180,6 +204,72 @@ export default function ListView() {
             </table>
           </div>
         </div>
+
+        {/* Pagination */}
+        {lv.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 px-1">
+            <span className="text-sm text-gray-500">
+              Pages {lv.currentPage} / {lv.totalPages}
+              &nbsp;&bull;&nbsp;
+              {lv.filteredTasks.length} task{lv.filteredTasks.length !== 1 ? "s" : ""}
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              {/* Prev */}
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={lv.goToPrevPage}
+                disabled={lv.currentPage === 1}
+                className="px-2.5! py-2!"
+              >
+                <MdChevronLeft size={18} />
+              </Button>
+
+              {/* Page numbers */}
+              {Array.from({ length: lv.totalPages }, (_, i) => i + 1)
+                .filter((p) => {
+                  if (lv.totalPages <= 7) return true;
+                  if (p === 1 || p === lv.totalPages) return true;
+                  if (Math.abs(p - lv.currentPage) <= 1) return true;
+                  return false;
+                })
+                .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+                    acc.push("...");
+                  }
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm select-none">…</span>
+                  ) : (
+                    <Button
+                      key={item}
+                      variant={lv.currentPage === item ? "primary" : "secondary"}
+                      size="md"
+                      onClick={() => lv.goToPage(item as number)}
+                      className="min-w-9.5! px-2.5!"
+                    >
+                      {item}
+                    </Button>
+                  )
+                )}
+
+              {/* Next */}
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={lv.goToNextPage}
+                disabled={lv.currentPage === lv.totalPages}
+                className="px-2.5! py-2!"
+              >
+                <MdChevronRight size={18} />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ListDropdowns

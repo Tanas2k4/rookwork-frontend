@@ -4,6 +4,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import CalendarView from "./user/CalendarView";
+import EventsView from "./user/EventsView";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 import Titlebar from "./components/layout/Titlebar";
@@ -15,9 +16,11 @@ import OverView from "./project/OverView";
 import BoardView from "./project/BoardView";
 import TimelineView from "./project/TimelineView";
 import ListView from "./project/ListView";
+import ProjectFilesView from "./project/storage/ProjectFilesView";
 import Loading from "./components/common/Loading";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
+import SettingsPage from "./pages/SettingsPage";
 import { projectApi } from "./api/services/projectApi";
 import { userApi } from "./api/services/userApi";
 import { tokenStorage } from "./api/tokenStorage";
@@ -46,15 +49,25 @@ function App() {
 
   useEffect(() => {
     if (!loggedIn) return;
-    Promise.all([userApi.getMe(), projectApi.getAll()])
-      .then(([user, projectsRes]) => {
-        setProfileName(user.profileName);
-        setAvatarUrl(user.picture ?? undefined);
-        setProjects(
-          projectsRes.map((p: ProjectResponse, i: number) => toProjectUI(p, i)),
-        );
-      })
-      .catch(console.error);
+
+    const loadUserData = () => {
+      Promise.all([userApi.getMe(), projectApi.getAll()])
+        .then(([user, projectsRes]) => {
+          setProfileName(user.profileName);
+          setAvatarUrl(user.picture ?? undefined);
+          setProjects(
+            projectsRes.map((p: ProjectResponse, i: number) => toProjectUI(p, i)),
+          );
+        })
+        .catch(console.error);
+    };
+
+    loadUserData();
+
+    window.addEventListener("profileUpdated", loadUserData);
+    return () => {
+      window.removeEventListener("profileUpdated", loadUserData);
+    };
   }, [loggedIn]);
 
   const handleLoginSuccess = () => {
@@ -126,7 +139,7 @@ function App() {
 
                     <Route
                       path="/projects/:projectKey"
-                      element={<ProjectPage />}
+                      element={<ProjectPage onProjectsChanged={reloadProjects} />}
                     >
                       <Route
                         index
@@ -136,14 +149,18 @@ function App() {
                       <Route path="board" element={<BoardView />} />
                       <Route path="timeline" element={<TimelineView />} />
                       <Route path="list" element={<ListView />} />
+                      <Route path="files" element={<ProjectFilesView />} />
+                      <Route path="events" element={<EventsView />} />
                     </Route>
 
+                    <Route path="/events" element={<EventsView />} />
                     <Route path="/calendars" element={<CalendarView />} />
                     <Route path="/my-issues" element={<MyIssuesPage />} />
                     <Route
                       path="/issues/:issueId"
                       element={<IssueDetailPage />}
                     />
+                    <Route path="/settings" element={<SettingsPage />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                   </Routes>
                 </main>

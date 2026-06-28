@@ -72,11 +72,22 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
 
       {/* Meta */}
       <div className="space-y-2 ml-5">
-        {task.assigned_to ? (
+        {task.assigned_to.length > 0 ? (
           <div className="flex items-center gap-1.5">
-            <img src={task.assigned_to.avt} className="w-5 h-5 rounded-full" />
+            <div className="flex -space-x-2">
+              {task.assigned_to.slice(0, 2).map((u, i) => (
+                <img key={i} src={u.avt} title={u.display_name} className="w-5 h-5 rounded-full object-cover border-2 border-white shrink-0" />
+              ))}
+              {task.assigned_to.length > 2 && (
+                <span className="w-5 h-5 rounded-full bg-purple-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-purple-700">
+                  +{task.assigned_to.length - 2}
+                </span>
+              )}
+            </div>
             <span className="text-[12px] text-gray-500">
-              {task.assigned_to.display_name}
+              {task.assigned_to.length === 1
+                ? task.assigned_to[0].display_name
+                : `${task.assigned_to.length} people`}
             </span>
           </div>
         ) : (

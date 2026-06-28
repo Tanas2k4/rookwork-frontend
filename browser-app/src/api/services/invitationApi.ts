@@ -10,10 +10,18 @@ export const invitationApi = {
   getPending: () =>
     apiClient.get<InvitationResponse[]>("/api/invitations/pending"),
 
+  // GET /api/invitations/project/:projectId/pending
+  getPendingForProject: (projectId: string) =>
+    apiClient.get<InvitationResponse[]>(`/api/invitations/project/${projectId}/pending`),
+
   // POST /api/invitations/:id/respond?accept=true|false
   respond: (invitationId: string, accept: boolean) =>
     apiClient.post<void>(
       `/api/invitations/${invitationId}/respond?accept=${accept}`,
       null,
     ),
+
+  // DELETE /api/invitations/:id
+  cancel: (invitationId: string) =>
+    apiClient.delete<void>(`/api/invitations/${invitationId}`),
 };

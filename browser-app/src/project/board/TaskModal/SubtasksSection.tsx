@@ -5,10 +5,11 @@
  */
 
 import { useState } from "react";
-import { MdAdd, MdClose } from "react-icons/md";
+import { MdClose } from "react-icons/md";
 import type { Subtask } from "../../../types/project";
 import { Button } from "../../../components/common/Button";
 import { Input } from "../../../components/common/Input";
+import { IoMdAdd } from "react-icons/io";
 
 interface Props {
   subtasks: Subtask[];
@@ -51,7 +52,7 @@ export function SubtasksSection({
           }}
           className="flex items-center gap-0.5 text-xs text-purple-700 hover:text-purple-900 transition"
         >
-          <MdAdd size={13} />
+          <IoMdAdd size={14} />
           {showForm ? "Cancel" : "Add"}
         </button>
       </div>
@@ -75,7 +76,7 @@ export function SubtasksSection({
               type="checkbox"
               checked={sub.done}
               onChange={() => onToggle(sub.id)}
-              className="accent-purple-700 w-3.5 h-3.5 cursor-pointer shrink-0"
+              className="accent-purple-800 w-3.5 h-3.5 cursor-pointer shrink-0"
             />
             <span
               className={`text-sm flex-1 ${sub.done ? "line-through text-gray-400" : "text-gray-700"}`}
@@ -98,7 +99,7 @@ export function SubtasksSection({
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${showForm ? "opacity-100 max-h-40 mt-2" : "opacity-0 max-h-0 mt-0"}`}
       >
-        <div className="flex flex-col gap-2 bg-gray-100 rounded-md border border-purple-600 px-3 py-2">
+        <div className="flex flex-col gap-2  rounded-md px-1 py-2">
           <Input
             autoFocus={showForm}
             value={value}
@@ -108,7 +109,7 @@ export function SubtasksSection({
               if (e.key === "Escape") setShowForm(false);
             }}
             placeholder="Subtask title..."
-            className="flex-1 text-sm text-gray-700 bg-transparent border-none focus:ring-0 px-0 py-0"
+            className="flex text-sm text-gray-800 bg-transparent border border-gray-500 rounded-sm focus:border-purple-800"
           />
           <div className="flex justify-end gap-2">
             <Button
@@ -119,11 +120,7 @@ export function SubtasksSection({
             >
               Cancel
             </Button>
-            <Button
-              onClick={submit}
-              variant="primary"
-              size="sm"
-            >
+            <Button onClick={submit} variant="primary" size="sm">
               Add
             </Button>
           </div>

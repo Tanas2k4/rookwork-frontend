@@ -14,6 +14,7 @@ import {
   apiUserToUI,
   issueToTask,
   uiStatusToApi,
+  uiTypeToApi,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";
 import { useClickOutside } from "./useClickOutside";
@@ -33,21 +34,23 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick } = useContext(ProjectContext);
 
-  const [tasks, setTasks]                   = useState<(Task & { _uuid: string })[]>([]);
-  const [users, setUsers]                   = useState<User[]>([]);
-  const [searchQuery, setSearchQuery]       = useState("");
-  const [filterOpen, setFilterOpen]         = useState(false);
+  const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedUsers, setSelectedUsers]   = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes]   = useState<string[]>([]);
-  const [openDropdown, setOpenDropdown]     = useState<DropdownState>({ type: null, taskId: null });
-  const [tick, setTick]                     = useState(0);
-  const { toasts, addToast, removeToast }   = useToast();
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [openDropdown, setOpenDropdown] = useState<DropdownState>({ type: null, taskId: null });
+  const [tick, setTick] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
+  const { toasts, addToast, removeToast } = useToast();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const filterRef   = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   //  Fetch issues 
 
@@ -65,17 +68,20 @@ export function useListView() {
         const seen = new Set<string>();
         const assignees: User[] = [];
         issues.forEach((i) => {
-          if (i.assignedTo && !seen.has(i.assignedTo.id)) {
-            seen.add(i.assignedTo.id);
-            assignees.push(apiUserToUI(i.assignedTo));
-          }
+          (i.assignees ?? []).forEach((u) => {
+            if (!seen.has(u.id)) {
+              seen.add(u.id);
+              assignees.push(apiUserToUI(u));
+            }
+          });
         });
         setUsers(assignees);
       })
-      .catch(() => addToast("Failed to load issues", "error"));
+      .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  }, [projectId, tick, addToast]);
+  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+  }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
 
@@ -85,26 +91,43 @@ export function useListView() {
   //  Filter 
 
   const filteredTasks = tasks.filter((task) => {
-    const matchesSearch  = task.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus  = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
-    const matchesUser    = selectedUsers.length === 0 || selectedUsers.includes((task.assigned_to as any)?.uuid ?? "");
-    const matchesType    = selectedTypes.length === 0 || selectedTypes.includes(task.type);
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
+    const matchesUser =
+      selectedUsers.length === 0 ||
+      task.assigned_to.some((u) => {
+        const typedU = u as User & { _uuid?: string; uuid?: string };
+        return selectedUsers.includes(typedU._uuid ?? typedU.uuid ?? typedU.avt);
+      });
+    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
   });
+
+  //  Pagination 
+
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedTasks = filteredTasks.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Reset to page 1 when filters/search change
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatuses, selectedUsers, selectedTypes]);
 
   //  Dropdown position 
 
   function openDropdownWithPosition(e: React.MouseEvent, type: DropdownState["type"], taskId: string) {
-    const rect           = e.currentTarget.getBoundingClientRect();
-    const spaceBelow     = window.innerHeight - rect.bottom;
-    const spaceAbove     = rect.top;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
     const estimatedHeight = type === "date" ? 120 : 200;
 
-    let top       = rect.bottom + window.scrollY + 4;
+    let top = rect.bottom + window.scrollY + 4;
     let maxHeight = Math.min(estimatedHeight, spaceBelow - 20);
 
     if (spaceBelow < estimatedHeight && spaceAbove > spaceBelow) {
-      top       = rect.top + window.scrollY - Math.min(estimatedHeight, spaceAbove - 20);
+      top = rect.top + window.scrollY - Math.min(estimatedHeight, spaceAbove - 20);
       maxHeight = Math.min(estimatedHeight, spaceAbove - 20);
     }
 
@@ -122,8 +145,8 @@ export function useListView() {
     try {
       await issueApi.update(projectId, taskId, data);
       addToast(successMsg, "success");
-    } catch {
-      addToast("Update failed. Please try again.", "error");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Update failed. Please try again.", "error");
       // Rollback: reload from server
       setTick((n) => n + 1);
     }
@@ -131,18 +154,58 @@ export function useListView() {
 
   //  Handlers 
 
-  function handleAssignUser(taskId: string, user: User & { _uuid?: string } | null) {
-    // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, assigned_to: user } : t));
-    closeDropdown();
+  function handleAssignUser(taskId: string, user: (User & { uuid?: string; _uuid?: string }) | null) {
+    const task = tasks.find((t) => t._uuid === taskId);
+    if (!task) return;
 
-    const assignedToId = (user as (User & { _uuid?: string }) | null)?._uuid ?? null;
-    updateIssue(taskId, { assignedToId: assignedToId ?? undefined }, 
-      user ? `Assigned to ${user.display_name}` : "Assignee removed"
+    const currentUuids = task._assigneeUuids ?? [];
+    const clickedUuid = user?.uuid ?? user?._uuid ?? null;
+
+    let newUuids: string[];
+    let newUsers: User[];
+
+    if (clickedUuid === null) {
+      // "Unassigned" clicked — xóa hết
+      newUuids = [];
+      newUsers = [];
+    } else if (currentUuids.includes(clickedUuid)) {
+      // toggle off
+      newUuids = currentUuids.filter((id) => id !== clickedUuid);
+      newUsers = (task.assigned_to as (User & { _uuid?: string; uuid?: string })[]).filter(
+        (u) => (u._uuid ?? u.uuid) !== clickedUuid,
+      );
+    } else {
+      // toggle on
+      newUuids = [...currentUuids, clickedUuid];
+      newUsers = [...(task.assigned_to as User[]), user!];
+    }
+
+    // Optimistic update
+    setTasks((p) =>
+      p.map((t) =>
+        t._uuid === taskId
+          ? { ...t, assigned_to: newUsers, _assigneeUuids: newUuids }
+          : t,
+      ),
+    );
+
+    updateIssue(
+      taskId,
+      { assigneeIds: newUuids },
+      newUsers.length > 0
+        ? `Assigned to ${newUsers.map((u) => u.display_name).join(", ")}`
+        : "Assignee removed",
     );
   }
 
   function handleStatusChange(taskId: string, status: Status) {
+    const task = tasks.find((t) => t._uuid === taskId);
+    if (!task) return;
+    if (task.status === status) {
+      closeDropdown();
+      return;
+    }
+
     // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, status } : t));
     closeDropdown();
@@ -151,13 +214,23 @@ export function useListView() {
   }
 
   function handleTypeChange(taskId: string, type: TaskType) {
-    // Optimistic update only — issueType is not in UpdateIssueRequest
+    // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, type } : t));
     closeDropdown();
-    // NOTE: API không có field issueType trong UpdateIssueRequest, bỏ qua API call
+
+    updateIssue(taskId, { issueType: uiTypeToApi(type) }, `Type → ${type}`);
   }
 
   function handleDeadlineChange(taskId: string, deadline: string) {
+    const task = tasks.find((t) => t._uuid === taskId);
+    if (!task) return;
+    const currentDeadline = task.deadline ? task.deadline.split("T")[0] : "";
+    const newDeadline = deadline ? deadline.split("T")[0] : "";
+    if (currentDeadline === newDeadline) {
+      closeDropdown();
+      return;
+    }
+
     // Optimistic
     setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: deadline || null } : t));
     closeDropdown();
@@ -183,6 +256,15 @@ export function useListView() {
     setSelectedTypes((p) => p.includes(type) ? p.filter((t) => t !== type) : [...p, type]);
   }
 
+  //  Pagination handlers 
+
+  function goToPage(page: number) {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  }
+
+  function goToPrevPage() { goToPage(safePage - 1); }
+  function goToNextPage() { goToPage(safePage + 1); }
+
   function clearFilters() {
     setSelectedStatuses([]);
     setSelectedUsers([]);
@@ -196,6 +278,7 @@ export function useListView() {
   return {
     tasks,
     filteredTasks,
+    pagedTasks,
     users,
     searchQuery,
     setSearchQuery,
@@ -221,5 +304,11 @@ export function useListView() {
     toasts,
     removeToast,
     reload,
+    currentPage: safePage,
+    totalPages,
+    goToPage,
+    goToPrevPage,
+    goToNextPage,
+    PAGE_SIZE,
   };
 }

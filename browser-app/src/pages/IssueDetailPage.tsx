@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import DOMPurify from "dompurify";
+import { RichTextEditor } from "../components/common/RichTextEditor";
 import { MdOutlineExpandMore } from "react-icons/md";
 import { IoIosArrowBack } from "react-icons/io";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
-import { SubtasksSection } from "../project/board/TaskPanel/SubtasksSection";
-import { ActivitySection } from "../project/board/TaskPanel/ActivitySection";
-import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
+import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
+import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
+import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid } from "../utils/issueMapper";
+import { subtaskApi } from "../api/services/subtaskApi";
 import { avatarUrl } from "../utils/avatar";
+import { isOverdue as isOverdueUtil } from "../utils/date";
 import {
   type Priority,
   statusMap,
@@ -19,10 +23,7 @@ import {
   typeColorMap,
 } from "../types/project";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-
+// helper components
 function PriorityBars({ priority }: { priority: Priority }) {
   const idx = priorities.indexOf(priority);
   return (
@@ -67,11 +68,11 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 
 export default function IssueDetailPage() {
   const { issueId } = useParams<{ issueId: string }>();
-  const navigate    = useNavigate();
-  const location    = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [issue, setIssue]             = useState<IssueResponse | null>(null);
-  const [notFound, setNotFound]       = useState(false);
+  const [issue, setIssue] = useState<IssueResponse | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
 
@@ -86,6 +87,18 @@ export default function IssueDetailPage() {
 
   async function patchIssue(updates: UpdateIssueRequest) {
     if (!issue) return;
+
+    // Check if the updates actually change any field in the issue
+    const hasChange = Object.entries(updates).some(([key, val]) => {
+      if (val === undefined) return false;
+      const currentVal = issue[key as keyof IssueResponse];
+      const normalizedCurrent = currentVal === null || currentVal === undefined ? "" : currentVal;
+      const normalizedNew = val === null || val === undefined ? "" : val;
+      return normalizedCurrent !== normalizedNew;
+    });
+
+    if (!hasChange) return;
+
     setIssue((prev) => prev ? { ...prev, ...updates } : prev);
     try {
       const updated = await issueApi.update(issue.projectId, issue.id, updates);
@@ -107,19 +120,104 @@ export default function IssueDetailPage() {
     );
   }
 
+  async function handleToggleSubtask(subtaskId: number) {
+    if (!issue) return;
+    const subtaskUuid = idToUuid(subtaskId);
+    if (!subtaskUuid) return;
+    const sub = issue.subtasks?.find((s) => s.id === subtaskUuid);
+    if (!sub) return;
+
+    const nextDone = !sub.isDone;
+    const originalSubtasks = issue.subtasks ?? [];
+
+    // Optimistic update
+    setIssue((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        subtasks: (prev.subtasks ?? []).map((s) =>
+          s.id === subtaskUuid ? { ...s, isDone: nextDone } : s
+        ),
+      };
+    });
+
+    try {
+      await subtaskApi.update(issue.projectId, issue.id, subtaskUuid, { isDone: nextDone });
+    } catch (err) {
+      // rollback
+      setIssue((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: originalSubtasks,
+        };
+      });
+      console.error(err);
+    }
+  }
+
+  async function handleAddSubtask(title: string) {
+    if (!issue || !title.trim()) return;
+    try {
+      const created = await subtaskApi.create(issue.projectId, issue.id, {
+        subtaskName: title.trim(),
+      });
+      uuidToId(created.id); // register
+      setIssue((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: [...(prev.subtasks ?? []), created],
+        };
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleDeleteSubtask(subtaskId: number) {
+    if (!issue) return;
+    const subtaskUuid = idToUuid(subtaskId);
+    if (!subtaskUuid) return;
+
+    const originalSubtasks = issue.subtasks ?? [];
+    // Optimistic update
+    setIssue((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        subtasks: (prev.subtasks ?? []).filter((s) => s.id !== subtaskUuid),
+      };
+    });
+
+    try {
+      await subtaskApi.delete(issue.projectId, issue.id, subtaskUuid);
+    } catch (err) {
+      // rollback
+      setIssue((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          subtasks: originalSubtasks,
+        };
+      });
+      console.error(err);
+    }
+  }
+
   if (!issue) return null;
 
   type LocationState = { from?: { label?: string; path?: string } };
   const routeState = location.state as LocationState | null;
-  const backLabel  = routeState?.from?.label ?? "My Issues";
-  const backPath   = routeState?.from?.path  ?? "/my-issues";
+  const backLabel = routeState?.from?.label ?? "My Issues";
+  const backPath = routeState?.from?.path ?? "/my-issues";
 
-  const type     = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
-  const status   = apiStatusToUI(issue.status);
+  const type = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
+  const status = apiStatusToUI(issue.status);
   const priority = apiPriorityToUI(issue.priority);
   const TypeIcon = typeIconMap[type];
   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
-  const isOverdue = deadline && new Date(deadline) < new Date() && issue.status !== "DONE";
+  const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
 
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
@@ -190,25 +288,55 @@ export default function IssueDetailPage() {
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
           {/* Description */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Description</p>
             {editingDesc ? (
-              <textarea autoFocus value={editDescValue}
-                onChange={(e) => setEditDescValue(e.target.value)}
-                rows={4}
-                onBlur={() => { patchIssue({ description: editDescValue }); setEditingDesc(false); }}
-                onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
-                className="w-full text-sm text-gray-600 outline-none rounded-lg p-2.5 resize-none border border-purple-300 focus:ring-1 focus:ring-purple-600 transition" />
+              <RichTextEditor
+                initialValue={editDescValue}
+                onChange={(val) => setEditDescValue(val)}
+                onSave={(val) => {
+                  patchIssue({ description: val });
+                  setEditingDesc(false);
+                }}
+                onCancel={() => setEditingDesc(false)}
+                placeholder="Add a description... (Ctrl + Enter to save)"
+              />
             ) : (
-              <p onDoubleClick={() => { setEditingDesc(true); setEditDescValue(issue.description ?? ""); }}
-                className="text-sm text-gray-600 cursor-default rounded px-1 -mx-1 py-1 hover:bg-gray-50 transition min-h-6 leading-relaxed"
-                title="Double-click to edit">
-                {issue.description || <span className="italic text-gray-300">No description — double-click to add</span>}
-              </p>
+              <div
+                onDoubleClick={() => {
+                  setEditingDesc(true);
+                  setEditDescValue(issue.description ?? "");
+                }}
+                className="text-sm text-gray-700 cursor-text rounded-md px-2 py-1.5 hover:bg-gray-50/80 transition min-h-10 border border-transparent hover:border-gray-200"
+                title="Double-click to edit"
+              >
+                {issue.description ? (
+                  <div
+                    className="tiptap-content"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(issue.description) }}
+                  />
+                ) : (
+                  <span className="italic text-gray-300 select-none">
+                    No description — double-click to add
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
           {/* Subtasks */}
-          <SubtasksSection subtasks={[]} onToggle={() => {}} onAdd={() => {}} onDelete={() => {}} />
+          <SubtasksSection
+            subtasks={(issue.subtasks ?? []).map((sub) => {
+              uuidToId(sub.id);
+              return {
+                id: uuidToId(sub.id),
+                title: sub.subtaskName,
+                done: sub.isDone,
+              };
+            })}
+            onToggle={handleToggleSubtask}
+            onAdd={handleAddSubtask}
+            onDelete={handleDeleteSubtask}
+          />
 
           {/* Activity — pass projectId trực tiếp từ issue vì không có ProjectProvider ở route này */}
           <ActivitySection
@@ -242,12 +370,19 @@ export default function IssueDetailPage() {
             </DetailRow>
 
             <DetailRow label="Assigned to">
-              {issue.assignedTo ? (
-                <span className="flex items-center gap-1.5">
-                  <img src={avatarUrl(issue.assignedTo.profileName, issue.assignedTo.picture)}
-                    className="w-4 h-4 rounded-full shrink-0" alt="" />
-                  <span className="text-gray-700">{issue.assignedTo.profileName}</span>
-                </span>
+              {issue.assignees && issue.assignees.length > 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  {issue.assignees.map((a) => (
+                    <div key={a.id} className="flex items-center gap-1.5">
+                      <img
+                        src={avatarUrl(a.profileName, a.picture)}
+                        className="w-4 h-4 rounded-full shrink-0 object-cover"
+                        alt=""
+                      />
+                      <span className="text-gray-700 text-sm">{a.profileName}</span>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <span className="text-gray-400 italic">Unassigned</span>
               )}

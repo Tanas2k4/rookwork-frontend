@@ -22,4 +22,5 @@ export interface ProjectResponse {
   doneIssues: number;
   createdAt: string;
   updatedAt: string;
+  deadline?: string | null;
 }

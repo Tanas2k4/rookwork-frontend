@@ -58,7 +58,7 @@ export function ListFilterPanel({
             <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 border-b border-gray-100">
               <h3 className="font-semibold text-sm text-gray-800">Filter Tasks</h3>
               {hasActiveFilters && (
-                <button onClick={onClear} className="text-xs text-purple-600 hover:text-purple-700">
+                <button onClick={onClear} className="text-xs text-purple-800 hover:text-purple-900">
                   Clear all
                 </button>
               )}
@@ -72,7 +72,7 @@ export function ListFilterPanel({
                   <label key={t.value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded">
                     <input type="checkbox" checked={selectedTypes.includes(t.value)}
                       onChange={() => onToggleType(t.value)}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+                      className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700" />
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex items-center gap-1.5 ${t.color}`}>
                       {t.icon}{t.label}
                     </span>
@@ -89,7 +89,7 @@ export function ListFilterPanel({
                   <label key={s.value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded">
                     <input type="checkbox" checked={selectedStatuses.includes(s.value)}
                       onChange={() => onToggleStatus(s.value)}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+                      className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700" />
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${s.color}`}>{s.label}</span>
                   </label>
                 ))}
@@ -105,8 +105,8 @@ export function ListFilterPanel({
                     <input type="checkbox"
                       checked={selectedUsers.includes(u.avt /* used as stable key */)}
                       onChange={() => onToggleUser(u.avt)}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
-                    <img src={u.avt} className="w-5 h-5 rounded-full" />
+                      className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700" />
+                    <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
                     <span className="text-sm text-gray-700">{u.display_name}</span>
                   </label>
                 ))}

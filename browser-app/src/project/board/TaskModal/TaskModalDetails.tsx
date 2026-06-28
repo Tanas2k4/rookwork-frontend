@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { MdOutlineExpandMore } from "react-icons/md";
+import { useState, useRef, useEffect } from "react";
+import { IoClose } from "react-icons/io5";
+import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
 import type { Task, Status, Priority, User } from "../../../types/project";
 import {
   statuses,
@@ -10,16 +11,17 @@ import {
 } from "../../../types/project";
 import { useProject } from "../../../hooks/useProject";
 import { formatDeadline } from "../../shared/dropdownConstants";
+import { avatarUrl } from "../../../utils/avatar";
 
 interface Props {
   task: Task;
   onChangeStatus: (s: Status) => void;
   onChangePriority: (p: Priority) => void;
-  onChangeAssignee: (u: User | null) => void;
+  onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
 }
 
-export function TaskPanelDetails({
+export function TaskModalDetails({
   task,
   onChangeStatus,
   onChangePriority,
@@ -33,6 +35,19 @@ export function TaskPanelDetails({
   const [showAssigneeDd,  setShowAssigneeDd]  = useState(false);
   const [editingDeadline, setEditingDeadline] = useState(false);
   const [deadlineValue,   setDeadlineValue]   = useState(task.deadline ?? "");
+  const assigneeDdRef = useRef<HTMLDivElement>(null);
+
+  // Close assignee dropdown on outside click
+  useEffect(() => {
+    if (!showAssigneeDd) return;
+    function handler(e: MouseEvent) {
+      if (assigneeDdRef.current && !assigneeDdRef.current.contains(e.target as Node)) {
+        setShowAssigneeDd(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showAssigneeDd]);
 
   function closeAll() {
     setShowStatusDd(false);
@@ -44,14 +59,34 @@ export function TaskPanelDetails({
     id: 0,
     email: "",
     display_name: m.profileName,
-    avt:
-      m.picture ??
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(m.profileName)}&background=7c3aed&color=fff`,
+    avt: avatarUrl(m.profileName, m.picture),
     _uuid: m.id,
   }));
 
+  // Current assignee UUIDs
+  const currentAssignees = (task.assigned_to ?? []) as (User & { _uuid?: string; uuid?: string })[];
+  const currentUuids = new Set(
+    currentAssignees.map((u) => u._uuid ?? u.uuid ?? ""),
+  );
+
+  function toggleMember(member: (typeof memberUsers)[0]) {
+    const uuid = member._uuid;
+    let newList: User[];
+    if (currentUuids.has(uuid)) {
+      newList = currentAssignees.filter(
+        (u) => (u._uuid ?? u.uuid) !== uuid,
+      );
+    } else {
+      newList = [...currentAssignees, member];
+    }
+    onChangeAssignee(newList);
+  }
+
+  const avatarStack = currentAssignees.slice(0, 3);
+  const extraCount = currentAssignees.length - 3;
+
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+    <div className="flex flex-col gap-y-5">
       {/* Status */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
@@ -149,49 +184,86 @@ export function TaskPanelDetails({
         )}
       </div>
 
-      {/* Assignee */}
+      {/* Assignees — multi-select */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
           Assigned To
         </p>
-        <div className="relative inline-block border border-gray-400 px-2 rounded-md">
+        <div className="relative" ref={assigneeDdRef}>
           <button
             onClick={() => { setShowAssigneeDd((p) => !p); setShowStatusDd(false); setShowPriorityDd(false); }}
-            className="flex items-center gap-2 text-sm text-gray-700 px-2 py-1 transition max-w-40"
+            className="flex items-center gap-2 text-sm text-gray-700 px-2 py-1 border border-gray-400 rounded-md transition hover:bg-gray-50 max-w-44"
           >
-            {task.assigned_to ? (
-              <>
-                <img src={task.assigned_to.avt} className="w-5 h-5 rounded-full shrink-0" />
-                <span className="truncate">{task.assigned_to.display_name}</span>
-              </>
+            {currentAssignees.length > 0 ? (
+              <div className="flex items-center gap-1">
+                {/* Avatar stack */}
+                <div className="flex -space-x-2">
+                  {avatarStack.map((u, i) => (
+                    <img
+                      key={i}
+                      src={u.avt}
+                      title={u.display_name}
+                      className="w-5 h-5 rounded-full object-cover border-2 border-white shrink-0"
+                    />
+                  ))}
+                  {extraCount > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-purple-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-purple-700 shrink-0">
+                      +{extraCount}
+                    </span>
+                  )}
+                </div>
+                <span className="truncate text-xs text-gray-600 max-w-20">
+                  {currentAssignees.length === 1
+                    ? currentAssignees[0].display_name
+                    : `${currentAssignees.length} people`}
+                </span>
+              </div>
             ) : (
-              <span className="italic text-gray-400">Unassigned</span>
+              <span className="italic text-gray-400">
+                Unassigned</span>
             )}
-            <MdOutlineExpandMore size={16} className="text-gray-400 shrink-0" />
+            <MdOutlineExpandMore size={16} className="text-gray-400 shrink-0 ml-auto" />
           </button>
+
           {showAssigneeDd && (
-            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-52">
+            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-56">
+              {/* Clear all */}
               <button
-                onClick={() => { onChangeAssignee(null); closeAll(); }}
-                className="w-full text-left px-3 py-1.5 text-sm text-gray-500 italic hover:bg-gray-50"
+                onClick={() => onChangeAssignee([])}
+                className="w-full text-left pl-3 py-1.5 text-sm text-gray-500 italic hover:bg-gray-50 flex items-center"
               >
-                Unassigned
+                <div className="p-1.5 bg-gray-200 rounded-full ml-1">
+                  <IoClose size={14} className=" text-gray-500" />
+                </div>
+                <span className="w-3 h-4" />
+                Unassigned (clear all)
               </button>
+              <div className="border-t border-gray-100 my-1" />
               {memberUsers.length === 0 ? (
                 <p className="px-3 py-2 text-xs text-gray-400 italic">No members found</p>
               ) : (
-                memberUsers.map((u, i) => (
-                  <button key={i}
-                    onClick={() => { onChangeAssignee(u); closeAll(); }}
-                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                      task.assigned_to?.display_name === u.display_name
-                        ? "text-purple-700 font-medium"
-                        : "text-gray-700"
-                    }`}>
-                    <img src={u.avt} className="w-5 h-5 rounded-full shrink-0" />
-                    {u.display_name}
-                  </button>
-                ))
+                memberUsers.map((u, i) => {
+                  const isSelected = currentUuids.has(u._uuid);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => toggleMember(u)}
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-purple-50 flex items-center gap-2 ${
+                        isSelected ? " font-medium bg-purple-50/50" : "text-gray-700"
+                      }`}
+                    >
+                      <span className={`w-4 h-4 rounded flex items-center justify-center border transition ${
+                        isSelected
+                          ? "bg-purple-900 border-purple-900"
+                          : "border-gray-300"
+                      }`}>
+                        {isSelected && <MdCheck size={11} className="text-white" />}
+                      </span>
+                      <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                      <span className="truncate">{u.display_name}</span>
+                    </button>
+                  );
+                })
               )}
             </div>
           )}

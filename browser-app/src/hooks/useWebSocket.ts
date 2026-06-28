@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client, type IMessage } from "@stomp/stompjs";
 import { tokenStorage } from "../api/tokenStorage";
+import type { ActivityResponse } from "../api/contracts/activity";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
@@ -16,6 +17,11 @@ export interface WsCommentPayload {
   comment?: unknown;
   commentId?: string;
   issueId?: string;
+}
+
+export interface WsActivityPayload {
+  type: "NEW_ACTIVITY";
+  activity?: ActivityResponse;
 }
 
 export interface WsNotificationPayload {
@@ -32,6 +38,7 @@ interface UseWebSocketOptions {
   issueId: string | null; // UUID của issue đang mở trong TaskPanel
   onComment?: (payload: WsCommentPayload) => void;
   onNotification?: (payload: WsNotificationPayload) => void;
+  onActivity?: (payload: WsActivityPayload) => void;
 }
 
 /**
@@ -45,10 +52,12 @@ export function useWebSocket({
   issueId,
   onComment,
   onNotification,
+  onActivity,
 }: UseWebSocketOptions) {
   const clientRef = useRef<Client | null>(null);
   const onCommentRef = useRef(onComment);
   const onNotificationRef = useRef(onNotification);
+  const onActivityRef = useRef(onActivity);
 
   // Keep refs up to date without reconnecting
   useEffect(() => {
@@ -58,6 +67,10 @@ export function useWebSocket({
   useEffect(() => {
     onNotificationRef.current = onNotification;
   }, [onNotification]);
+
+  useEffect(() => {
+    onActivityRef.current = onActivity;
+  }, [onActivity]);
 
   useEffect(() => {
     const token = tokenStorage.getAccess();
@@ -80,6 +93,19 @@ export function useWebSocket({
                 onCommentRef.current?.(payload);
               } catch (e) {
                 console.error("WS comment parse error", e);
+              }
+            },
+          );
+
+          // Subscribe activities cho issue đang mở
+          client.subscribe(
+            `/topic/project/${projectId}/issue/${issueId}/activities`,
+            (msg: IMessage) => {
+              try {
+                const payload = JSON.parse(msg.body) as WsActivityPayload;
+                onActivityRef.current?.(payload);
+              } catch (e) {
+                console.error("WS activity parse error", e);
               }
             },
           );

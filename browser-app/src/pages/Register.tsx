@@ -14,9 +14,29 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const checkEmail = async (val: string) => {
+    setEmailError("");
+    if (!val) return;
+    
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(val)) {
+      setEmailError("Chỉ chấp nhận email định dạng @gmail.com");
+      return;
+    }
+
+    try {
+      const exists = await authApi.checkEmail(val);
+      if (exists) {
+        setEmailError("Email này đã được đăng ký");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleRegister = async () => {
     setError("");
@@ -24,6 +44,10 @@ function Register() {
 
     if (!profileName || !email || !password || !confirm) {
       setError("Please fill all fields");
+      return;
+    }
+    if (emailError) {
+      setError("Vui lòng sửa các lỗi trước khi tiếp tục");
       return;
     }
     if (password !== confirm) {
@@ -56,8 +80,8 @@ function Register() {
 
         {/* PROFILE NAME */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <LuUser className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <LuUser className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               className="w-full bg-transparent text-[14px] outline-none"
               placeholder="display name"
@@ -69,21 +93,26 @@ function Register() {
 
         {/* EMAIL */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <IoMailOutline className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <IoMailOutline className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               className="w-full bg-transparent text-[14px] outline-none"
               placeholder="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError("");
+              }}
+              onBlur={(e) => checkEmail(e.target.value)}
             />
           </div>
+          {emailError && <p className="text-xs text-red-500 mt-1 pl-1">{emailError}</p>}
         </div>
 
         {/* PASSWORD */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               type="password"
               className="w-full bg-transparent text-[14px] outline-none"
@@ -96,8 +125,8 @@ function Register() {
 
         {/* CONFIRM PASSWORD */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600 transition-all duration-200">
-            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-600 transition-colors" />
+          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
             <input
               type="password"
               className="w-full bg-transparent text-[14px] outline-none"

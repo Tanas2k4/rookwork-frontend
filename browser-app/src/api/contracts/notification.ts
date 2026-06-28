@@ -7,6 +7,8 @@ export interface NotificationResponse {
   issueId?: string;
   issueName?: string;
   invitationId?: string;       
+  invitationStatus?: string;
+  projectId?: string;
   sender?: {
     id?: string;
     profileName: string;

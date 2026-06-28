@@ -2,6 +2,7 @@ import type {
   LoginRequest,
   AuthRegister,
   AuthResponse,
+  GoogleLoginRequest,
 } from "../contracts/auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -14,10 +15,28 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!res.ok) {
+    const text = await res.text();
+    let errorMessage = "";
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === "object") {
+        errorMessage = parsed.message || parsed.error || "";
+      }
+    } catch {
+      // not JSON
+    }
+    throw new Error(errorMessage || text || `Request failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`);
+  if (!res.ok) {
     const message = await res.text();
     throw new Error(message || `Request failed: ${res.status}`);
   }
-
   return res.json();
 }
 
@@ -29,4 +48,10 @@ export const authApi = {
 
   refresh: (refreshToken: string) =>
     post<AuthResponse>("/api/auth/refresh", { refreshToken }),
+
+  googleLogin: (data: GoogleLoginRequest) =>
+    post<AuthResponse>("/api/auth/google", data),
+
+  checkEmail: (email: string) =>
+    get<boolean>(`/api/auth/check-email?email=${encodeURIComponent(email)}`),
 };

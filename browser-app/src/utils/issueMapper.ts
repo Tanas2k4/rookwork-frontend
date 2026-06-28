@@ -19,6 +19,7 @@ import type {
   Status as ApiStatus,
   UserSummary,
 } from "../api/contracts/issue";
+import { avatarUrl } from "./avatar";
 
 /**
  * Chuyển đổi loại công việc từ API BE (viết hoa) sang loại công việc trên UI FE (viết thường).
@@ -86,10 +87,10 @@ export function uiPriorityToApi(p: Priority): PriorityType {
  */
 export function apiUserToUI(u: UserSummary): User & { uuid?: string } {
   return {
-    id: 0,
+    id: uuidToId(u.id),
     email: "",
     display_name: u.profileName,
-    avt: u.picture ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(u.profileName)}&background=7c3aed&color=fff`,
+    avt: avatarUrl(u.profileName, u.picture),
     uuid: u.id,
   };
 }
@@ -128,23 +129,35 @@ export function idToUuid(id: number): string | undefined {
 export function issueToTask(
   issue: IssueResponse,
   allIssues: IssueResponse[] = [],
-): Task & { _uuid: string } {
+): Task & { _uuid: string; _projectId: string; _assigneeUuids: string[] } {
   const children = allIssues
     .filter((i) => i.parentId === issue.id)
     .map((i) => uuidToId(i.id));
 
+  const assignees = (issue.assignees ?? []).map(apiUserToUI);
+
   return {
     id: uuidToId(issue.id),
     _uuid: issue.id,
+    _projectId: issue.projectId,
+    _assigneeUuids: (issue.assignees ?? []).map((u) => u.id),
     title: issue.issueName,
     description: issue.description ?? undefined,
     type: apiTypeToUI(issue.issueType),
     priority: apiPriorityToUI(issue.priority),
-    assigned_to: issue.assignedTo ? apiUserToUI(issue.assignedTo) : null,
+    assigned_to: assignees,
     deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
     status: apiStatusToUI(issue.status),
-    subtasks: [],
+    subtasks: (issue.subtasks ?? []).map((sub) => {
+      uuidToId(sub.id);
+      return {
+        id: uuidToId(sub.id),
+        title: sub.subtaskName,
+        done: sub.isDone,
+      };
+    }),
     parentId: issue.parentId ? uuidToId(issue.parentId) : null,
     childIds: children,
+    attachments: issue.attachments,
   };
 }
