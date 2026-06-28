@@ -3,6 +3,7 @@ import { HiX, HiChevronDown } from "react-icons/hi";
 import type { EventForm } from "../types/calendar";
 import { EVENT_COLORS } from "../types/calendar";
 import { eventApi } from "../api/services/eventApi";
+import { userApi } from "../api/services/userApi";
 import type { ProjectResponse, UserSummary } from "../api/contracts";
 import type { Toast } from "../types/project";
 import { avatarUrl } from "../utils/avatar";
@@ -43,7 +44,8 @@ export default function CreateEventModal({
 }: CreateEventModalProps) {
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const projectDropdownRef = useRef<HTMLDivElement>(null);
-  
+  const [currentUser, setCurrentUser] = useState<UserSummary | null>(null);
+
   const [form, setForm] = useState<EventForm & { projectId: string }>({
     title: "",
     date: initialDate || new Date().toISOString().split("T")[0],
@@ -78,6 +80,36 @@ export default function CreateEventModal({
     }
   }, [isOpen, initialDate, initialProjectId]);
 
+  // Fetch current user details when modal opens
+  useEffect(() => {
+    if (isOpen && !currentUser) {
+      userApi
+        .getMe()
+        .then(setCurrentUser)
+        .catch((err) =>
+          console.error("Failed to load current user details", err),
+        );
+    }
+  }, [isOpen, currentUser]);
+
+  // Filter out guests who are not members of the selected project when project selection changes
+  useEffect(() => {
+    if (form.projectId) {
+      const selectedProj = userProjects.find((p) => p.id === form.projectId);
+      if (selectedProj && selectedProj.members) {
+        setForm((f) => {
+          const filtered = f.guests.filter((g) =>
+            selectedProj.members.some(
+              (m) =>
+                m.email && m.email.toLowerCase() === g.email?.toLowerCase(),
+            ),
+          );
+          return { ...f, guests: filtered };
+        });
+      }
+    }
+  }, [form.projectId, userProjects]);
+
   // Close project dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -96,12 +128,45 @@ export default function CreateEventModal({
     const emailInput = form.guestInput.trim();
     if (!emailInput) return;
 
+    // Check if the user is inviting themselves
+    if (
+      currentUser &&
+      emailInput.toLowerCase() === currentUser.email.toLowerCase()
+    ) {
+      addToast("You cannot invite yourself as a guest", "error");
+      return;
+    }
+
+    // Check if already in guests list
+    if (
+      form.guests.some(
+        (g) => g.email?.toLowerCase() === emailInput.toLowerCase(),
+      )
+    ) {
+      addToast("This guest is already added", "error");
+      return;
+    }
+
+    // If project is linked, guest must be a member of the selected project
+    if (form.projectId) {
+      const selectedProj = userProjects.find((p) => p.id === form.projectId);
+      if (selectedProj) {
+        const isMember = selectedProj.members?.some(
+          (m) => m.email && m.email.toLowerCase() === emailInput.toLowerCase(),
+        );
+        if (!isMember) {
+          addToast("Guest must be a member of the selected project", "error");
+          return;
+        }
+      }
+    }
+
     // Search in userProjects members to find matching email
     let foundMember: UserSummary | null = null;
     for (const project of userProjects) {
       if (project.members) {
         const match = project.members.find(
-          (m) => m.email && m.email.toLowerCase() === emailInput.toLowerCase()
+          (m) => m.email && m.email.toLowerCase() === emailInput.toLowerCase(),
         );
         if (match) {
           foundMember = match;
@@ -126,7 +191,7 @@ export default function CreateEventModal({
         ...f.guests,
         {
           name,
-          role: f.guests.length === 0 ? "organizer" : "attendee",
+          role: "attendee",
           avatar,
           picture,
           email,
@@ -135,6 +200,67 @@ export default function CreateEventModal({
       guestInput: "",
     }));
   };
+
+  const addMemberAsGuest = (member: UserSummary) => {
+    if (!member.email) return;
+
+    if (
+      currentUser &&
+      member.email.toLowerCase() === currentUser.email.toLowerCase()
+    ) {
+      addToast("You cannot invite yourself as a guest", "error");
+      return;
+    }
+
+    if (
+      form.guests.some(
+        (g) => g.email?.toLowerCase() === member.email.toLowerCase(),
+      )
+    ) {
+      addToast("This guest is already added", "error");
+      return;
+    }
+
+    const name = member.profileName;
+    const picture = member.picture || undefined;
+    const email = member.email;
+    const avatar = name
+      .split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+
+    setForm((f) => ({
+      ...f,
+      guests: [
+        ...f.guests,
+        {
+          name,
+          role: "attendee",
+          avatar,
+          picture,
+          email,
+        },
+      ],
+    }));
+  };
+
+  const selectedProject = form.projectId
+    ? userProjects.find((p) => p.id === form.projectId)
+    : null;
+
+  const availableMembers = selectedProject
+    ? (selectedProject.members || []).filter(
+        (m) =>
+          m.email &&
+          (!currentUser ||
+            m.email.toLowerCase() !== currentUser.email.toLowerCase()) &&
+          !form.guests.some(
+            (g) => g.email?.toLowerCase() === m.email.toLowerCase(),
+          ),
+      )
+    : [];
 
   const handleCreateEvent = async () => {
     if (!form.title || !form.date) return;
@@ -223,7 +349,8 @@ export default function CreateEventModal({
               >
                 <span>
                   {form.projectId
-                    ? userProjects.find((p) => p.id === form.projectId)?.projectName || "Personal Event"
+                    ? userProjects.find((p) => p.id === form.projectId)
+                        ?.projectName || "Personal Event"
                     : "Personal Event"}
                 </span>
                 <HiChevronDown
@@ -355,6 +482,35 @@ export default function CreateEventModal({
                 Add
               </button>
             </div>
+
+            {/* Suggested Project Members */}
+            {form.projectId && availableMembers.length > 0 && (
+              <div className="mt-2 mb-3">
+                <span className="text-[11px] font-semibold text-purple-800 uppercase tracking-wider block mb-1.5">
+                  Project Members
+                </span>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 rounded-md bg-gray-200">
+                  {availableMembers.map((member) => (
+                    <button
+                      key={member.id}
+                      type="button"
+                      onClick={() => addMemberAsGuest(member)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white hover:bg-gray-100 hover:border-gray-200 shadow-xs transition-all text-xs text-gray-700 cursor-pointer "
+                    >
+                      <img
+                        src={avatarUrl(member.profileName, member.picture)}
+                        alt={member.profileName}
+                        className="w-4.5 h-4.5 rounded-full object-cover shrink-0"
+                      />
+                      <span className="font-heading font-medium">
+                        {member.profileName}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {form.guests.length > 0 && (
               <div className="mt-2 flex flex-col gap-1">
                 {form.guests.map((g, i) => (
@@ -403,7 +559,10 @@ export default function CreateEventModal({
                     form.color === c.value ? "scale-110" : "hover:scale-105"
                   }`}
                   style={{
-                    boxShadow: form.color === c.value ? `0 0 0 2px #fff, 0 0 0 4px ${getPresetHex(c.value)}` : undefined
+                    boxShadow:
+                      form.color === c.value
+                        ? `0 0 0 2px #fff, 0 0 0 4px ${getPresetHex(c.value)}`
+                        : undefined,
                   }}
                   title={c.label}
                 />
@@ -417,7 +576,9 @@ export default function CreateEventModal({
                 style={{
                   background:
                     "linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)",
-                  boxShadow: !form.color.startsWith("bg-") ? `0 0 0 2px #fff, 0 0 0 4px ${form.color}` : undefined
+                  boxShadow: !form.color.startsWith("bg-")
+                    ? `0 0 0 2px #fff, 0 0 0 4px ${form.color}`
+                    : undefined,
                 }}
                 title="Custom RGB Color"
               >
@@ -449,9 +610,7 @@ export default function CreateEventModal({
               rows={2}
               placeholder="Additional notes..."
               value={form.note}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, note: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
           </div>
         </div>
