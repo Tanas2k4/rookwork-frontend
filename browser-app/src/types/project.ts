@@ -1,9 +1,21 @@
 import { type IconType } from "react-icons";
-import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import { FaTasks, FaBook, FaRocket, FaCheckSquare } from "react-icons/fa";
+import {
+  LuBug,
+  LuSparkles,
+  LuBookOpen,
+  LuFlag,
+  LuSearch,
+  LuWrench,
+  LuFileText,
+  LuTestTube,
+  LuLifeBuoy,
+} from "react-icons/lu";
 import type { AttachmentResponse } from "../api/contracts/attachment";
+import type { IssueTypeResponse } from "../api/contracts/issue";
 
 // Enums / literal types
-export type TaskType = "task" | "story" | "epic";
+export type TaskType = string;
 export type Priority = "low" | "medium" | "high" | "urgent";
 export type Status = "to_do" | "in_progress" | "done";
 export type TaskPriority = Priority;
@@ -36,6 +48,7 @@ export interface Task {
   parentId?: number | null;
   childIds?: number[];
   attachments?: AttachmentResponse[];
+  issueType: IssueTypeResponse;
 }
 
 export interface Comment {
@@ -54,20 +67,37 @@ export interface Toast {
   type: "success" | "error" | "info";
 }
 
-// Constants
-export const typeIconMap: Record<TaskType, IconType> = {
+// Icons Registry
+export const issueTypeIcons: Record<string, IconType> = {
+  task: FaTasks,
+  story: FaBook,
+  epic: FaRocket,
+  bug: LuBug,
+  sparkles: LuSparkles,
+  "check-square": FaCheckSquare,
+  "book-open": LuBookOpen,
+  flag: LuFlag,
+  search: LuSearch,
+  wrench: LuWrench,
+  "file-text": LuFileText,
+  "test-tube": LuTestTube,
+  "life-buoy": LuLifeBuoy,
+};
+
+// Constants (For backward compatibility and default system types)
+export const typeIconMap: Record<string, IconType> = {
   task: FaTasks,
   story: FaBook,
   epic: FaRocket,
 };
 
-export const typeColorMap: Record<TaskType, string> = {
+export const typeColorMap: Record<string, string> = {
   task: "text-blue-700",
   story: "text-green-700",
   epic: "text-purple-700",
 };
 
-export const typeLabelMap: Record<TaskType, string> = {
+export const typeLabelMap: Record<string, string> = {
   task: "Task",
   story: "Story",
   epic: "Epic",

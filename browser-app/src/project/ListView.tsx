@@ -1,6 +1,6 @@
 import { IoSearchSharp } from "react-icons/io5";
 import { LiaSortSolid } from "react-icons/lia";
-import { FaCaretDown, FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import { FaCaretDown } from "react-icons/fa";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { useContext } from "react";
 import { useListView } from "../hooks/useListView";
@@ -9,12 +9,9 @@ import { ListDropdowns } from "./list/ListDropdowns";
 import { ToastContainer } from "../components/common/ToastContainer";
 import { Button } from "../components/common/Button";
 import { ProjectContext } from "../context/ProjectContext";
+import { issueTypeIcons } from "../types/project";
 
-const typeOptions = [
-  { label: "Task",  value: "task",  icon: <FaTasks  size={12} />, color: "bg-blue-100 text-blue-700" },
-  { label: "Story", value: "story", icon: <FaBook   size={12} />, color: "bg-green-100 text-green-700" },
-  { label: "Epic",  value: "epic",  icon: <FaRocket size={12} />, color: "bg-purple-100 text-purple-700" },
-];
+// typeOptions removed as unused
 
 const statusOptions = [
   { label: "To Do",       value: "to_do",       color: "bg-gray-100 text-gray-800" },
@@ -24,9 +21,8 @@ const statusOptions = [
 
 export default function ListView() {
   const lv = useListView();
-  const { openIssueModal } = useContext(ProjectContext);
+  const { openIssueModal, issueTypes } = useContext(ProjectContext);
 
-  const getTypeOption   = (type: string)   => typeOptions.find((t) => t.value === type)   ?? typeOptions[0];
   const getStatusOption = (status: string) => statusOptions.find((s) => s.value === status) ?? statusOptions[0];
 
   return (
@@ -99,7 +95,6 @@ export default function ListView() {
                   </tr>
                 ) : (
                   lv.pagedTasks.map((task) => {
-                    const typeOpt   = getTypeOption(task.type);
                     const statusOpt = getStatusOption(task.status);
                     return (
                       <tr key={task._uuid} className="hover:bg-gray-50 transition-colors">
@@ -118,9 +113,23 @@ export default function ListView() {
                         <td className="px-4 py-3 border-r border-gray-200">
                           <div className="flex items-center justify-between cursor-pointer group"
                             onDoubleClick={(e) => lv.openDropdownWithPosition(e, "type", task._uuid)}>
-                            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 ${typeOpt.color}`}>
-                              {typeOpt.icon}{typeOpt.label}
-                            </span>
+                            {(() => {
+                              const it = task.issueType;
+                              const Icon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
+                              return (
+                                <span
+                                  className="px-2.5 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 border"
+                                  style={{
+                                    backgroundColor: `${it?.color || "#64748B"}15`,
+                                    color: it?.color || "#64748B",
+                                    borderColor: `${it?.color || "#64748B"}30`
+                                  }}
+                                >
+                                  <Icon size={12} />
+                                  {it?.name || "Task"}
+                                </span>
+                              );
+                            })()}
                             <button onClick={(e) => lv.openDropdownWithPosition(e, "type", task._uuid)}
                               className="p-1 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition">
                               <FaCaretDown className="text-gray-500" />
@@ -277,6 +286,7 @@ export default function ListView() {
         dropdownRef={lv.dropdownRef}
         tasks={lv.tasks}
         users={lv.users}
+        issueTypes={issueTypes}
         onAssignUser={lv.handleAssignUser}
         onStatusChange={lv.handleStatusChange}
         onTypeChange={lv.handleTypeChange}
