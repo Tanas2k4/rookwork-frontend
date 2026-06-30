@@ -4,6 +4,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import CalendarView from "./user/CalendarView";
+import EventsView from "./user/EventsView";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 import Titlebar from "./components/layout/Titlebar";
@@ -15,6 +16,7 @@ import OverView from "./project/OverView";
 import BoardView from "./project/BoardView";
 import TimelineView from "./project/TimelineView";
 import ListView from "./project/ListView";
+import ProjectFilesView from "./project/storage/ProjectFilesView";
 import Loading from "./components/common/Loading";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
@@ -147,8 +149,11 @@ function App() {
                       <Route path="board" element={<BoardView />} />
                       <Route path="timeline" element={<TimelineView />} />
                       <Route path="list" element={<ListView />} />
+                      <Route path="files" element={<ProjectFilesView />} />
+                      <Route path="events" element={<EventsView />} />
                     </Route>
 
+                    <Route path="/events" element={<EventsView />} />
                     <Route path="/calendars" element={<CalendarView />} />
                     <Route path="/my-issues" element={<MyIssuesPage />} />
                     <Route

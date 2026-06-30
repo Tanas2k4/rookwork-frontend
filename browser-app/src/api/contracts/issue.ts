@@ -1,4 +1,5 @@
 import type { AttachmentResponse } from "./attachment";
+import type { SubtaskResponse } from "./subtask";
 
 export type IssueType = "EPIC" | "STORY" | "TASK";
 export type PriorityType = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -59,4 +60,5 @@ export interface IssueResponse {
   createdAt: string;
   updatedAt: string;
   attachments?: AttachmentResponse[];
+  subtasks?: SubtaskResponse[];
 }

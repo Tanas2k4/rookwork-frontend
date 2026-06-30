@@ -122,7 +122,7 @@ function CommentEditor({
   };
 
   return (
-    <div className="w-full border border-gray-250 rounded-lg overflow-hidden bg-white focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-700 transition-all duration-150">
+    <div className="w-full border border-gray-300 rounded-lg overflow-hidden bg-white focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-700 transition-all duration-150">
       <textarea
         autoFocus={autoFocus}
         placeholder={placeholder}

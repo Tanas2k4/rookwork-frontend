@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { LuComponent } from "react-icons/lu";
+import { LuComponent, LuUndo2 } from "react-icons/lu";
 import { IoClose } from "react-icons/io5";
 import { IoIosArrowDown } from "react-icons/io";
 import { GiLinkedRings } from "react-icons/gi";
@@ -227,6 +227,25 @@ export default function InviteModal({
 
   const handleRoleChange = (id: string, role: User["role"]) => {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)));
+  };
+
+  const handleCancelInvite = async (invitationId: string) => {
+    try {
+      await invitationApi.cancel(invitationId);
+      setInviteMessage({
+        text: "Invitation revoked successfully.",
+        type: "success",
+      });
+      fetchPendingInvites();
+      setTimeout(() => setInviteMessage(null), 4000);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to revoke invitation.";
+      setInviteMessage({
+        text: errorMsg,
+        type: "error",
+      });
+    }
   };
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
@@ -472,10 +491,19 @@ export default function InviteModal({
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-1.5">
-                          <span className="text-xs font-semibold  text-emerald-700  pr-2.5 py-0.5 rounded-full tracking-wider shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-bold text-green-700   py-0.5 rounded-full tracking-wider shrink-0">
                             Pending
                           </span>
+                          {isCurrentUserOwner && (
+                            <button
+                              onClick={() => handleCancelInvite(invite.id)}
+                              className="text-[11px] font-bold text-red-600 hover:text-red-400  px-1 py-0.5 rounded-md  transition-colors cursor-pointer shrink-0"
+                              title="Invoke"
+                            >
+                              <LuUndo2 size={15} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

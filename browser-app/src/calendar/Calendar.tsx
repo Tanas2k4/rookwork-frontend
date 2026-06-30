@@ -1,11 +1,10 @@
 import type { CalendarEvent, ViewMode } from "../types/calendar";
 import {
-  COLOR_MAP,
   DAYS,
   getDaysInMonth,
   getFirstDayOfMonth,
-  getColorName,
   timeToMinutes,
+  getEventColorStyles,
 } from "../types/calendar";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -22,6 +21,77 @@ type CalendarProps = {
   onSelectDate: (date: Date) => void;
   onDoubleClickDate: (date: Date) => void;
 };
+
+function getLayoutEvents(dayEvents: CalendarEvent[]) {
+  // Sort events by start time, then by end time
+  const sorted = [...dayEvents].sort((a, b) => {
+    const startA = timeToMinutes(a.time);
+    const startB = timeToMinutes(b.time);
+    if (startA !== startB) return startA - startB;
+    return timeToMinutes(a.endTime) - timeToMinutes(b.endTime);
+  });
+
+  const columns: CalendarEvent[][] = [];
+  const eventToColumnIndex = new Map<string, number>();
+  const eventToGroupColumnsCount = new Map<string, number>();
+  
+  let groupEvents: CalendarEvent[] = [];
+  let groupEnd = 0;
+
+  const finalizeGroup = () => {
+    if (groupEvents.length === 0) return;
+    const colCount = columns.length;
+    for (const ev of groupEvents) {
+      eventToGroupColumnsCount.set(ev.id, colCount);
+    }
+    columns.length = 0;
+    groupEvents = [];
+    groupEnd = 0;
+  };
+
+  for (const ev of sorted) {
+    const evStart = timeToMinutes(ev.time);
+    
+    // If this event starts at or after the groupEnd, finalize previous group
+    if (evStart >= groupEnd) {
+      finalizeGroup();
+    }
+    
+    let placedColIdx = -1;
+    for (let c = 0; c < columns.length; c++) {
+      const col = columns[c];
+      const lastEv = col[col.length - 1];
+      const lastEnd = timeToMinutes(lastEv.endTime);
+      if (lastEnd <= evStart) {
+        placedColIdx = c;
+        col.push(ev);
+        break;
+      }
+    }
+    
+    if (placedColIdx === -1) {
+      placedColIdx = columns.length;
+      columns.push([ev]);
+    }
+    
+    eventToColumnIndex.set(ev.id, placedColIdx);
+    groupEvents.push(ev);
+    const evEnd = timeToMinutes(ev.endTime);
+    groupEnd = Math.max(groupEnd, evEnd);
+  }
+  
+  finalizeGroup();
+
+  return sorted.map((ev) => {
+    const colIdx = eventToColumnIndex.get(ev.id) ?? 0;
+    const colCount = eventToGroupColumnsCount.get(ev.id) ?? 1;
+    return {
+      event: ev,
+      colIdx,
+      colCount,
+    };
+  });
+}
 
 function TimeGrid({
   dates,
@@ -95,6 +165,7 @@ function TimeGrid({
         <div className="absolute inset-0 flex" style={{ left: "56px" }}>
           {dates.map((date, di) => {
             const dayEvts = eventsForDate(date);
+            const layoutEvents = getLayoutEvents(dayEvts);
             return (
               <div
                 key={di}
@@ -102,17 +173,22 @@ function TimeGrid({
                 onDoubleClick={() => onDoubleClickDate(date)}
                 onClick={() => onSelectDate(date)}
               >
-                {dayEvts.map((ev) => {
+                {layoutEvents.map(({ event: ev, colIdx, colCount }) => {
                   const startMin = timeToMinutes(ev.time);
                   const endMin = timeToMinutes(ev.endTime);
                   const height = Math.max(endMin - startMin, 20);
-                  const c =
-                    COLOR_MAP[getColorName(ev.color)] ?? COLOR_MAP.violet;
+                  const colorStyles = getEventColorStyles(ev.color);
                   return (
                     <div
                       key={ev.id}
-                      className={`absolute left-0.5 right-0.5 ${c.bg} ${c.border} ${c.text} rounded-md px-2 py-1 overflow-hidden cursor-pointer hover:shadow-sm transition-shadow`}
-                      style={{ top: `${startMin}px`, height: `${height}px` }}
+                      className={`absolute rounded-md px-2 py-1 overflow-hidden cursor-pointer hover:shadow-sm transition-shadow ${colorStyles.className}`}
+                      style={{ 
+                        top: `${startMin}px`, 
+                        height: `${height}px`,
+                        left: `calc(${(colIdx * 100) / colCount}% + 2px)`,
+                        width: `calc(${100 / colCount}% - 4px)`,
+                        ...colorStyles.style
+                      }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <p className="text-[10px] font-heading font-semibold truncate">
@@ -255,14 +331,18 @@ export default function Calendar({
                   </div>
 
                   <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-0.5 max-h-32">
-                    {dayEvents.slice(0, 3).map((event) => (
-                      <div
-                        key={event.id}
-                        className={`${event.color} text-white text-[10px] font-heading font-medium rounded-md px-2 py-1 cursor-pointer truncate hover:brightness-95 transition-all`}
-                      >
-                        {event.time} {event.title}
-                      </div>
-                    ))}
+                    {dayEvents.slice(0, 3).map((event) => {
+                      const colorStyles = getEventColorStyles(event.color);
+                      return (
+                        <div
+                          key={event.id}
+                          className={`text-[10px] font-heading font-medium rounded-md px-2 py-1 cursor-pointer truncate hover:brightness-95 transition-all ${colorStyles.solidClass}`}
+                          style={colorStyles.solidStyle}
+                        >
+                          {event.time} {event.title}
+                        </div>
+                      );
+                    })}
                     {dayEvents.length > 3 && (
                       <div className="text-[10px] text-gray-500 font-medium px-2 py-0.5 text-center">
                         +{dayEvents.length - 3} more

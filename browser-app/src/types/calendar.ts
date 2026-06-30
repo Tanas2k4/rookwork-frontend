@@ -1,3 +1,6 @@
+import type { EventResponse } from "../api/contracts/event";
+
+
 //  Types 
 
 export type ViewMode = "Month" | "Week" | "Day";
@@ -6,10 +9,12 @@ export type Guest = {
   name: string;
   role: string;
   avatar: string;
+  picture?: string;
+  email?: string;
 };
 
 export type CalendarEvent = {
-  id: number;
+  id: string;
   date: Date;
   time: string;
   endTime: string;
@@ -18,6 +23,7 @@ export type CalendarEvent = {
   location: string;
   guests: Guest[];
   note: string;
+  projectId?: string;
 };
 
 export type EventForm = {
@@ -30,6 +36,7 @@ export type EventForm = {
   color: string;
   guestInput: string;
   guests: Guest[];
+  projectId?: string;
 };
 
 //  Constants 
@@ -73,7 +80,7 @@ export const COLOR_MAP: Record<
 
 export const INITIAL_EVENTS: CalendarEvent[] = [
   {
-    id: 2,
+    id: "2",
     date: new Date(2026, 2, 5),
     time: "14:00",
     endTime: "15:00",
@@ -113,4 +120,114 @@ export function timeToMinutes(t: string) {
 export function getColorName(color: string) {
   const m = color.match(/(violet|sky|emerald|amber|pink|rose|indigo)/);
   return m ? m[1] : "violet";
+}
+
+export function getEventColorStyles(color: string) {
+  const isTailwind = color && color.startsWith("bg-");
+  if (isTailwind) {
+    const colorName = getColorName(color);
+    const mapped = COLOR_MAP[colorName] ?? COLOR_MAP.violet;
+    return {
+      isTailwind: true,
+      className: `${mapped.bg} ${mapped.border} ${mapped.text}`,
+      style: {},
+      barClass: mapped.dot,
+      barStyle: {},
+      solidClass: `${color} text-white`,
+      solidStyle: {},
+    };
+  } else {
+    const customColor = color || "#8b5cf6"; // fallback
+    
+    // Create a soft background color by adding transparency
+    let softBg = customColor;
+    if (customColor.startsWith("#")) {
+      // If it's a 7-character hex like #8b5cf6, append '26' for ~15% opacity
+      if (customColor.length === 7) {
+        softBg = customColor + "26";
+      } else if (customColor.length === 4) {
+        softBg = customColor + "2";
+      }
+    } else if (customColor.startsWith("rgb")) {
+      softBg = customColor.replace("rgb", "rgba").replace(")", ", 0.15)");
+    }
+    
+    return {
+      isTailwind: false,
+      className: "",
+      style: {
+        backgroundColor: softBg,
+        borderColor: customColor,
+        borderWidth: "1px",
+        borderStyle: "solid",
+        color: customColor,
+      },
+      barClass: "",
+      barStyle: {
+        backgroundColor: customColor,
+      },
+      solidClass: "text-white",
+      solidStyle: {
+        backgroundColor: customColor,
+      },
+    };
+  }
+}
+
+export function mapToCalendarEvent(resp: EventResponse): CalendarEvent {
+  const startDate = new Date(resp.startTime);
+  
+  const startHour = String(startDate.getHours()).padStart(2, "0");
+  const startMin = String(startDate.getMinutes()).padStart(2, "0");
+  const time = `${startHour}:${startMin}`;
+
+  const endDate = new Date(resp.endTime);
+  const endHour = String(endDate.getHours()).padStart(2, "0");
+  const endMin = String(endDate.getMinutes()).padStart(2, "0");
+  const endTime = `${endHour}:${endMin}`;
+
+  const guests: Guest[] = [];
+  if (resp.creator) {
+    guests.push({
+      name: resp.creator.profileName,
+      role: "organizer",
+      avatar: resp.creator.profileName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "ME",
+      picture: resp.creator.picture,
+      email: resp.creator.email,
+    });
+  }
+  if (resp.guests) {
+    resp.guests.forEach(g => {
+      guests.push({
+        name: g.profileName,
+        role: "attendee",
+        avatar: g.profileName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "G",
+        picture: g.picture,
+        email: g.email,
+      });
+    });
+  }
+
+  return {
+    id: resp.id,
+    date: startDate,
+    time,
+    endTime,
+    title: resp.eventName,
+    color: resp.color || "bg-violet-800/70",
+    location: resp.location || "",
+    guests,
+    note: resp.eventDescription || "",
+    projectId: resp.projectId,
+  };
+}
+
+export function formatTime12h(timeStr: string) {
+  if (!timeStr) return "";
+  const [hStr, mStr] = timeStr.split(":");
+  let h = parseInt(hStr, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${String(h).padStart(2, "0")}:${mStr} ${ampm}`;
 }

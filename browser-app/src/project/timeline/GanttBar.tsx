@@ -24,11 +24,11 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
         width,
         height: barH,
         borderRadius: 6,
-        background: `linear-gradient(90deg, ${color}cc, ${color}88)`,
-        border: `1px solid ${color}66`,
+        background: `${color}a6`,
+        border: `1px solid ${color}`,
         boxShadow: isHovered
-          ? `0 2px 12px ${color}44`
-          : `0 1px 4px ${color}22`,
+          ? `0 2px 12px ${color}33`
+          : `0 1px 4px ${color}11`,
         pointerEvents: "all",
         cursor: "pointer",
         transition: "box-shadow 0.15s, transform 0.15s",
@@ -49,8 +49,12 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
           left: 0, top: 0,
           height: "100%",
           width: `${task.progress}%`,
-          background: `${color}55`,
-          borderRadius: "6px 0 0 6px",
+          background: task.progress > 0 && task.progress < 100
+            ? `linear-gradient(90deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.15) calc(100% - 12px), rgba(0, 0, 0, 0) 100%), linear-gradient(90deg, ${color} 0%, ${color} calc(100% - 12px), ${color}a6 100%)`
+            : `linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25)), ${color}`,
+          borderRadius: task.progress === 100 ? "6px" : "6px 0 0 6px",
+          borderRight: task.progress > 0 && task.progress < 100 ? "1px solid rgba(255, 255, 255, 0.2)" : "none",
+          boxShadow: task.progress > 0 && task.progress < 100 ? "1px 0 2px rgba(0, 0, 0, 0.1)" : "none",
           transition: "width 0.4s ease",
         }}
       />
@@ -58,7 +62,7 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
       {/* Content */}
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, paddingLeft: 8, paddingRight: 6, width: "100%", overflow: "hidden" }}>
         {width > 80 && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, textShadow: "0 1px 3px rgba(15,23,42,0.6)" }}>
             {task.name}
           </span>
         )}
@@ -83,7 +87,7 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
         ))}
 
         {width > 60 && (
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", fontWeight: 700, flexShrink: 0, marginLeft: "auto", paddingRight: 2 }}>
+          <span style={{ fontSize: 10, color: "#fff", fontWeight: 700, flexShrink: 0, marginLeft: "auto", paddingRight: 2, textShadow: "0 1px 3px rgba(15,23,42,0.6)" }}>
             {task.progress}%
           </span>
         )}

@@ -15,6 +15,7 @@ import type {
 } from "../types/project";
 import { statusMap, priorityLabelMap } from "../types/project";
 import { issueApi } from "../api/services/issueApi";
+import { subtaskApi } from "../api/services/subtaskApi";
 import type { AttachmentResponse } from "../api/contracts/attachment";
 import {
   uiTypeToApi,
@@ -372,35 +373,102 @@ export function useBoard(projectId: string | null) {
     pushToast("Task reordered");
   }
 
-  //  Subtasks (local only — no subtask API yet) 
+  //  Subtasks integrated with Backend API
 
-  function toggleSubtask(subtaskId: number) {
-    if (!selectedTask) return;
-    const updated = selectedTask.subtasks.map((s) =>
-      s.id === subtaskId ? { ...s, done: !s.done } : s,
+  async function toggleSubtask(subtaskId: number) {
+    if (!selectedTask || !projectId) return;
+    const issueUuid = (selectedTask as Task & { _uuid?: string })._uuid ?? idToUuid(selectedTask.id);
+    const subtaskUuid = idToUuid(subtaskId);
+    if (!issueUuid || !subtaskUuid) return;
+
+    const sub = selectedTask.subtasks.find((s) => s.id === subtaskId);
+    if (!sub) return;
+
+    const originalSubtasks = selectedTask.subtasks;
+    const nextDone = !sub.done;
+
+    // Optimistic update
+    const updated = originalSubtasks.map((s) =>
+      s.id === subtaskId ? { ...s, done: nextDone } : s,
     );
     updateTaskLocal(selectedTask.id, { subtasks: updated });
+
+    try {
+      await subtaskApi.update(projectId, issueUuid, subtaskUuid, { isDone: nextDone });
+    } catch (err) {
+      // rollback
+      updateTaskLocal(selectedTask.id, { subtasks: originalSubtasks });
+      pushToast(err instanceof Error ? err.message : "Failed to update subtask", "error");
+    }
   }
 
-  function addSubtask(title: string) {
-    if (!selectedTask || !title.trim()) return;
-    const newSub: Subtask = {
-      id: tempIdRef.current--,
+  async function addSubtask(title: string) {
+    if (!selectedTask || !title.trim() || !projectId) return;
+    const issueUuid = (selectedTask as Task & { _uuid?: string })._uuid ?? idToUuid(selectedTask.id);
+    if (!issueUuid) return;
+
+    const tempId = tempIdRef.current--;
+    const tempSub: Subtask = {
+      id: tempId,
       title: title.trim(),
       done: false,
     };
+    const originalSubtasks = selectedTask.subtasks;
+
+    // Optimistic update
     updateTaskLocal(selectedTask.id, {
-      subtasks: [...selectedTask.subtasks, newSub],
+      subtasks: [...originalSubtasks, tempSub],
     });
-    pushToast("Subtask added");
+
+    try {
+      const created = await subtaskApi.create(projectId, issueUuid, {
+        subtaskName: title.trim(),
+      });
+      uuidToId(created.id); // register
+      const realSub: Subtask = {
+        id: uuidToId(created.id),
+        title: created.subtaskName,
+        done: created.isDone,
+      };
+
+      setTasks((prevTasks) => {
+        return prevTasks.map((t) => {
+          if (t.id === selectedTask.id) {
+            const newSubtasks = t.subtasks.map((s) => (s.id === tempId ? realSub : s));
+            const updatedTask = { ...t, subtasks: newSubtasks };
+            setSelectedTask(updatedTask);
+            return updatedTask;
+          }
+          return t;
+        });
+      });
+      pushToast("Subtask added");
+    } catch (err) {
+      // rollback
+      updateTaskLocal(selectedTask.id, { subtasks: originalSubtasks });
+      pushToast(err instanceof Error ? err.message : "Failed to add subtask", "error");
+    }
   }
 
-  function deleteSubtask(subtaskId: number) {
-    if (!selectedTask) return;
-    updateTaskLocal(selectedTask.id, {
-      subtasks: selectedTask.subtasks.filter((s) => s.id !== subtaskId),
-    });
+  async function deleteSubtask(subtaskId: number) {
+    if (!selectedTask || !projectId) return;
+    const issueUuid = (selectedTask as Task & { _uuid?: string })._uuid ?? idToUuid(selectedTask.id);
+    const subtaskUuid = idToUuid(subtaskId);
+    if (!issueUuid || !subtaskUuid) return;
+
+    const originalSubtasks = selectedTask.subtasks;
+    // Optimistic update
+    const updated = originalSubtasks.filter((s) => s.id !== subtaskId);
+    updateTaskLocal(selectedTask.id, { subtasks: updated });
     pushToast("Subtask removed", "info");
+
+    try {
+      await subtaskApi.delete(projectId, issueUuid, subtaskUuid);
+    } catch (err) {
+      // rollback
+      updateTaskLocal(selectedTask.id, { subtasks: originalSubtasks });
+      pushToast(err instanceof Error ? err.message : "Failed to delete subtask", "error");
+    }
   }
 
   function updateAttachments(taskId: number, attachments: AttachmentResponse[]) {
