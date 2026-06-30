@@ -12,13 +12,15 @@ import {
 import { useProject } from "../../../hooks/useProject";
 import { formatDeadline } from "../../shared/dropdownConstants";
 import { avatarUrl } from "../../../utils/avatar";
+import type { ProjectStatusResponse } from "../../../api/contracts/projectStatus";
 
 interface Props {
   task: Task;
-  onChangeStatus: (s: Status) => void;
+  onChangeStatus: (statusId: string) => void;
   onChangePriority: (p: Priority) => void;
   onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
+  projectStatuses: ProjectStatusResponse[];
 }
 
 export function TaskModalDetails({
@@ -27,6 +29,7 @@ export function TaskModalDetails({
   onChangePriority,
   onChangeAssignee,
   onSaveDeadline,
+  projectStatuses,
 }: Props) {
   const { members } = useProject();
 
@@ -97,20 +100,30 @@ export function TaskModalDetails({
             onClick={() => { setShowStatusDd((p) => !p); setShowPriorityDd(false); setShowAssigneeDd(false); }}
             className="flex items-center gap-1.5 text-sm text-gray-700 px-2 py-1 transition"
           >
-            <span className={`w-2 h-2 rounded-full ${statusMap[task.status].dotColor}`} />
-            {statusMap[task.status].label}
+            {(() => {
+              const currentStatus = projectStatuses.find((ps) => ps.id === (task as any)._statusId) ||
+                projectStatuses.find((ps) => ps.statusCategory === (task.status === "to_do" ? "TO_DO" : task.status === "in_progress" ? "IN_PROGRESS" : "DONE"));
+              const color = currentStatus?.color ?? "#94a3b8";
+              const label = currentStatus?.statusName ?? statusMap[task.status].label;
+              return (
+                <>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <span>{label}</span>
+                </>
+              );
+            })()}
             <MdOutlineExpandMore size={16} className="text-gray-400" />
           </button>
           {showStatusDd && (
-            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-40">
-              {statuses.map((s) => (
-                <button key={s}
-                  onClick={() => { onChangeStatus(s); closeAll(); }}
+            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-48 max-h-60 overflow-y-auto">
+              {projectStatuses.map((s) => (
+                <button key={s.id}
+                  onClick={() => { onChangeStatus(s.id); closeAll(); }}
                   className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                    task.status === s ? "text-purple-700 font-medium" : "text-gray-700"
+                    (task as any)._statusId === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"
                   }`}>
-                  <span className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`} />
-                  {statusMap[s].label}
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  <span className="truncate">{s.statusName}</span>
                 </button>
               ))}
             </div>

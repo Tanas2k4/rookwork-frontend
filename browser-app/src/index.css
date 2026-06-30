@@ -17,10 +17,33 @@ body {
   -webkit-app-region: no-drag;
 }
 
-/* hidden scrollbar */
+/* hidden scrollbar (global) */
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+/* Kanban board horizontal scrollbar — visible, thin, styled */
+.board-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+.board-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.board-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 99px;
+}
+.board-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 99px;
+}
+.board-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 body {

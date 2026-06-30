@@ -22,6 +22,7 @@ import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime, toDatetimeLocal } from "../../../utils/date";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "../../../components/common/RichTextEditor";
+import type { ProjectStatusResponse } from "../../../api/contracts/projectStatus";
 
 interface Props {
   task: Task | null;
@@ -31,7 +32,7 @@ interface Props {
   onOpenTask: (task: Task) => void;
   onSaveTitle: (title: string) => void;
   onSaveDescription: (desc: string) => void;
-  onChangeStatus: (s: Status) => void;
+  onChangeStatus: (statusId: string) => void;
   onChangePriority: (p: Priority) => void;
   onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
@@ -42,6 +43,7 @@ interface Props {
   onAddSubtask: (title: string) => void;
   onDeleteSubtask: (id: number) => void;
   onUpdateAttachments?: (attachments: AttachmentResponse[]) => void;
+  projectStatuses: ProjectStatusResponse[];
 }
 
 //  Log Work Section
@@ -357,6 +359,7 @@ export function TaskModal({
   onAddSubtask,
   onDeleteSubtask,
   onUpdateAttachments,
+  projectStatuses,
 }: Props) {
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
@@ -500,6 +503,7 @@ export function TaskModal({
                     onChangePriority={onChangePriority}
                     onChangeAssignee={onChangeAssignee}
                     onSaveDeadline={onSaveDeadline}
+                    projectStatuses={projectStatuses}
                   />
 
                   {/* Log Work */}

@@ -18,14 +18,18 @@ import { issueApi } from "../api/services/issueApi";
 import { subtaskApi } from "../api/services/subtaskApi";
 import type { AttachmentResponse } from "../api/contracts/attachment";
 import {
-  uiStatusToApi,
+  uiTypeToApi,
+  uiStatusToStatusId,
   uiPriorityToApi,
   uuidToId,
   idToUuid,
   issueToTask,
+  categoryToUIStatus,
 } from "../utils/issueMapper";
 import { useToast } from "../hooks/useToast";
 import { ProjectContext } from "../context/ProjectContext";
+import { useProjectStatuses } from "../hooks/useProjectStatuses";
+import { useWorkflow } from "../hooks/useWorkflow";
 
 //  Hook 
 
@@ -37,12 +41,14 @@ import { ProjectContext } from "../context/ProjectContext";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
-  const { issueUpdateTick, issueTypes } = useContext(ProjectContext);
+  const { issueUpdateTick, notifyIssueUpdated, issueTypes } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const { toasts, addToast: pushToast, removeToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { statuses: projectStatuses } = useProjectStatuses(projectId);
+  const { isTransitionAllowed } = useWorkflow(projectId);
 
   const tempIdRef = useRef(-1);
 
@@ -135,7 +141,7 @@ export function useBoard(projectId: string | null) {
         issueName: title,
         issueTypeId,
         priority: uiPriorityToApi(priority),
-        status: uiStatusToApi(status),
+        statusId: uiStatusToStatusId(status, projectStatuses),
       });
 
       uuidToId(created.id); // register uuid
@@ -143,6 +149,9 @@ export function useBoard(projectId: string | null) {
 
       setTasks((p) => p.map((t) => (t.id === tempId ? realTask : t)));
       pushToast("Task created");
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
       return realTask;
     } catch (err) {
       setTasks((p) => p.filter((t) => t.id !== tempId));
@@ -164,6 +173,9 @@ export function useBoard(projectId: string | null) {
 
     try {
       await issueApi.delete(projectId, uuid);
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
     } catch (err) {
       // Rollback
       setTasks((p) => [...p, task]);
@@ -181,6 +193,9 @@ export function useBoard(projectId: string | null) {
     if (!uuid) return;
     try {
       await issueApi.update(projectId, uuid, patch);
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
     } catch (err) {
       console.error("Failed to update issue", err);
       pushToast(err instanceof Error ? err.message : "Failed to save change", "error");
@@ -204,19 +219,34 @@ export function useBoard(projectId: string | null) {
     patchIssue(selectedTask.id, { description });
   }
 
-  function changeStatus(s: Status) {
-    if (!selectedTask) return;
-    if (selectedTask.status === s) return;
-    updateTaskLocal(selectedTask.id, { status: s });
-    pushToast(`Status → ${statusMap[s].label}`);
-    patchIssue(selectedTask.id, { status: uiStatusToApi(s) });
+  function changeTaskStatusId(taskId: number, statusId: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const targetStatus = projectStatuses.find((ps) => ps.id === statusId);
+    if (!targetStatus) return;
+    const oldStatusId = (task as any)._statusId;
+    if (oldStatusId === statusId) return;
+    if (!isTransitionAllowed(oldStatusId, statusId)) {
+      pushToast("This status transition is not allowed by the project's workflow rules", "error");
+      return;
+    }
+    const uiStatus = categoryToUIStatus(targetStatus.statusCategory);
+    updateTaskLocal(taskId, {
+      status: uiStatus,
+      _statusId: statusId,
+      _statusMeta: targetStatus,
+    } as any);
+    pushToast(`${task.title} → ${targetStatus.statusName}`);
+    patchIssue(taskId, { statusId });
   }
 
-  function changeTaskStatus(task: Task, newStatus: Status) {
-    if (task.status === newStatus) return;
-    updateTaskLocal(task.id, { status: newStatus });
-    pushToast(`${task.title} moved to ${statusMap[newStatus].label}`);
-    patchIssue(task.id, { status: uiStatusToApi(newStatus) });
+  function changeStatus(statusId: string) {
+    if (!selectedTask) return;
+    changeTaskStatusId(selectedTask.id, statusId);
+  }
+
+  function changeTaskStatus(task: Task, newStatusId: string) {
+    changeTaskStatusId(task.id, newStatusId);
   }
 
   function changePriority(p: Priority) {
@@ -511,6 +541,7 @@ export function useBoard(projectId: string | null) {
     deleteSubtask,
     removeToast,
     updateAttachments,
+    isTransitionAllowed,
     reload: loadIssues,
   };
 }

@@ -22,6 +22,8 @@ export interface GanttTask {
   group?: string;
   status?: "todo" | "in_progress" | "done";
   type?: TaskType;
+  _statusId?: string;
+  _statusMeta?: any;
 }
 
 // Constants
@@ -76,29 +78,33 @@ function inferStart(task: Task): Date {
 }
 
 export function taskToGantt(task: Task): GanttTask {
-  const rawGroupName = task.issueType?.name || "Task";
+  const t = task as Task & { _statusId?: string; _statusMeta?: any; issueType?: any };
+  const rawGroupName = t.issueType?.name || "Task";
   const groupName = rawGroupName.charAt(0).toUpperCase() + rawGroupName.slice(1).toLowerCase();
 
   return {
-    id: String(task.id),
-    name: task.title,
-    start: inferStart(task),
-    end: task.deadline ? new Date(task.deadline) : new Date("2026-03-15"),
-    progress: calcProgress(task),
-    color: task.issueType?.color || "#64748B",
-    status: statusToGantt(task.status),
+    id: String(t.id),
+    name: t.title,
+    start: inferStart(t),
+    end: t.deadline ? new Date(t.deadline) : new Date("2026-03-15"),
+    progress: calcProgress(t),
+    color: t.issueType?.color || "#64748B",
+    status: statusToGantt(t.status),
     group: groupName,
-    type: task.type,
-    assignees: Array.isArray(task.assigned_to)
-      ? task.assigned_to.map((u) => ({
+    type: t.type,
+    assignees: Array.isArray(t.assigned_to)
+      ? t.assigned_to.map((u) => ({
           id: String(u.id),
           name: u.display_name,
           avatar: u.avt,
           color: USER_COLORS[Math.abs(u.id - 1) % USER_COLORS.length] || USER_COLORS[0],
         }))
       : [],
+    _statusId: t._statusId,
+    _statusMeta: t._statusMeta,
   };
 }
+
 
 // Column builder
 function getWeekNumber(d: Date): number {
