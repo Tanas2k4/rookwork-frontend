@@ -5,11 +5,11 @@ import type { Dispatch, SetStateAction } from "react";
 import { FaChevronDown } from "react-icons/fa6";
 import { BsBell } from "react-icons/bs";
 import { GoSidebarCollapse } from "react-icons/go";
-import { IoSearchSharp } from "react-icons/io5";
 import { BiPlus } from "react-icons/bi";
 import rookworkLogo from "../../assets/logo-no-background.png";
 import { CreateProjectPanel } from "./shared/CreateProjectPanel";
 import { NotificationPanel } from "./shared/NotificationPanel";
+import { HeaderSearch } from "./shared/HeaderSearch";
 import { useNotifications } from "../../hooks/useNotifications";
 import type { ProjectResponse } from "../../api/contracts";
 
@@ -100,14 +100,7 @@ function Header({
           </Link>
 
           <div className="flex gap-3 relative w-max items-center">
-            <div className="relative">
-              <IoSearchSharp className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="bg-gray-200 pl-10 pr-3 py-1 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
+            <HeaderSearch />
             <button
               onClick={() => setOpenCreatePanel(true)}
               className="flex items-center justify-center bg-purple-900 gap-1 px-3 py-1 rounded-md text-gray-200 hover:bg-purple-800 transition"
