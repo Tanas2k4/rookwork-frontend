@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { useLocation } from "react-router-dom";
 import { ProjectContext } from "../../context/ProjectContext";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask } from "../../utils/issueMapper";
@@ -21,6 +22,7 @@ export default function ProjectFilesView() {
     openIssueModal,
     notifyIssueUpdated,
   } = useContext(ProjectContext);
+  const location = useLocation();
   const [tasks, setTasks] = useState<(Task & { _uuid: string })[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFolderUuid, setSelectedFolderUuid] = useState<string | null>(
@@ -37,6 +39,13 @@ export default function ProjectFilesView() {
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] =
     useState<boolean>(false);
   const { toasts, addToast, removeToast } = useToast();
+
+  useEffect(() => {
+    const state = location.state as { folderUuid?: string } | null;
+    if (state?.folderUuid) {
+      setSelectedFolderUuid(state.folderUuid);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!projectId) return;

@@ -185,8 +185,15 @@ export default function ListView() {
                         <td className="px-4 py-3 border-r border-gray-200">
                           <div className="flex items-center justify-between cursor-pointer group"
                             onDoubleClick={(e) => lv.openDropdownWithPosition(e, "status", task._uuid)}>
-                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusOpt.color}`}>
-                              {statusOpt.label}
+                            <span
+                              style={
+                                (task as any)._statusMeta?.color
+                                  ? { backgroundColor: (task as any)._statusMeta.color + "20", color: (task as any)._statusMeta.color }
+                                  : undefined
+                              }
+                              className={!(task as any)._statusMeta?.color ? `px-3 py-1 text-xs font-semibold rounded-full ${statusOpt.color}` : "px-3 py-1 text-xs font-semibold rounded-full"}
+                            >
+                              {(task as any)._statusMeta?.statusName ?? statusOpt.label}
                             </span>
                             <button onClick={(e) => lv.openDropdownWithPosition(e, "status", task._uuid)}
                               className="p-1 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition">
@@ -291,6 +298,7 @@ export default function ListView() {
         onStatusChange={lv.handleStatusChange}
         onTypeChange={lv.handleTypeChange}
         onDeadlineChange={lv.handleDeadlineChange}
+        projectStatuses={lv.projectStatuses}
       />
         <ToastContainer toasts={lv.toasts} onRemove={lv.removeToast} />
     </div>

@@ -14,10 +14,12 @@ import type { Task, Status, Priority, User } from "../../types/project";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask, uuidToId } from "../../utils/issueMapper";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
+import { useProjectStatuses } from "../../hooks/useProjectStatuses";
 
 export function SharedIssueModal() {
   const { projectId, setOpenIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
   const board = useBoard(projectId);
+  const { statuses: projectStatuses } = useProjectStatuses(projectId);
   const boardRef = useRef(board);
   useEffect(() => {
     boardRef.current = board;
@@ -119,6 +121,7 @@ export function SharedIssueModal() {
       onAddSubtask={board.addSubtask}
       onDeleteSubtask={board.deleteSubtask}
       onUpdateAttachments={updateAttachments}
+      projectStatuses={projectStatuses}
     />
   );
 }

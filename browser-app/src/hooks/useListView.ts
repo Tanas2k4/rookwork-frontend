@@ -13,10 +13,13 @@ import { ProjectContext } from "../context/ProjectContext";
 import {
   apiUserToUI,
   issueToTask,
-  uiStatusToApi,
+  uiStatusToStatusId,
+  uiTypeToApi,
+  categoryToUIStatus,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";
 import { useClickOutside } from "./useClickOutside";
+import { useProjectStatuses } from "./useProjectStatuses";
 
 //  Types 
 
@@ -33,7 +36,7 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId, issueUpdateTick, issueTypes } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick, notifyIssueUpdated, issueTypes } = useContext(ProjectContext);
 
   const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -47,6 +50,7 @@ export function useListView() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 25;
   const { toasts, addToast, removeToast } = useToast();
+  const { statuses: projectStatuses } = useProjectStatuses(projectId);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -144,6 +148,9 @@ export function useListView() {
     try {
       await issueApi.update(projectId, taskId, data);
       addToast(successMsg, "success");
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Update failed. Please try again.", "error");
       // Rollback: reload from server
@@ -197,19 +204,35 @@ export function useListView() {
     );
   }
 
-  function handleStatusChange(taskId: string, status: Status) {
+  function handleStatusChange(taskId: string, statusId: string) {
     const task = tasks.find((t) => t._uuid === taskId);
     if (!task) return;
-    if (task.status === status) {
+    const targetStatus = projectStatuses.find((ps) => ps.id === statusId);
+    if (!targetStatus) return;
+
+    if ((task as any)._statusId === statusId) {
       closeDropdown();
       return;
     }
 
+    const uiStatus = categoryToUIStatus(targetStatus.statusCategory);
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, status } : t));
+    setTasks((p) =>
+      p.map((t) =>
+        t._uuid === taskId
+          ? ({
+              ...t,
+              status: uiStatus,
+              _statusId: statusId,
+              _statusMeta: targetStatus,
+            } as any)
+          : t,
+      ),
+    );
     closeDropdown();
 
-    updateIssue(taskId, { status: uiStatusToApi(status) }, `Status → ${status.replace("_", " ")}`);
+    updateIssue(taskId, { statusId }, `Status → ${targetStatus.statusName}`);
   }
 
   function handleTypeChange(taskId: string, issueTypeId: string) {
@@ -318,5 +341,6 @@ export function useListView() {
     goToPrevPage,
     goToNextPage,
     PAGE_SIZE,
+    projectStatuses,
   };
 }
