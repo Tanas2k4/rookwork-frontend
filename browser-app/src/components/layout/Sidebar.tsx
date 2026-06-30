@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { GoSidebarCollapse } from "react-icons/go";
-import { IoCalendarOutline, IoSettingsOutline } from "react-icons/io5";
+import { IoCalendarOutline, IoSettingsOutline, IoShieldOutline } from "react-icons/io5";
 import { MdKeyboardArrowDown, MdKeyboardArrowRight } from "react-icons/md";
 import { BsCalendar2Event, BsFolder } from "react-icons/bs";
 import { AiOutlineCheckSquare } from "react-icons/ai";
@@ -12,9 +12,10 @@ interface SidebarProps {
   sidebar: boolean;
   setSidebar: Dispatch<SetStateAction<boolean>>;
   projects: ProjectUI[];
+  isAdmin?: boolean;
 }
 
-const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
+const Sidebar = ({ sidebar, setSidebar, projects, isAdmin }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [projectsExpanded, setProjectsExpanded] = useState(true);
@@ -163,6 +164,24 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
 
           {/* Footer */}
           <div className="border-t border-gray-200 py-2 px-2">
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `flex items-center w-full h-10 rounded-lg transition-colors group ${
+                    isActive || location.pathname.startsWith('/admin') ? "bg-purple-50 text-purple-700 font-medium" : "hover:bg-gray-100"
+                  }`
+                }
+              >
+                <div className="w-12 flex justify-center items-center shrink-0">
+                  <IoShieldOutline size={20} />
+                </div>
+                <span className={`truncate transition-all duration-300 ${sidebar ? "opacity-100" : "opacity-0"}`}>
+                  Admin Panel
+                </span>
+              </NavLink>
+            )}
+
             <NavLink
               to="/calendars"
               className={({ isActive }) =>

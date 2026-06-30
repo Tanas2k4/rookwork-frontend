@@ -24,6 +24,7 @@ export interface UserSummary {
   notifyDailyDigest?: boolean;
   role?: string;
   hasPassword?: boolean;
+  isAdmin?: boolean;
 }
 
 export interface CreateIssueRequest {

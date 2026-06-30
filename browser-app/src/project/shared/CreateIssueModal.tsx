@@ -87,11 +87,12 @@ const PRIORITIES_ORDER: PriorityType[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 interface CreateIssueModalProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 // Removed file helper functions
 
-export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
+export function CreateIssueModal({ open, onClose, onSuccess }: CreateIssueModalProps) {
   const { members, projectId, reloadIssues } = useProject();
   const { addToast } = useToast();
 
