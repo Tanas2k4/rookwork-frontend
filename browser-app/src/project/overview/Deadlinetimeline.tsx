@@ -6,18 +6,29 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import type { IssueTypeResponse, UserSummary } from "../../api/contracts/issue";
 import type { OverviewData, OverviewIssue } from "../../hooks/useOverview";
-import type { UserSummary } from "../../api/contracts/issue";
-import { apiTypeToUI, apiPriorityToUI, apiStatusToUI } from "../../utils/issueMapper";
+import { apiPriorityToUI, apiStatusToUI } from "../../utils/issueMapper";
 import { avatarUrl } from "../../utils/avatar";
 
 type TaskStatus = "to_do" | "in_progress" | "done";
-type TaskType = "epic" | "story" | "task";
 type TaskPriority = "urgent" | "high" | "medium" | "low";
 
-function TypeChip({ type }: { type: TaskType }) {
-  const cls: Record<TaskType, string> = { epic: "bg-violet-100 text-violet-700", story: "bg-sky-100 text-sky-700", task: "bg-gray-100 text-gray-600" };
-  return <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${cls[type]}`}>{type}</span>;
+function TypeChip({ issueType }: { issueType: IssueTypeResponse }) {
+  if (!issueType) return null;
+  const color = issueType.color;
+  return (
+    <span
+      className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border"
+      style={{
+        backgroundColor: `${color}15`,
+        color: color,
+        borderColor: `${color}30`
+      }}
+    >
+      {issueType.name}
+    </span>
+  );
 }
 function PriorityBadge({ priority }: { priority: TaskPriority }) {
   const cls: Record<TaskPriority, string> = { urgent: "bg-red-100 text-red-600", high: "bg-orange-50 text-orange-500", medium: "bg-orange-50 text-orange-600", low: "bg-green-50 text-green-600" };
@@ -139,7 +150,6 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
               const daysLabel = isDone ? "Done" : isOverdue ? `${Math.abs(item.daysLeft)}d ago` : item.daysLeft === 0 ? "Today" : item.daysLeft === 1 ? "1d left" : `${item.daysLeft}d left`;
               
               const isHovered = hoveredData?.id === item.id;
-              const type = apiTypeToUI(item.issueType);
 
               return (
                 <div 
@@ -168,7 +178,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
                     {item.issueName}
                   </span>
                   <div className="mt-1">
-                    <TypeChip type={type} />
+                    <TypeChip issueType={item.issueType} />
                   </div>
                 </div>
               );
@@ -192,7 +202,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
           }}
         >
           <div className="flex items-center gap-1.5 mb-2">
-            <TypeChip type={apiTypeToUI(hoveredData.item.issueType)} />
+            <TypeChip issueType={hoveredData.item.issueType} />
             <PriorityBadge priority={apiPriorityToUI(hoveredData.item.priority)} />
           </div>
           <p className="text-[12px] font-semibold text-gray-800 leading-snug mb-2">{hoveredData.item.issueName}</p>

@@ -12,8 +12,7 @@ import {
   priorityColorMap,
   priorityLabelMap,
   priorities,
-  typeIconMap,
-  typeColorMap,
+  issueTypeIcons,
 } from "../types/project";
 import { avatarUrl } from "../utils/avatar";
 import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
@@ -296,9 +295,9 @@ export default function MyIssuesPage() {
 
               <div className="space-y-1.5">
                 {groupIssues.map((issue) => {
-                  const type     = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
+                  const it = issue.issueType;
                   const priority = apiPriorityToUI(issue.priority);
-                  const TypeIcon = typeIconMap[type];
+                  const TypeIcon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
                   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
                   const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
 
@@ -309,7 +308,7 @@ export default function MyIssuesPage() {
                       })}
                       className="w-full text-left flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 hover:border-gray-300 hover:bg-neutral-100 transition group"
                     >
-                      <TypeIcon size={13} className={`${typeColorMap[type]} shrink-0`} />
+                      <TypeIcon size={13} style={{ color: it?.color || "#64748B" }} className="shrink-0" />
                       <span className="flex-1 text-sm text-gray-700 group-hover:text-purple-800 truncate font-medium transition">
                         {issue.issueName}
                       </span>

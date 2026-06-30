@@ -3,9 +3,8 @@ import { MdClose } from "react-icons/md";
 import { FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import type { Task } from "../../../types/project";
 import {
-  typeIconMap,
-  typeColorMap,
   typeLabelMap,
+  issueTypeIcons,
 } from "../../../types/project";
 
 interface Props {
@@ -29,7 +28,10 @@ export function TaskModalHeader({
   const [value, setValue] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const Icon = typeIconMap[task.type];
+
+  const it = task.issueType;
+  const Icon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
+  const typeColor = it?.color || "#64748B";
 
   const parent = task.parentId
     ? allTasks.find((t) => t.id === task.parentId)
@@ -42,14 +44,16 @@ export function TaskModalHeader({
 
   return (
     <div className="shrink-0 border-b border-gray-200 px-6 py-4 flex items-start gap-3 bg-white rounded-t-2xl">
-      <Icon className={`${typeColorMap[task.type]} text-lg mt-1.5 shrink-0`} />
+      <Icon style={{ color: typeColor }} className="text-lg mt-1.5 shrink-0" />
       <div className="flex-1 min-w-0">
         {/* Parent breadcrumb */}
         {parent && (
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
             {(() => {
-              const PI = typeIconMap[parent.type];
-              return <PI className={typeColorMap[parent.type]} size={11} />;
+              const pit = parent.issueType;
+              const PI = issueTypeIcons[pit?.iconKey || "task"] || issueTypeIcons.task;
+              const parentColor = pit?.color || "#64748B";
+              return <PI style={{ color: parentColor }} size={11} />;
             })()}
             <button
               onClick={() => onOpenTask(parent)}

@@ -14,7 +14,7 @@ import type {
 } from "../types/project";
 import type {
   IssueResponse,
-  IssueType,
+  IssueTypeResponse,
   PriorityType,
   Status as ApiStatus,
   UserSummary,
@@ -25,16 +25,16 @@ import { avatarUrl } from "./avatar";
  * Chuyển đổi loại công việc từ API BE (viết hoa) sang loại công việc trên UI FE (viết thường).
  * @param t Loại công việc từ BE
  */
-export function apiTypeToUI(t: IssueType): TaskType {
-  return t.toLowerCase() as TaskType;
+export function apiTypeToUI(t: IssueTypeResponse): TaskType {
+  return t.name.toLowerCase() as TaskType;
 }
 
 /**
  * Chuyển đổi loại công việc từ UI FE (viết thường) sang loại công việc của API BE (viết hoa).
  * @param t Loại công việc từ FE
  */
-export function uiTypeToApi(t: TaskType): IssueType {
-  return t.toUpperCase() as IssueType;
+export function uiTypeToApi(t: TaskType): any {
+  return t.toUpperCase();
 }
 
 /**
@@ -159,5 +159,6 @@ export function issueToTask(
     parentId: issue.parentId ? uuidToId(issue.parentId) : null,
     childIds: children,
     attachments: issue.attachments,
+    issueType: issue.issueType,
   };
 }

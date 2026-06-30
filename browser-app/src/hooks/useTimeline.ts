@@ -11,11 +11,12 @@ import type { GanttTask } from "../project/timeline/timelineUtils";
 import type { IssueResponse } from "../api/contracts/issue";
 import { issueToTask } from "../utils/issueMapper";
 import { ProjectContext } from "../context/ProjectContext";
+import { computeAllProgress } from "../utils/progress";
 
-const TYPE_DURATION: Record<IssueResponse["issueType"], number> = {
-  TASK: 7,
-  STORY: 14,
-  EPIC: 28,
+const TYPE_DURATION: Record<string, number> = {
+  task: 7,
+  story: 14,
+  epic: 28,
 };
 
 /**
@@ -32,15 +33,24 @@ function addDaysToDate(date: Date, days: number): Date {
 /**
  * Chuyển đổi một đối tượng IssueResponse của API thành đối tượng GanttTask dùng cho thư viện Timeline.
  * @param issue Đối tượng issue từ API BE
+ * @param progressMap Bản đồ chứa tiến độ được tính toán
  */
-function issueToGantt(issue: IssueResponse): GanttTask {
+function issueToGantt(
+  issue: IssueResponse,
+  progressMap: Record<string, number>,
+): GanttTask {
   const minimalTask = issueToTask(issue);
   const gantt = taskToGantt(minimalTask);
   const start = new Date(issue.createdAt);
   const end = issue.deadline
     ? new Date(issue.deadline)
-    : addDaysToDate(start, TYPE_DURATION[issue.issueType]);
-  return { ...gantt, id: issue.id, start, end };
+    : addDaysToDate(
+        start,
+        TYPE_DURATION[issue.issueType.name.toLowerCase()] || 7,
+      );
+  const progress =
+    progressMap[issue.id] !== undefined ? progressMap[issue.id] : gantt.progress;
+  return { ...gantt, id: issue.id, start, end, progress };
 }
 
 //  Hook
@@ -69,7 +79,10 @@ export function useTimeline(projectId: string | null): UseTimelineReturn {
     issueApi
       .getAll(projectId)
       .then((issues) => {
-        if (!cancelled) setGanttTasks(issues.map(issueToGantt));
+        if (!cancelled) {
+          const progressMap = computeAllProgress(issues);
+          setGanttTasks(issues.map((i) => issueToGantt(i, progressMap)));
+        }
       })
       .catch((err) => {
         console.error("useTimeline: failed to load issues", err);

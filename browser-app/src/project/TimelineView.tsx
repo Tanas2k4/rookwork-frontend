@@ -61,9 +61,14 @@ export default function TimelineView() {
 
   const groups = useMemo(
     () =>
-      Array.from(new Set(TASKS.map((t) => t.group || "Other"))).sort(
-        (a, b) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b),
-      ),
+      Array.from(new Set(TASKS.map((t) => t.group || "Other"))).sort((a, b) => {
+        const idxA = GROUP_ORDER.indexOf(a);
+        const idxB = GROUP_ORDER.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      }),
     [TASKS],
   );
 
