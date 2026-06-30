@@ -43,12 +43,6 @@ export const STATUS_CONFIG: Record<
 };
 
 // Adapter
-const TYPE_COLOR: Record<TaskType, string> = {
-  task: "#1d4ed8",
-  story: "#15803d",
-  epic: "#7e22ce",
-};
-
 const USER_COLORS = [
   "#f472b6",
   "#60a5fa",
@@ -76,24 +70,27 @@ function inferStart(task: Task): Date {
   const deadline = task.deadline
     ? new Date(task.deadline)
     : new Date("2026-03-15");
-  const duration: Record<TaskType, number> = { task: 7, story: 14, epic: 28 };
+  const durationMap: Record<string, number> = { task: 7, story: 14, epic: 28 };
+  const duration = durationMap[task.type.toLowerCase()] || 7;
   const d = new Date(deadline);
-  d.setDate(d.getDate() - duration[task.type]);
+  d.setDate(d.getDate() - duration);
   return d;
 }
 
 export function taskToGantt(task: Task): GanttTask {
-  const t = task as Task & { _statusId?: string; _statusMeta?: any };
+  const t = task as Task & { _statusId?: string; _statusMeta?: any; issueType?: any };
+  const rawGroupName = t.issueType?.name || "Task";
+  const groupName = rawGroupName.charAt(0).toUpperCase() + rawGroupName.slice(1).toLowerCase();
+
   return {
     id: String(t.id),
     name: t.title,
     start: inferStart(t),
     end: t.deadline ? new Date(t.deadline) : new Date("2026-03-15"),
     progress: calcProgress(t),
-    color: TYPE_COLOR[t.type],
+    color: t.issueType?.color || "#64748B",
     status: statusToGantt(t.status),
-    group:
-      t.type === "epic" ? "Epic" : t.type === "story" ? "Story" : "Task",
+    group: groupName,
     type: t.type,
     assignees: Array.isArray(t.assigned_to)
       ? t.assigned_to.map((u) => ({
@@ -107,6 +104,7 @@ export function taskToGantt(task: Task): GanttTask {
     _statusMeta: t._statusMeta,
   };
 }
+
 
 // Column builder
 function getWeekNumber(d: Date): number {

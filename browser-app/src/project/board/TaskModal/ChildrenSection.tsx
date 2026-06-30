@@ -8,11 +8,8 @@ import {
 import { TbSubtask } from "react-icons/tb";
 import type { Task } from "../../../types/project";
 import {
-  typeIconMap,
-  typeColorMap,
   statusMap,
-  childTypeMap,
-  childLabelMap,
+  issueTypeIcons,
 } from "../../../types/project";
 
 interface Props {
@@ -33,7 +30,14 @@ export function ChildrenSection({
   const [expanded, setExpanded] = useState(true);
   const [showLinkDd, setShowLinkDd] = useState(false);
 
-  const childType = childTypeMap[task.type];
+  const allowedChildTypes = useMemo(() => {
+    if (task.type === "epic") return ["story"];
+    if (task.type === "story") {
+      const allTypes = Array.from(new Set(allTasks.map((t) => t.type)));
+      return allTypes.filter((t) => t !== "epic" && t !== "story");
+    }
+    return [];
+  }, [task.type, allTasks]);
 
   const children = useMemo(() => {
     return allTasks.filter((t) => (task.childIds ?? []).includes(t.id));
@@ -42,17 +46,17 @@ export function ChildrenSection({
   const candidates = useMemo(() => {
     return allTasks.filter(
       (t) =>
-        t.type === childType &&
+        allowedChildTypes.includes(t.type) &&
         !(task.childIds ?? []).includes(t.id) &&
         t.parentId == null,
     );
-  }, [allTasks, task.childIds, childType]);
+  }, [allTasks, task.childIds, allowedChildTypes]);
 
-  if (!childType) {
+  if (allowedChildTypes.length === 0) {
     return null;
   }
 
-  const label = childLabelMap[task.type]!;
+  const label = task.type === "epic" ? "Stories" : "Tasks & Issues";
 
   return (
     <div>
@@ -75,18 +79,19 @@ export function ChildrenSection({
             className="flex items-center gap-0.5 text-xs text-purple-700 hover:text-purple-900 transition"
           >
             <MdAdd size={13} />
-            Link {childType}
+            Link Issue
           </button>
           {showLinkDd && (
             <>
               <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30 w-60 max-h-56 overflow-y-auto">
                 {candidates.length === 0 ? (
                   <p className="text-xs text-gray-400 italic px-3 py-2">
-                    No available {childType}s to link
+                    No available issues to link
                   </p>
                 ) : (
                   candidates.map((c) => {
-                    const Icon = typeIconMap[c.type];
+                    const cit = c.issueType;
+                    const Icon = issueTypeIcons[cit?.iconKey || "task"] || issueTypeIcons.task;
                     return (
                       <button
                         key={c.id}
@@ -97,7 +102,8 @@ export function ChildrenSection({
                         className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
                       >
                         <Icon
-                          className={`${typeColorMap[c.type]} shrink-0`}
+                          style={{ color: cit?.color || "#64748B" }}
+                          className="shrink-0"
                           size={12}
                         />
                         <span className="truncate">{c.title}</span>
@@ -119,11 +125,12 @@ export function ChildrenSection({
         <div className="space-y-1.5">
           {children.length === 0 ? (
             <p className="text-xs text-gray-300 italic">
-              No {childType}s linked yet
+              No linked issues yet
             </p>
           ) : (
             children.map((child) => {
-              const Icon = typeIconMap[child.type];
+              const cit = child.issueType;
+              const Icon = issueTypeIcons[cit?.iconKey || "task"] || issueTypeIcons.task;
               const doneCount = child.subtasks.filter((s) => s.done).length;
               return (
                 <div
@@ -131,7 +138,8 @@ export function ChildrenSection({
                   className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 group/child hover:bg-white hover:shadow-sm transition"
                 >
                   <Icon
-                    className={`${typeColorMap[child.type]} shrink-0`}
+                    style={{ color: cit?.color || "#64748B" }}
+                    className="shrink-0"
                     size={12}
                   />
                   <button

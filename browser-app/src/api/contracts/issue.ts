@@ -2,7 +2,15 @@ import type { AttachmentResponse } from "./attachment";
 import type { SubtaskResponse } from "./subtask";
 import type { ProjectStatusResponse } from "./projectStatus";
 
-export type IssueType = "EPIC" | "STORY" | "TASK";
+export interface IssueTypeResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  iconKey: string;
+  color: string;
+  isSystem: boolean;
+}
+
 export type PriorityType = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 // Status is no longer a plain string — it is a full ProjectStatusResponse object from the server.
 // Keep this re-export for any legacy code that may import it directly.
@@ -31,7 +39,7 @@ export interface UserSummary {
 
 export interface CreateIssueRequest {
   issueName: string;
-  issueType: IssueType;
+  issueTypeId: string;
   priority: PriorityType;
   description?: string;
   deadline?: string;
@@ -42,7 +50,7 @@ export interface CreateIssueRequest {
 export interface UpdateIssueRequest {
   issueName?: string;
   description?: string;
-  issueType?: IssueType;
+  issueTypeId?: string;
   priority?: PriorityType;
   deadline?: string;
   assigneeIds?: string[];
@@ -55,7 +63,7 @@ export interface IssueResponse {
   id: string;
   issueName: string;
   description: string | null;
-  issueType: IssueType;
+  issueType: IssueTypeResponse;
   priority: PriorityType | null;
   /** Full status column object from the project's workflow. */
   status: ProjectStatusResponse | null;

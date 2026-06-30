@@ -4,11 +4,9 @@ import { useRef, useEffect } from "react";
 import { useDrag } from "react-dnd";
 import type { Task } from "../../types/project";
 import {
-  typeIconMap,
-  typeColorMap,
   priorities,
   priorityColorMap,
-  childTypeMap,
+  issueTypeIcons,
 } from "../../types/project";
 import { isOverdue } from "../../utils/date";
 
@@ -21,7 +19,11 @@ interface Props {
 
 export function BoardCard({ task, allTasks, onClick, index }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const TypeIcon = typeIconMap[task.type];
+  
+  const it = task.issueType;
+  const TypeIcon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
+  const typeColor = it?.color || "#64748B";
+
   const overdue = task.deadline ? isOverdue(task.deadline, task.status) : false;
   const doneCount = task.subtasks.filter((s) => s.done).length;
   const parent = task.parentId
@@ -55,8 +57,10 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
       {parent && (
         <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-1.5">
           {(() => {
-            const PI = typeIconMap[parent.type];
-            return <PI className={typeColorMap[parent.type]} size={9} />;
+            const pit = parent.issueType;
+            const PI = issueTypeIcons[pit?.iconKey || "task"] || issueTypeIcons.task;
+            const parentColor = pit?.color || "#64748B";
+            return <PI style={{ color: parentColor }} size={9} />;
           })()}
           <span className="truncate max-w-30">{parent.title}</span>
         </div>
@@ -64,7 +68,7 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
 
       {/* Title */}
       <div className="flex items-start gap-2.5 mb-3">
-        <TypeIcon className={`${typeColorMap[task.type]} mt-0.5 shrink-0`} />
+        <TypeIcon style={{ color: typeColor }} className="mt-0.5 shrink-0" />
         <span className="text-[14px] font-medium text-gray-800 flex-1 leading-snug">
           {task.title}
         </span>
@@ -104,14 +108,14 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
               </span>
             </div>
             {/* Children badge (epic→story, story→task) */}
-            {childTypeMap[task.type] && (task.childIds?.length ?? 0) > 0 && (
-              <span className="flex items-center gap-0.5 text-[11px] text-gray-400 bg-gray-100 px-1.5 rounded-full">
+            {(task.type === "epic" || task.type === "story") && (task.childIds?.length ?? 0) > 0 && (
+              <span className="flex items-center gap-1 text-[11px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
                 {task.type === "epic" ? (
-                  <FaBook size={9} />
+                  <FaBook size={9} className="text-emerald-700 shrink-0" />
                 ) : (
-                  <FaTasks size={9} />
+                  <FaTasks size={9} className="text-blue-700 shrink-0" />
                 )}
-                {task.childIds!.length}
+                <span className="text-[10px] font-semibold">{task.childIds!.length}</span>
               </span>
             )}
           </div>

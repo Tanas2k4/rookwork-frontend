@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from "react";
 import type { Task, Status, Priority, User } from "../../../types/project";
-import { childTypeMap } from "../../../types/project";
 import { TaskModalHeader } from "./TaskModalHeader";
 import { TaskModalDetails } from "./TaskModalDetails";
 import { ChildrenSection } from "./ChildrenSection";
@@ -475,7 +474,7 @@ export function TaskModal({
                     onUpdateAttachments={onUpdateAttachments}
                   />
 
-                  {childTypeMap[task.type] && (
+                  {(task.type === "epic" || task.type === "story") && (
                     <ChildrenSection
                       key={`children-section-${task.id}-${(task.childIds ?? []).sort().join("-")}`}
                       task={task}

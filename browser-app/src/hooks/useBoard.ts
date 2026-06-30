@@ -41,7 +41,7 @@ import { useWorkflow } from "../hooks/useWorkflow";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
-  const { issueUpdateTick, notifyIssueUpdated } = useContext(ProjectContext);
+  const { issueUpdateTick, notifyIssueUpdated, issueTypes } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -109,6 +109,7 @@ export function useBoard(projectId: string | null) {
 
     // Optimistic add with temp id
     const tempId = tempIdRef.current--;
+    const matchedType = issueTypes.find(t => t.name.toLowerCase() === type.toLowerCase());
     const tempTask: Task = {
       id: tempId,
       title,
@@ -120,14 +121,25 @@ export function useBoard(projectId: string | null) {
       subtasks: [],
       parentId: null,
       childIds: [],
+      issueType: matchedType || {
+        id: "",
+        name: type,
+        description: null,
+        iconKey: type,
+        color: "#64748B",
+        isSystem: true,
+      },
     };
     setTasks((p) => [...p, tempTask]);
     pushToast("Creating task...", "info");
 
     try {
+      const matchedType = issueTypes.find(t => t.name.toLowerCase() === type.toLowerCase());
+      const issueTypeId = matchedType ? matchedType.id : "";
+
       const created = await issueApi.create(projectId, {
         issueName: title,
-        issueType: uiTypeToApi(type),
+        issueTypeId,
         priority: uiPriorityToApi(priority),
         statusId: uiStatusToStatusId(status, projectStatuses),
       });

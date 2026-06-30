@@ -21,6 +21,7 @@ import Loading from "./components/common/Loading";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
 import SettingsPage from "./pages/SettingsPage";
+import ProjectSettingsPage from "./pages/ProjectSettingsPage";
 import { projectApi } from "./api/services/projectApi";
 import { userApi } from "./api/services/userApi";
 import { tokenStorage } from "./api/tokenStorage";
@@ -151,6 +152,7 @@ function App() {
                       <Route path="list" element={<ListView />} />
                       <Route path="files" element={<ProjectFilesView />} />
                       <Route path="events" element={<EventsView />} />
+                      <Route path="settings" element={<ProjectSettingsPage />} />
                     </Route>
 
                     <Route path="/events" element={<EventsView />} />
