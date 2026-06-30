@@ -5,6 +5,7 @@ import { MdCheck } from "react-icons/md";
 import type { Task, User, Status, TaskType } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
 import { typeOptions, statusOptions } from "../shared/dropdownConstants";
+import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
 
 interface Props {
   openDropdown: DropdownState;
@@ -12,14 +13,16 @@ interface Props {
   tasks: (Task & { _uuid: string })[];
   users: User[];
   onAssignUser: (taskId: string, user: User | null) => void;
-  onStatusChange: (taskId: string, status: Status) => void;
+  onStatusChange: (taskId: string, statusId: string) => void;
   onTypeChange: (taskId: string, type: TaskType) => void;
   onDeadlineChange: (taskId: string, deadline: string) => void;
+  projectStatuses: ProjectStatusResponse[];
 }
 
 export function ListDropdowns({
   openDropdown, dropdownRef, tasks, users,
   onAssignUser, onStatusChange, onTypeChange, onDeadlineChange,
+  projectStatuses,
 }: Props) {
   if (!openDropdown.type || !openDropdown.position) return null;
 
@@ -121,13 +124,14 @@ export function ListDropdowns({
         <div ref={dropdownRef} style={{ ...baseStyle, maxHeight: `${maxHeight}px` }}
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-44 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
-            {statusOptions.map((s) => (
-              <button key={s.value} onClick={() => onStatusChange(taskId, s.value)}
+            {projectStatuses.map((s) => (
+              <button key={s.id} onClick={() => onStatusChange(taskId, s.id)}
                 className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                  currentTask?.status === s.value ? "bg-purple-50" : ""
+                  (currentTask as any)?._statusId === s.id ? "bg-purple-50" : ""
                 }`}>
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${s.color}`}>
-                  {s.label}
+                <span className="px-3 py-1 text-xs font-semibold rounded-full"
+                  style={{ backgroundColor: s.color + "20", color: s.color }}>
+                  {s.statusName}
                 </span>
               </button>
             ))}

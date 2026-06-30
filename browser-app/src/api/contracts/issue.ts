@@ -1,9 +1,12 @@
 import type { AttachmentResponse } from "./attachment";
 import type { SubtaskResponse } from "./subtask";
+import type { ProjectStatusResponse } from "./projectStatus";
 
 export type IssueType = "EPIC" | "STORY" | "TASK";
 export type PriorityType = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type Status = "TO_DO" | "IN_PROGRESS" | "DONE";
+// Status is no longer a plain string — it is a full ProjectStatusResponse object from the server.
+// Keep this re-export for any legacy code that may import it directly.
+export type { ProjectStatusResponse as IssueStatus };
 
 export interface UserSummary {
   id: string;
@@ -31,8 +34,9 @@ export interface CreateIssueRequest {
   issueType: IssueType;
   priority: PriorityType;
   description?: string;
-  deadline?: string; // "2024-08-15T00:00:00" 
-  status: Status;
+  deadline?: string;
+  /** UUID of the target ProjectStatus column. */
+  statusId?: string;
 }
 
 export interface UpdateIssueRequest {
@@ -40,9 +44,10 @@ export interface UpdateIssueRequest {
   description?: string;
   issueType?: IssueType;
   priority?: PriorityType;
-  deadline?: string;       // "2024-08-15" — maps to LocalDate
-  assigneeIds?: string[];  // null=no change, []=remove all, [id1,id2]=set new
-  status?: Status;
+  deadline?: string;
+  assigneeIds?: string[];
+  /** UUID of the target ProjectStatus column. */
+  statusId?: string;
   parentId?: string | null;
 }
 
@@ -52,7 +57,8 @@ export interface IssueResponse {
   description: string | null;
   issueType: IssueType;
   priority: PriorityType | null;
-  status: Status | null;
+  /** Full status column object from the project's workflow. */
+  status: ProjectStatusResponse | null;
   parentId: string | null;
   projectId: string;
   assignees: UserSummary[];   // multi-assignee list

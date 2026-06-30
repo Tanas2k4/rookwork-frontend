@@ -61,19 +61,25 @@ const getGroupConfig = (group: string) => {
   };
 };
 
-const getStatusIcon = (status: "todo" | "in_progress" | "done") => {
+const getStatusIcon = (task: GanttTask) => {
+  if (task._statusMeta?.color) {
+    return (
+      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task._statusMeta.color }}></div>
+    );
+  }
+  const status = task.status || "todo";
   switch (status) {
     case "todo":
       return (
-        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+        <div className="w-2 h-2 rounded-full bg-gray-400 shrink-0"></div>
       );
     case "in_progress":
       return (
-        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+        <div className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></div>
       );
     case "done":
       return (
-        <div className="w-2 h-2 rounded-full bg-green-600"></div>
+        <div className="w-2 h-2 rounded-full bg-green-600 shrink-0"></div>
       );
   }
 };
@@ -228,7 +234,7 @@ export function TaskListPanel({
                       title={`${task.name}\nClick để xem chi tiết`}
                       className="flex items-center gap-2.5 px-4 pl-8 cursor-pointer transition-all duration-150 border-b border-gray-100 bg-white hover:bg-gray-50/50 group"
                     >
-                      {getStatusIcon(task.status || "todo")}
+                      {getStatusIcon(task)}
                       <span className="text-[13px] font-medium text-gray-600 truncate flex-1 leading-normal group-hover:text-purple-600 transition-colors">
                         {task.name}
                       </span>

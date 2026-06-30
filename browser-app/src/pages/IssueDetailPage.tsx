@@ -8,7 +8,7 @@ import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
-import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid } from "../utils/issueMapper";
+import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid, uiStatusToStatusId } from "../utils/issueMapper";
 import { subtaskApi } from "../api/services/subtaskApi";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue as isOverdueUtil } from "../utils/date";
@@ -22,6 +22,7 @@ import {
   typeIconMap,
   typeColorMap,
 } from "../types/project";
+import { useProjectStatuses } from "../hooks/useProjectStatuses";
 
 // helper components
 function PriorityBars({ priority }: { priority: Priority }) {
@@ -73,6 +74,7 @@ export default function IssueDetailPage() {
 
   const [issue, setIssue] = useState<IssueResponse | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const { statuses: projectStatuses } = useProjectStatuses(issue?.projectId ?? null);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
 
@@ -249,7 +251,10 @@ export default function IssueDetailPage() {
               }>
                 {statuses.map((s) => (
                   <button key={s}
-                    onClick={() => patchIssue({ status: s === "to_do" ? "TO_DO" : s === "in_progress" ? "IN_PROGRESS" : "DONE" })}
+                    onClick={() => {
+                      const statusId = uiStatusToStatusId(s, projectStatuses);
+                      if (statusId) patchIssue({ statusId });
+                    }}
                     className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${status === s ? "text-purple-700 font-medium" : "text-gray-700"}`}>
                     <span className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`} />
                     {statusMap[s].label}
