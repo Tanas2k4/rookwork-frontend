@@ -233,8 +233,8 @@ export function BoardColumn({
   const accentColor = statusColor ?? (status === "done" ? "#10B981" : status === "in_progress" ? "#3B82F6" : "#9CA3AF");
 
   // Determine styles based on drag and drop state
-  let borderClass = "border-gray-200";
-  let bgClass = "bg-gray-50";
+  let borderClass = "border-none";
+  let bgClass = "bg-gray-100";
 
   if (isDragging) {
     if (canDrop) {
@@ -340,7 +340,7 @@ export function BoardColumn({
       </div>
 
       {/* Colored accent line directly below the status name/header */}
-      <div className="h-1 mx-4 rounded-full" style={{ backgroundColor: accentColor }} />
+      <div className="h-0.5 mx-4 rounded-full" style={{ backgroundColor: accentColor }} />
 
       {/* Cards area */}
       <div className="flex-1 p-3 space-y-2">
