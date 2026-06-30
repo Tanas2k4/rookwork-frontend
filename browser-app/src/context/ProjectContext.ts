@@ -1,12 +1,14 @@
 import { createContext } from "react";
 import type { ProjectResponse } from "../api/contracts";
-import type { UserSummary } from "../api/contracts/issue";
+import type { UserSummary, IssueTypeResponse } from "../api/contracts/issue";
 
 export interface ProjectContextValue {
   projectId: string | null;
   projectKey: string | null;
   project: ProjectResponse | null;
   members: UserSummary[];
+  issueTypes: IssueTypeResponse[];
+  reloadIssueTypes: () => Promise<void>;
   loading: boolean;
   refresh: () => void;
   reloadIssues: () => void;
@@ -29,6 +31,8 @@ export const ProjectContext = createContext<ProjectContextValue>({
   projectKey: null,
   project: null,
   members: [],
+  issueTypes: [],
+  reloadIssueTypes: async () => {},
   loading: false,
   refresh: () => {},
   reloadIssues: () => {},

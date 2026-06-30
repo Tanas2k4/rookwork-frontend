@@ -1,24 +1,26 @@
-// components/list/ListDropdowns.tsx
 import type { RefObject } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdCheck } from "react-icons/md";
-import type { Task, User, Status, TaskType } from "../../types/project";
+import type { Task, User, Status } from "../../types/project";
+import { issueTypeIcons } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
-import { typeOptions, statusOptions } from "../shared/dropdownConstants";
+import type { IssueTypeResponse } from "../../api/contracts/issue";
+import { statusOptions } from "../shared/dropdownConstants";
 
 interface Props {
   openDropdown: DropdownState;
   dropdownRef: RefObject<HTMLDivElement | null>;
   tasks: (Task & { _uuid: string })[];
   users: User[];
+  issueTypes: IssueTypeResponse[];
   onAssignUser: (taskId: string, user: User | null) => void;
   onStatusChange: (taskId: string, status: Status) => void;
-  onTypeChange: (taskId: string, type: TaskType) => void;
+  onTypeChange: (taskId: string, issueTypeId: string) => void;
   onDeadlineChange: (taskId: string, deadline: string) => void;
 }
 
 export function ListDropdowns({
-  openDropdown, dropdownRef, tasks, users,
+  openDropdown, dropdownRef, tasks, users, issueTypes,
   onAssignUser, onStatusChange, onTypeChange, onDeadlineChange,
 }: Props) {
   if (!openDropdown.type || !openDropdown.position) return null;
@@ -40,16 +42,28 @@ export function ListDropdowns({
         <div ref={dropdownRef} style={{ ...baseStyle, maxHeight: `${maxHeight}px` }}
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-44 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
-            {typeOptions.map((t) => (
-              <button key={t.value} onClick={() => onTypeChange(taskId, t.value)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                  currentTask?.type === t.value ? "bg-purple-50" : ""
-                }`}>
-                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 ${t.color}`}>
-                  {t.icon}{t.label}
-                </span>
-              </button>
-            ))}
+            {issueTypes.map((t) => {
+              const Icon = issueTypeIcons[t.iconKey] || issueTypeIcons.task;
+              const isSelected = currentTask?.issueType?.id === t.id;
+              return (
+                <button key={t.id} onClick={() => onTypeChange(taskId, t.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
+                    isSelected ? "bg-purple-50" : ""
+                  }`}>
+                  <span
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 border"
+                    style={{
+                      backgroundColor: `${t.color}15`,
+                      color: t.color,
+                      borderColor: `${t.color}30`
+                    }}
+                  >
+                    <Icon size={12} />
+                    {t.name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

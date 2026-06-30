@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
-import type { Task, Status, TaskType, User } from "../types/project";
+import type { Task, Status, User } from "../types/project";
 import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
@@ -14,7 +14,6 @@ import {
   apiUserToUI,
   issueToTask,
   uiStatusToApi,
-  uiTypeToApi,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";
 import { useClickOutside } from "./useClickOutside";
@@ -34,7 +33,7 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId, issueUpdateTick } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick, issueTypes } = useContext(ProjectContext);
 
   const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -213,12 +212,21 @@ export function useListView() {
     updateIssue(taskId, { status: uiStatusToApi(status) }, `Status → ${status.replace("_", " ")}`);
   }
 
-  function handleTypeChange(taskId: string, type: TaskType) {
+  function handleTypeChange(taskId: string, issueTypeId: string) {
+    const foundType = issueTypes.find((t) => t.id === issueTypeId);
+    if (!foundType) return;
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, type } : t));
+    setTasks((p) =>
+      p.map((t) =>
+        t._uuid === taskId
+          ? { ...t, type: foundType.name.toLowerCase(), issueType: foundType }
+          : t,
+      ),
+    );
     closeDropdown();
 
-    updateIssue(taskId, { issueType: uiTypeToApi(type) }, `Type → ${type}`);
+    updateIssue(taskId, { issueTypeId }, `Type → ${foundType.name}`);
   }
 
   function handleDeadlineChange(taskId: string, deadline: string) {

@@ -320,7 +320,7 @@ export default function ProjectFilesView() {
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-500 rounded-lg pl-9 pr-3 py-1.5 text-xs
+            className="w-full bg-white border border-gray-500 rounded-lg pl-9 pr-3 py-1.5 text-sm
               focus:outline-none focus:border-none focus:ring-1 focus:ring-purple-800 focus:border-purple-800 transition"
           />
         </div>
@@ -329,7 +329,7 @@ export default function ProjectFilesView() {
         <div className="relative shrink-0 select-none">
           <button
             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-            className="flex items-center justify-between bg-white border border-gray-500 text-gray-700 text-xs rounded-lg pl-3 pr-2.5 py-1.5 font-semibold focus:outline-none hover:border-purple-800 focus:border-purple-800 transition cursor-pointer gap-2 w-36"
+            className="flex items-center justify-between bg-white border border-gray-500 text-gray-700 text-sm rounded-lg pl-3 pr-2.5 py-1.5 focus:outline-none hover:border-purple-800 focus:border-purple-800 transition cursor-pointer gap-2 w-36"
           >
             <span>
               {fileTypeFilter === "all" && "All File Types"}

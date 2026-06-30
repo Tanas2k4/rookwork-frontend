@@ -1,7 +1,15 @@
 import type { AttachmentResponse } from "./attachment";
 import type { SubtaskResponse } from "./subtask";
 
-export type IssueType = "EPIC" | "STORY" | "TASK";
+export interface IssueTypeResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  iconKey: string;
+  color: string;
+  isSystem: boolean;
+}
+
 export type PriorityType = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type Status = "TO_DO" | "IN_PROGRESS" | "DONE";
 
@@ -28,7 +36,7 @@ export interface UserSummary {
 
 export interface CreateIssueRequest {
   issueName: string;
-  issueType: IssueType;
+  issueTypeId: string;
   priority: PriorityType;
   description?: string;
   deadline?: string; // "2024-08-15T00:00:00" 
@@ -38,7 +46,7 @@ export interface CreateIssueRequest {
 export interface UpdateIssueRequest {
   issueName?: string;
   description?: string;
-  issueType?: IssueType;
+  issueTypeId?: string;
   priority?: PriorityType;
   deadline?: string;       // "2024-08-15" — maps to LocalDate
   assigneeIds?: string[];  // null=no change, []=remove all, [id1,id2]=set new
@@ -50,7 +58,7 @@ export interface IssueResponse {
   id: string;
   issueName: string;
   description: string | null;
-  issueType: IssueType;
+  issueType: IssueTypeResponse;
   priority: PriorityType | null;
   status: Status | null;
   parentId: string | null;

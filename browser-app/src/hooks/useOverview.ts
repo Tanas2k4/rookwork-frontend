@@ -12,6 +12,7 @@ import type { IssueResponse } from "../api/contracts/issue";
 import type { ActivityResponse } from "../api/contracts/activity";
 import { apiStatusToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
+import { computeAllProgress } from "../utils/progress";
 
 //  Helpers 
 
@@ -109,14 +110,7 @@ export interface OverviewData {
   activities: ActivityItem[];
 }
 
-/**
- * Tính toán tỷ lệ phần trăm hoàn thành cơ bản của một issue.
- */
-function computeProgress(issue: IssueResponse): number {
-  if (issue.status === "DONE") return 100;
-  if (issue.status === "IN_PROGRESS") return 40;
-  return 0;
-}
+// computeProgress removed as unused
 
 /**
  * Xử lý chuỗi nhãn hành động hiển thị cho nhật ký hoạt động.
@@ -155,6 +149,8 @@ function actionLabel(a: ActivityResponse): string {
     default:          return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
   }
 }
+
+// computeAllProgress imported from progress utils
 
 /**
  * Hàm phân tích và tổng hợp dữ liệu tổng quan (Overview) từ danh sách công việc và lịch sử hoạt động.
@@ -198,18 +194,19 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
       deadlineLabel: fmtDeadline(i.deadline!),
     }));
 
+  const progressMap = computeAllProgress(issues);
+
   // Milestones — use EPICs
-  const epics = issues.filter((i) => i.issueType === "EPIC");
+  const epics = issues.filter((i) => i.issueType.name.toUpperCase() === "EPIC");
   const milestones: MilestoneItem[] = epics.map((epic) => {
     const children = issues.filter((i) => i.parentId === epic.id);
     const all = [epic, ...children];
-    const prog = Math.round(all.reduce((s, i) => s + computeProgress(i), 0) / all.length);
     return {
       id: epic.id,
       name: epic.issueName,
       deadline: epic.deadline ? fmtDeadline(epic.deadline) : "No deadline",
       status: apiStatusToUI(epic.status),
-      progress: prog,
+      progress: progressMap[epic.id] || 0,
       taskCount: all.length,
     };
   });

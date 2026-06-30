@@ -19,8 +19,7 @@ import {
   priorityColorMap,
   priorityLabelMap,
   priorities,
-  typeIconMap,
-  typeColorMap,
+  issueTypeIcons,
 } from "../types/project";
 
 // helper components
@@ -212,10 +211,10 @@ export default function IssueDetailPage() {
   const backLabel = routeState?.from?.label ?? "My Issues";
   const backPath = routeState?.from?.path ?? "/my-issues";
 
-  const type = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
+  const it = issue.issueType;
   const status = apiStatusToUI(issue.status);
   const priority = apiPriorityToUI(issue.priority);
-  const TypeIcon = typeIconMap[type];
+  const TypeIcon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
   const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
 
@@ -231,7 +230,7 @@ export default function IssueDetailPage() {
       {/* Title area */}
       <div className="shrink-0 px-8 pt-2 pb-5 border-b border-gray-100">
         <div className="flex items-center justify-between gap-3">
-          <TypeIcon size={13} className={typeColorMap[type]} />
+          <TypeIcon size={13} style={{ color: it?.color || "#64748B" }} />
           <h1 className="text-xl font-semibold text-gray-700 leading-snug flex-1 pt-1 min-w-0">
             {issue.issueName}
           </h1>
@@ -349,9 +348,9 @@ export default function IssueDetailPage() {
         <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto">
           <div className="px-5 py-6">
             <DetailRow label="Issue type">
-              <span className={`inline-flex items-center gap-1.5 ${typeColorMap[type]}`}>
+              <span className="inline-flex items-center gap-1.5 border px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: `${it?.color || "#64748B"}15`, color: it?.color || "#64748B", borderColor: `${it?.color || "#64748B"}30` }}>
                 <TypeIcon size={12} />
-                <span className="text-gray-700 capitalize">{type}</span>
+                <span className="capitalize">{it?.name || "Task"}</span>
               </span>
             </DetailRow>
 

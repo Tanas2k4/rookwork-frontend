@@ -1,16 +1,26 @@
 import type { OverviewData } from "../../hooks/useOverview";
-import type { IssueType, PriorityType } from "../../api/contracts/issue";
+import type { IssueTypeResponse, PriorityType } from "../../api/contracts/issue";
 import { avatarUrl } from "../../utils/avatar";
 
-type TaskType = "epic" | "story" | "task";
 type TaskPriority = "urgent" | "high" | "medium" | "low";
 
-function apiTypeToUI(t: IssueType): TaskType { return t.toLowerCase() as TaskType; }
 function apiPriorityToUI(p: PriorityType | null): TaskPriority { return (p?.toLowerCase() ?? "medium") as TaskPriority; }
 
-function TypeChip({ type }: { type: TaskType }) {
-  const cls: Record<TaskType, string> = { epic: "bg-violet-100 text-violet-700", story: "bg-sky-100 text-sky-700", task: "bg-gray-100 text-gray-600" };
-  return <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${cls[type]}`}>{type}</span>;
+function TypeChip({ issueType }: { issueType: IssueTypeResponse }) {
+  if (!issueType) return null;
+  const color = issueType.color;
+  return (
+    <span
+      className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border"
+      style={{
+        backgroundColor: `${color}15`,
+        color: color,
+        borderColor: `${color}30`
+      }}
+    >
+      {issueType.name}
+    </span>
+  );
 }
 function PriorityBadge({ priority }: { priority: TaskPriority }) {
   const cls: Record<TaskPriority, string> = { urgent: "bg-red-100 text-red-600", high: "bg-orange-50 text-orange-500", medium: "bg-orange-50 text-orange-600", low: "bg-green-50 text-green-600" };
@@ -82,7 +92,7 @@ export default function TaskSnapshot({ data }: { data: OverviewData }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <TypeChip type={apiTypeToUI(t.issueType)} />
+                  <TypeChip issueType={t.issueType} />
                   <PriorityBadge priority={apiPriorityToUI(t.priority)} />
                   <span className={`text-[11px] font-semibold whitespace-nowrap ${isOv ? "text-red-500" : "text-orange-500"}`}>
                     {t.deadlineLabel}
