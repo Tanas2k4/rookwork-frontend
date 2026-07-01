@@ -33,6 +33,8 @@ export interface UserSummary {
   notifyMentioned?: boolean;
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
+  notifyComment?: boolean;
+  notifyEventInvited?: boolean;
   role?: string;
   systemRole?: string;
 }
