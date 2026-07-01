@@ -6,20 +6,17 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
-import type { Task, Status, User } from "../types/project";
+import type { Task, User } from "../types/project";
 import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
 import {
   apiUserToUI,
   issueToTask,
-  uiStatusToStatusId,
-  uiTypeToApi,
   categoryToUIStatus,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";
 import { useClickOutside } from "./useClickOutside";
-import { useProjectStatuses } from "./useProjectStatuses";
 
 //  Types 
 
@@ -36,7 +33,7 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId, issueUpdateTick, notifyIssueUpdated, issueTypes } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick, notifyIssueUpdated, issueTypes, projectStatuses } = useContext(ProjectContext);
 
   const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -50,7 +47,7 @@ export function useListView() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 25;
   const { toasts, addToast, removeToast } = useToast();
-  const { statuses: projectStatuses } = useProjectStatuses(projectId);
+
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);

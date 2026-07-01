@@ -1,11 +1,12 @@
 import type { RefObject } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdCheck } from "react-icons/md";
-import type { Task, User, Status } from "../../types/project";
+import type { Task, User } from "../../types/project";
 import { issueTypeIcons } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
 import type { IssueTypeResponse } from "../../api/contracts/issue";
+import { useProject } from "../../hooks/useProject";
 
 interface Props {
   openDropdown: DropdownState;
@@ -25,6 +26,8 @@ export function ListDropdowns({
   onAssignUser, onStatusChange, onTypeChange, onDeadlineChange,
   projectStatuses,
 }: Props) {
+  const { isTransitionAllowed } = useProject();
+
   if (!openDropdown.type || !openDropdown.position) return null;
 
   const { top, left, maxHeight } = openDropdown.position;
@@ -137,17 +140,27 @@ export function ListDropdowns({
         <div ref={dropdownRef} style={{ ...baseStyle, maxHeight: `${maxHeight}px` }}
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-44 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
-            {projectStatuses.map((s) => (
-              <button key={s.id} onClick={() => onStatusChange(taskId, s.id)}
-                className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                  (currentTask as any)?._statusId === s.id ? "bg-purple-50" : ""
-                }`}>
-                <span className="px-3 py-1 text-xs font-semibold rounded-full"
-                  style={{ backgroundColor: s.color + "20", color: s.color }}>
-                  {s.statusName}
-                </span>
-              </button>
-            ))}
+            {(() => {
+              const currentStatusId = (currentTask as any)?._statusId || projectStatuses.find((ps) =>
+                ps.statusCategory === (currentTask?.status === "to_do" ? "TO_DO" : currentTask?.status === "in_progress" ? "IN_PROGRESS" : "DONE")
+              )?.id;
+
+              const allowedStatuses = projectStatuses.filter((s) =>
+                s.id === currentStatusId || isTransitionAllowed(currentStatusId, s.id)
+              );
+
+              return allowedStatuses.map((s) => (
+                <button key={s.id} onClick={() => onStatusChange(taskId, s.id)}
+                  className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
+                    (currentTask as any)?._statusId === s.id ? "bg-purple-50" : ""
+                  }`}>
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full"
+                    style={{ backgroundColor: s.color + "20", color: s.color }}>
+                    {s.statusName}
+                  </span>
+                </button>
+              ));
+            })()}
           </div>
         </div>
       )}

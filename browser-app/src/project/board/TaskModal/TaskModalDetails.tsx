@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
-import type { Task, Status, Priority, User } from "../../../types/project";
+import type { Task, Priority, User } from "../../../types/project";
 import {
-  statuses,
   statusMap,
   priorities,
   priorityColorMap,
@@ -31,7 +30,7 @@ export function TaskModalDetails({
   onSaveDeadline,
   projectStatuses,
 }: Props) {
-  const { members } = useProject();
+  const { members, isTransitionAllowed } = useProject();
 
   const [showStatusDd,    setShowStatusDd]    = useState(false);
   const [showPriorityDd,  setShowPriorityDd]  = useState(false);
@@ -116,16 +115,26 @@ export function TaskModalDetails({
           </button>
           {showStatusDd && (
             <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-48 max-h-60 overflow-y-auto">
-              {projectStatuses.map((s) => (
-                <button key={s.id}
-                  onClick={() => { onChangeStatus(s.id); closeAll(); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                    (task as any)._statusId === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"
-                  }`}>
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                  <span className="truncate">{s.statusName}</span>
-                </button>
-              ))}
+              {(() => {
+                const currentStatusId = (task as any)._statusId || projectStatuses.find((ps) =>
+                  ps.statusCategory === (task.status === "to_do" ? "TO_DO" : task.status === "in_progress" ? "IN_PROGRESS" : "DONE")
+                )?.id;
+
+                const allowedStatuses = projectStatuses.filter((s) =>
+                  s.id === currentStatusId || isTransitionAllowed(currentStatusId, s.id)
+                );
+
+                return allowedStatuses.map((s) => (
+                  <button key={s.id}
+                    onClick={() => { onChangeStatus(s.id); closeAll(); }}
+                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
+                      (task as any)._statusId === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"
+                    }`}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                    <span className="truncate">{s.statusName}</span>
+                  </button>
+                ));
+              })()}
             </div>
           )}
         </div>

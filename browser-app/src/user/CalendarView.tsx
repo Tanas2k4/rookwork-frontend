@@ -44,7 +44,7 @@ export default function CalendarView() {
 
     // Add issue deadline dots
     issues
-      .filter((i) => i.deadline && i.status !== "DONE")
+      .filter((i) => i.deadline && i.status?.statusCategory !== "DONE")
       .forEach((i) => {
         const dateKey = i.deadline!.split("T")[0];
         if (!dates[dateKey]) dates[dateKey] = [];

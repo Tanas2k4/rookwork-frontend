@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { MdAdd, MdCheck, MdClose } from "react-icons/md";
+import { MdAdd, MdCheck, MdClose, MdDeleteOutline } from "react-icons/md";
 import { useDrop, useDrag } from "react-dnd";
 import type { Task, Status, TaskType, Priority } from "../../types/project";
 import { statusMap } from "../../types/project";
@@ -30,7 +30,7 @@ interface Props {
     priority: Priority,
     status: Status,
   ) => Promise<unknown> | void;
-  onMoveTask: (taskId: number, newStatus: Status) => void;
+  onMoveTask: (taskId: number, newStatus: string) => void;
   onReorderTasks: (taskId: number, fromIndex: number, toIndex: number) => void;
   /** Called when user renames the column inline. Null statusId = non-editable column. */
   onRename?: (statusId: string, newName: string) => Promise<void>;
@@ -38,6 +38,7 @@ interface Props {
   isTransitionAllowed: (fromStatusId: string | null | undefined, toStatusId: string | null | undefined) => boolean;
   onReorderColumns?: (fromIndex: number, toIndex: number) => void;
   onPersistColumnOrder?: () => void;
+  onDeleteColumn?: (statusId: string) => void;
 }
 
 export function BoardColumn({
@@ -57,6 +58,7 @@ export function BoardColumn({
   isTransitionAllowed,
   onReorderColumns,
   onPersistColumnOrder,
+  onDeleteColumn,
 }: Props) {
   const columnRef = useRef<HTMLDivElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -327,15 +329,26 @@ export function BoardColumn({
           )}
         </div>
 
-        {/* Add task button */}
+        {/* Actions container */}
         {!renaming && (
-          <button
-            onClick={() => setAdding(true)}
-            className="ml-2 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition shrink-0"
-            title="Add task"
-          >
-            <MdAdd size={18} />
-          </button>
+          <div className="flex items-center gap-1.5 ml-2 shrink-0">
+            <button
+              onClick={() => setAdding(true)}
+              className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition"
+              title="Add task"
+            >
+              <MdAdd size={18} />
+            </button>
+            {statusId && onDeleteColumn && (
+              <button
+                onClick={() => onDeleteColumn(statusId)}
+                className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-200 transition"
+                title="Delete column"
+              >
+                <MdDeleteOutline size={18} />
+              </button>
+            )}
+          </div>
         )}
       </div>
 

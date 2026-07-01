@@ -183,7 +183,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   }, []);
 
   const totalIssues = issues.length;
-  const doneIssues = issues.filter((i) => i.status === "DONE").length;
+  const doneIssues = issues.filter((i) => i.status?.statusCategory === "DONE").length;
   const overdueIssues = issues.filter(
     (i) => i.deadline && isOverdue(i.deadline, i.status),
   ).length;
@@ -212,12 +212,12 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
 
     // 2. Get tasks due today, fallback to general active tasks if none
     let filteredTasks = issues.filter((i) => {
-      if (i.status === "DONE" || !i.deadline) return false;
+      if (i.status?.statusCategory === "DONE" || !i.deadline) return false;
       return i.deadline.split("T")[0] === todayStr;
     });
     
     if (filteredTasks.length === 0) {
-      filteredTasks = issues.filter((i) => i.status !== "DONE").slice(0, 4);
+      filteredTasks = issues.filter((i) => i.status?.statusCategory !== "DONE").slice(0, 4);
     }
 
     const items = [
@@ -251,7 +251,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
 
     // Add issue deadline dots
     issues
-      .filter((i) => i.deadline && i.status !== "DONE")
+      .filter((i) => i.deadline && i.status?.statusCategory !== "DONE")
       .forEach((i) => {
         const dateKey = i.deadline!.split("T")[0];
         if (!dates[dateKey]) dates[dateKey] = [];
@@ -373,7 +373,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                   }
 
                   const issue = item.issue;
-                  const status = toTaskStatus(issue.status);
+                  const status = toTaskStatus(issue.status?.statusCategory ?? null);
                   const priority = toTaskPriority(issue.priority);
                   const isDone = status === "done";
                   const accentColor = PRIORITY_COLOR[priority];

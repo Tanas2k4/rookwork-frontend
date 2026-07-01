@@ -1,37 +1,35 @@
 import type { OverviewData } from "../../hooks/useOverview";
 
 function DonutChart({ data, animated }: { data: OverviewData; animated: boolean }) {
-  const done = data.doneTasks;
-  const inProgress = data.inProgressTasks;
   const total = data.totalTasks || 0;
-  const toDo = Math.max(0, total - done - inProgress);
 
-  const chartData = [
-    { label: "Done", value: done, color: "#10b981" },
-    { label: "In Progress", value: inProgress, color: "#6366f1" },
-    { label: "To Do", value: toDo, color: "#cbd5e1" },
-  ];
+  const chartData = data.statusDistribution.map((sd) => ({
+    label: sd.statusName,
+    value: sd.count,
+    color: sd.color,
+  }));
 
   const r = 48, cx = 60, cy = 60, sw = 16;
   const circ = 2 * Math.PI * r;
-  let offset = 0;
-  const segments = chartData.map((d) => {
+  
+  const segments: React.ReactNode[] = [];
+  let currentOffset = 0;
+  for (const d of chartData) {
     const realDash = total > 0 ? (d.value / total) * circ : 0;
     const dash = animated ? realDash : 0;
-    const el = (
+    segments.push(
       <circle key={d.label} cx={cx} cy={cy} r={r} fill="none"
         stroke={d.color} strokeWidth={sw}
         strokeDasharray={`${dash} ${circ - dash}`}
-        strokeDashoffset={-offset}
+        strokeDashoffset={-currentOffset}
         style={{
           transform: "rotate(-90deg)",
           transformOrigin: `${cx}px ${cy}px`,
           transition: "stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)",
         }} />
     );
-    offset += realDash;
-    return el;
-  });
+    currentOffset += realDash;
+  }
 
   return (
     <div className="flex items-center gap-5">
@@ -42,7 +40,7 @@ function DonutChart({ data, animated }: { data: OverviewData; animated: boolean 
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-xl font-black text-gray-900">{total}</span>
-          <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest">Tasks</span>
+          <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest">Issues</span>
         </div>
       </div>
       <div className="flex flex-col gap-2 flex-1">

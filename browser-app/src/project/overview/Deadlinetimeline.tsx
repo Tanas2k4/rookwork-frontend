@@ -126,7 +126,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
             <div className="absolute top-10.25 left-8 right-8 h-0.5 bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 z-0 pointer-events-none" />
 
             {timelineTasks.map((item) => {
-              const isDone = item.status === "DONE";
+              const isDone = item.status?.statusCategory === "DONE";
               const isOverdue = item.daysLeft < 0;
               const isUrgent = !isDone && item.daysLeft >= 0 && item.daysLeft <= 2;
               const isSoon = !isDone && item.daysLeft > 2 && item.daysLeft <= 7;
@@ -234,7 +234,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
           </div>
           <div className="flex items-center justify-between">
             <StatusBadge status={apiStatusToUI(hoveredData.item.status)} />
-            <span className={`text-[10px] font-semibold ${hoveredData.item.daysLeft < 0 ? "text-red-600" : (hoveredData.item.daysLeft <= 7 && hoveredData.item.status !== "DONE") ? "text-orange-600" : hoveredData.item.status === "DONE" ? "text-green-600" : "text-blue-600"}`}>
+            <span className={`text-[10px] font-semibold ${hoveredData.item.daysLeft < 0 ? "text-red-600" : (hoveredData.item.daysLeft <= 7 && hoveredData.item.status?.statusCategory !== "DONE") ? "text-orange-600" : hoveredData.item.status?.statusCategory === "DONE" ? "text-green-600" : "text-blue-600"}`}>
               {hoveredData.item.deadlineLabel}
             </span>
           </div>

@@ -9,9 +9,9 @@ import { issueApi } from "../../api/services/issueApi";
 import { RichTextEditor } from "../../components/common/RichTextEditor";
 import type {
   PriorityType,
-  Status as ApiStatus,
   UserSummary,
 } from "../../api/contracts/issue";
+import type { StatusCategory as ApiStatus } from "../../api/contracts/projectStatus";
 import { type Priority, issueTypeIcons } from "../../types/project";
 
 // Dynamic Issue types config loaded from ProjectContext
@@ -64,7 +64,7 @@ interface CreateIssueModalProps {
 // Removed file helper functions
 
 export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
-  const { members, projectId, reloadIssues, issueTypes } = useProject();
+  const { members, projectId, reloadIssues, issueTypes, projectStatuses } = useProject();
   const { addToast } = useToast();
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
@@ -160,13 +160,14 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
     setCreateError("");
     try {
       const deadlineISO = dueDate ? new Date(dueDate).toISOString() : undefined;
+      const statusId = projectStatuses.find((ps) => ps.statusCategory === status)?.id;
       const created = await issueApi.create(projectId, {
         issueName: issueTitle.trim(),
         issueTypeId: selectedTypeId,
         priority,
         description: issueDescription.trim() || undefined,
         deadline: deadlineISO,
-        status,
+        statusId,
       });
 
       // Assign members if any selected

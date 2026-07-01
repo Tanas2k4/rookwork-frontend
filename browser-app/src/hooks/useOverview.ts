@@ -13,6 +13,7 @@ import type { ActivityResponse } from "../api/contracts/activity";
 import { apiStatusToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
 import { computeAllProgress } from "../utils/progress";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 
 //  Helpers 
 
@@ -108,6 +109,12 @@ export interface OverviewData {
 
   // Recent activity
   activities: ActivityItem[];
+  statusDistribution: {
+    statusId: string;
+    statusName: string;
+    color: string;
+    count: number;
+  }[];
 }
 
 // computeProgress removed as unused
@@ -155,20 +162,33 @@ function actionLabel(a: ActivityResponse): string {
 /**
  * Hàm phân tích và tổng hợp dữ liệu tổng quan (Overview) từ danh sách công việc và lịch sử hoạt động.
  */
-function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[]): OverviewData {
+function deriveOverview(
+  issues: IssueResponse[],
+  activities: ActivityResponse[],
+  projectStatuses: ProjectStatusResponse[]
+): OverviewData {
   const total = issues.length;
-  const done = issues.filter((i) => i.status === "DONE").length;
-  const inProgress  = issues.filter((i) => i.status === "IN_PROGRESS").length; 
+  const statusDistribution = projectStatuses.map((status) => {
+    const count = issues.filter((i) => i.status?.id === status.id).length;
+    return {
+      statusId: status.id,
+      statusName: status.statusName,
+      color: status.color,
+      count,
+    };
+  });
+  const done = issues.filter((i) => i.status?.statusCategory === "DONE").length;
+  const inProgress  = issues.filter((i) => i.status?.statusCategory === "IN_PROGRESS").length; 
 
   const overdue = issues.filter(
-    (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status !== "DONE",
+    (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE",
   ).length;
   const dueSoon = issues.filter(
     (i) =>
       i.deadline &&
       getDaysLeft(i.deadline) >= 0 &&
       getDaysLeft(i.deadline) <= 7 &&
-      i.status !== "DONE",
+      i.status?.statusCategory !== "DONE",
   ).length;
   const progress = total === 0 ? 0 : Math.round((done / total) * 100);
 
@@ -184,8 +204,8 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
 
   // Attention — overdue first, then due soon, top 5
   const attentionTasks: OverviewIssue[] = [
-    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status !== "DONE"),
-    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) >= 0 && i.status !== "DONE"),
+    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE"),
+    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) >= 0 && i.status?.statusCategory !== "DONE"),
   ]
     .slice(0, 5)
     .map((i) => ({
@@ -248,6 +268,7 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
     overdueCount: overdue,
     dueSoonCount: dueSoon,
     overallProgress: progress,
+    statusDistribution,
     timelineTasks,
     attentionTasks,
     milestones,
@@ -270,7 +291,7 @@ export interface UseOverviewReturn {
  * quá hạn, sắp tới hạn, biểu đồ tải công việc thành viên và luồng hoạt động gần đây.
  */
 export function useOverview(): UseOverviewReturn {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick, projectStatuses } = useContext(ProjectContext);
   const [data, setData] = useState<OverviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -294,7 +315,7 @@ export function useOverview(): UseOverviewReturn {
       activityApi.getByProject(projectId, 20),
     ])
       .then(([issues, activities]) => {
-        if (!cancelled) setData(deriveOverview(issues, activities));
+        if (!cancelled) setData(deriveOverview(issues, activities, projectStatuses));
       })
       .catch((err) => {
         console.error("useOverview: failed to load", err);
@@ -302,7 +323,7 @@ export function useOverview(): UseOverviewReturn {
       });
 
     return () => { cancelled = true; };
-  }, [projectId, tick]);
+  }, [projectId, tick, issueUpdateTick, projectStatuses]);
 
   const reload = () => setTick((n) => n + 1);
 

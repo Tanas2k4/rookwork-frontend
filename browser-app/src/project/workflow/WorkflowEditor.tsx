@@ -23,7 +23,6 @@ export function WorkflowEditor({
   onClose,
   statuses,
   currentTransitions,
-  isOpenWorkflow,
   onSave,
 }: Props) {
   const [selectedTransitions, setSelectedTransitions] = useState<AddTransitionRequest[]>([]);
@@ -33,10 +32,16 @@ export function WorkflowEditor({
   // Initialize state
   useEffect(() => {
     if (open) {
-      setSelectedTransitions([...currentTransitions]);
+      // Filter out any stale transitions referencing statuses that were deleted
+      const valid = currentTransitions.filter((t) =>
+        statuses.some((s) => s.id === t.fromStatusId) &&
+        statuses.some((s) => s.id === t.toStatusId)
+      );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedTransitions(valid);
       setError(null);
     }
-  }, [open, currentTransitions]);
+  }, [open, currentTransitions, statuses]);
 
   if (!open) return null;
 
@@ -118,7 +123,7 @@ export function WorkflowEditor({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex flex-col gap-5">
+        <div className="p-6 overflow-y-auto flex flex-col gap-5 flex-1 min-h-0">
           <div>
             <p className="text-sm text-gray-600 leading-relaxed">
               Define which column transitions are allowed when users drag and drop issues.
@@ -161,7 +166,7 @@ export function WorkflowEditor({
           </div>
 
           {/* Matrix table */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50/50">
+          <div className="border border-gray-200 rounded-xl overflow-auto bg-gray-50/50 max-h-[380px] scrollbar-thin">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-100/70 border-b border-gray-200">
