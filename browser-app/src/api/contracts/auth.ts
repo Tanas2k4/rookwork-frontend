@@ -5,8 +5,9 @@ export interface LoginRequest {
 
 export interface AuthRegister {
   email: string;
-  profileName: string
+  profileName: string;
   password: string;
+  invitationId?: string;
 }
 
 export interface RefreshRequest {
@@ -20,4 +21,9 @@ export interface AuthResponse {
 
 export interface GoogleLoginRequest {
   token: string;
+}
+
+export interface RegisterResponse {
+  email: string;
+  message: string;
 }
