@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { invitationApi } from "../api/services/invitationApi";
 import WorkingHoursChart from "../dashboard/WorkingHoursChart";
 import ActiveProjects from "../dashboard/ActiveProjects";
 import { type ProjectUI } from "../api/contracts/projectUI";
@@ -170,7 +171,22 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
 
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   useEffect(() => {
+    const acceptId = searchParams.get("acceptInvitationId");
+    if (acceptId) {
+      invitationApi.respond(acceptId, true)
+        .then(() => {
+          window.location.href = "/dashboard";
+        })
+        .catch((err) => {
+          console.error("Failed to accept invitation from email link:", err);
+          window.location.href = "/dashboard";
+        });
+    }
+
     issueApi.getAssigned()
       .then(setIssues)
       .catch(console.error);
@@ -180,7 +196,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
         setEvents(res.map(mapToCalendarEvent));
       })
       .catch(console.error);
-  }, []);
+  }, [searchParams]);
 
   const totalIssues = issues.length;
   const doneIssues = issues.filter((i) => i.status === "DONE").length;
