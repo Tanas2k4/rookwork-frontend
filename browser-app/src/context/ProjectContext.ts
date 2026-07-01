@@ -1,6 +1,8 @@
 import { createContext } from "react";
 import type { ProjectResponse } from "../api/contracts";
 import type { UserSummary, IssueTypeResponse } from "../api/contracts/issue";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
+import type { WorkflowResponse, AddTransitionRequest } from "../api/contracts/workflow";
 
 export interface ProjectContextValue {
   projectId: string | null;
@@ -24,6 +26,13 @@ export interface ProjectContextValue {
   issueUpdateTick: number;
   /** Gọi sau mỗi thao tác cập nhật để trigger reload ở các view khác */
   notifyIssueUpdated: () => void;
+  projectStatuses: ProjectStatusResponse[];
+  reloadStatuses: () => Promise<void>;
+  setStatuses: (statuses: ProjectStatusResponse[]) => void;
+  workflow: WorkflowResponse | null;
+  isTransitionAllowed: (fromStatusId: string | null | undefined, toStatusId: string | null | undefined) => boolean;
+  updateWorkflow: (transitions: AddTransitionRequest[]) => Promise<WorkflowResponse | undefined>;
+  reloadWorkflow: () => Promise<void>;
 }
 
 export const ProjectContext = createContext<ProjectContextValue>({
@@ -41,4 +50,11 @@ export const ProjectContext = createContext<ProjectContextValue>({
   setOpenIssueModal: () => {},
   issueUpdateTick: 0,
   notifyIssueUpdated: () => {},
+  projectStatuses: [],
+  reloadStatuses: async () => {},
+  setStatuses: () => {},
+  workflow: null,
+  isTransitionAllowed: () => true,
+  updateWorkflow: async () => undefined,
+  reloadWorkflow: async () => {},
 });

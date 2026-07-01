@@ -6,6 +6,8 @@ import type { ProjectResponse } from "../api/contracts";
 import type { IssueTypeResponse } from "../api/contracts/issue";
 import { ProjectContext } from "../context/ProjectContext";
 import { useWebSocket, type WsNotificationPayload } from "../hooks/useWebSocket";
+import { useProjectStatuses } from "../hooks/useProjectStatuses";
+import { useWorkflow } from "../hooks/useWorkflow";
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const { projectKey } = useParams<{ projectKey: string }>();
@@ -15,6 +17,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [issueUpdateTick, setIssueUpdateTick] = useState(0);
   const reloadIssuesRef = useRef<() => void>(() => {});
   const openIssueModalRef = useRef<(uuid: string) => void>(() => {});
+
+  const { statuses: projectStatuses, reload: reloadStatuses, setStatuses } = useProjectStatuses(projectKey ?? null);
+  const { workflow, isTransitionAllowed, updateWorkflow, reloadWorkflow } = useWorkflow(projectKey ?? null);
 
   const loadIssueTypes = useCallback(async () => {
     if (!projectKey) return;
@@ -81,7 +86,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         issueTypes,
         reloadIssueTypes: loadIssueTypes,
         loading,
-        refresh: load,
+        refresh: () => {
+          load();
+          reloadStatuses();
+        },
         reloadIssues: () => reloadIssuesRef.current(),
         setReloadIssues: (fn) => {
           reloadIssuesRef.current = fn;
@@ -92,6 +100,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         },
         issueUpdateTick,
         notifyIssueUpdated,
+        projectStatuses,
+        reloadStatuses,
+        setStatuses,
+        workflow,
+        isTransitionAllowed,
+        updateWorkflow,
+        reloadWorkflow,
       }}
     >
       {children}

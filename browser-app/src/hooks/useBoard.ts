@@ -27,8 +27,6 @@ import {
 } from "../utils/issueMapper";
 import { useToast } from "../hooks/useToast";
 import { ProjectContext } from "../context/ProjectContext";
-import { useProjectStatuses } from "../hooks/useProjectStatuses";
-import { useWorkflow } from "../hooks/useWorkflow";
 
 //  Hook 
 
@@ -40,14 +38,18 @@ import { useWorkflow } from "../hooks/useWorkflow";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
-  const { issueUpdateTick, notifyIssueUpdated, issueTypes } = useContext(ProjectContext);
+  const {
+    issueUpdateTick,
+    notifyIssueUpdated,
+    issueTypes,
+    projectStatuses,
+    isTransitionAllowed,
+  } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const { toasts, addToast: pushToast, removeToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const { statuses: projectStatuses } = useProjectStatuses(projectId);
-  const { isTransitionAllowed } = useWorkflow(projectId);
 
   const tempIdRef = useRef(-1);
 
@@ -539,6 +541,7 @@ export function useBoard(projectId: string | null) {
     addSubtask,
     deleteSubtask,
     removeToast,
+    pushToast,
     updateAttachments,
     isTransitionAllowed,
     reload: loadIssues,

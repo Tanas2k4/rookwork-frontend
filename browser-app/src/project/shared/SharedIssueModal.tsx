@@ -14,12 +14,10 @@ import type { Task, Priority, User } from "../../types/project";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask, uuidToId } from "../../utils/issueMapper";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
-import { useProjectStatuses } from "../../hooks/useProjectStatuses";
 
 export function SharedIssueModal() {
-  const { projectId, setOpenIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
+  const { projectId, setOpenIssueModal, notifyIssueUpdated, projectStatuses } = useContext(ProjectContext);
   const board = useBoard(projectId);
-  const { statuses: projectStatuses } = useProjectStatuses(projectId);
   const boardRef = useRef(board);
   useEffect(() => {
     boardRef.current = board;

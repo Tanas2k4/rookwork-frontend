@@ -12,7 +12,7 @@ import type {
   UserSummary,
 } from "../../api/contracts/issue";
 import type { StatusCategory as ApiStatus } from "../../api/contracts/projectStatus";
-import { useProjectStatuses } from "../../hooks/useProjectStatuses";
+
 import { type Priority, issueTypeIcons } from "../../types/project";
 
 // Dynamic Issue types config loaded from ProjectContext
@@ -65,9 +65,8 @@ interface CreateIssueModalProps {
 // Removed file helper functions
 
 export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
-  const { members, projectId, reloadIssues, issueTypes } = useProject();
+  const { members, projectId, reloadIssues, issueTypes, projectStatuses } = useProject();
   const { addToast } = useToast();
-  const { statuses } = useProjectStatuses(projectId);
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [issueTitle, setIssueTitle] = useState("");
@@ -162,9 +161,8 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
     setCreateError("");
     try {
       const deadlineISO = dueDate ? new Date(dueDate).toISOString() : undefined;
-      const matchedStatus = statuses.find((s) => s.statusCategory === status);
-      const statusId = matchedStatus?.id || statuses[0]?.id;
-
+      const matchedStatus = projectStatuses.find((s) => s.statusCategory === status);
+      const statusId = matchedStatus?.id || projectStatuses[0]?.id;
       const created = await issueApi.create(projectId, {
         issueName: issueTitle.trim(),
         issueTypeId: selectedTypeId,

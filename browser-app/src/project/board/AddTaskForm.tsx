@@ -7,9 +7,10 @@
 import { useState } from "react";
 import { MdAdd } from "react-icons/md";
 import type { TaskType, Priority } from "../../types/project";
-import { typeLabelMap, priorities, priorityLabelMap } from "../../types/project";
+import { priorities, priorityLabelMap } from "../../types/project";
 import { Button } from "../../components/common/Button";
 import { Input } from "../../components/common/Input";
+import { useProject } from "../../hooks/useProject";
 
 interface Props {
   onSubmit: (title: string, type: TaskType, priority: Priority) => void;
@@ -22,6 +23,7 @@ interface Props {
  * để thêm một công việc mới, có hỗ trợ lựa chọn loại công việc (Type) và độ ưu tiên (Priority).
  */
 export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
+  const { issueTypes } = useProject();
   const [title, setTitle] = useState("");
   const [type, setType] = useState<TaskType>("task");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -52,8 +54,10 @@ export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
           disabled={submitting}
           className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white disabled:opacity-50"
         >
-          {(["task", "story", "epic"] as TaskType[]).map((t) => (
-            <option key={t} value={t}>{typeLabelMap[t]}</option>
+          {issueTypes.map((t) => (
+            <option key={t.id} value={t.name.toLowerCase()}>
+              {t.name}
+            </option>
           ))}
         </select>
         <select

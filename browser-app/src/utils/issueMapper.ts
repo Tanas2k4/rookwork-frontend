@@ -81,6 +81,7 @@ export function uiStatusToStatusId(
  * @deprecated Use apiStatusToUI(ProjectStatusResponse) instead.
  * Kept for any legacy callers that still pass the old string enum.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function uiStatusToApi(_s: Status): string {
   // This function is no longer used for API calls.
   // Use uiStatusToStatusId() to get a UUID to pass as statusId.
