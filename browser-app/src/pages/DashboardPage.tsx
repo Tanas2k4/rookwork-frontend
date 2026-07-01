@@ -181,11 +181,11 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
     if (acceptId) {
       invitationApi.respond(acceptId, true)
         .then(() => {
-          window.location.href = "/dashboard";
+          navigate("/dashboard");
         })
         .catch((err) => {
           console.error("Failed to accept invitation from email link:", err);
-          window.location.href = "/dashboard";
+          navigate("/dashboard");
         });
     }
 
