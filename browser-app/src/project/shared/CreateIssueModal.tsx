@@ -12,6 +12,7 @@ import type {
   UserSummary,
 } from "../../api/contracts/issue";
 import type { StatusCategory as ApiStatus } from "../../api/contracts/projectStatus";
+
 import { type Priority, issueTypeIcons } from "../../types/project";
 
 // Dynamic Issue types config loaded from ProjectContext
@@ -160,7 +161,8 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
     setCreateError("");
     try {
       const deadlineISO = dueDate ? new Date(dueDate).toISOString() : undefined;
-      const statusId = projectStatuses.find((ps) => ps.statusCategory === status)?.id;
+      const matchedStatus = projectStatuses.find((s) => s.statusCategory === status);
+      const statusId = matchedStatus?.id || projectStatuses[0]?.id;
       const created = await issueApi.create(projectId, {
         issueName: issueTitle.trim(),
         issueTypeId: selectedTypeId,

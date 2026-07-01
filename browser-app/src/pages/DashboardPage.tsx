@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { invitationApi } from "../api/services/invitationApi";
 import WorkingHoursChart from "../dashboard/WorkingHoursChart";
 import ActiveProjects from "../dashboard/ActiveProjects";
 import { type ProjectUI } from "../api/contracts/projectUI";
@@ -9,6 +10,7 @@ import type { TaskPriority, TaskStatus } from "../types/project";
 import MiniCalendar from "../calendar/MiniCalendar";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse } from "../api/contracts/issue";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue } from "../utils/date";
 import { priorityColorMap } from "../types/project";
@@ -46,11 +48,12 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
   to_do: "#94a3b8", in_progress: "#7c3aed", done: "#22c55e",
 };
 
-function toTaskStatus(s: string | null): TaskStatus {
+function toTaskStatus(s: ProjectStatusResponse | null | undefined): TaskStatus {
+  const category = s?.statusCategory;
   const map: Record<string, TaskStatus> = {
     TO_DO: "to_do", IN_PROGRESS: "in_progress", DONE: "done",
   };
-  return map[s ?? ""] ?? "to_do";
+  return map[category ?? ""] ?? "to_do";
 }
 
 function toTaskPriority(p: string | null): TaskPriority {
@@ -170,7 +173,22 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
 
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   useEffect(() => {
+    const acceptId = searchParams.get("acceptInvitationId");
+    if (acceptId) {
+      invitationApi.respond(acceptId, true)
+        .then(() => {
+          navigate("/dashboard");
+        })
+        .catch((err) => {
+          console.error("Failed to accept invitation from email link:", err);
+          navigate("/dashboard");
+        });
+    }
+
     issueApi.getAssigned()
       .then(setIssues)
       .catch(console.error);
@@ -180,7 +198,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
         setEvents(res.map(mapToCalendarEvent));
       })
       .catch(console.error);
-  }, []);
+  }, [searchParams]);
 
   const totalIssues = issues.length;
   const doneIssues = issues.filter((i) => i.status?.statusCategory === "DONE").length;
@@ -373,7 +391,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                   }
 
                   const issue = item.issue;
-                  const status = toTaskStatus(issue.status?.statusCategory ?? null);
+                  const status = toTaskStatus(issue.status);
                   const priority = toTaskPriority(issue.priority);
                   const isDone = status === "done";
                   const accentColor = PRIORITY_COLOR[priority];
