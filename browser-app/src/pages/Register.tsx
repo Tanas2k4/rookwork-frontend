@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import LoginBackground from "../assets/login-background.jpg";
 import { IoIosPersonAdd } from "react-icons/io";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -18,7 +18,9 @@ function Register() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<"register" | "otp">("register");
-  const [otp, setOtp] = useState("");
+  const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""));
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [isShaking, setIsShaking] = useState(false);
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -77,21 +79,89 @@ function Register() {
     }
   };
 
+  const handleOtpChange = (value: string, index: number) => {
+    const numValue = value.replace(/\D/g, "");
+    if (!numValue && value !== "") return;
+
+    const newOtpValues = [...otpValues];
+    if (numValue.length > 1) {
+      const pastedDigits = numValue.slice(0, 6).split("");
+      for (let i = 0; i < 6; i++) {
+        if (pastedDigits[i]) {
+          newOtpValues[i] = pastedDigits[i];
+        }
+      }
+      setOtpValues(newOtpValues);
+      const focusIndex = Math.min(pastedDigits.length, 5);
+      inputRefs.current[focusIndex]?.focus();
+      return;
+    }
+
+    newOtpValues[index] = numValue;
+    setOtpValues(newOtpValues);
+
+    if (numValue && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace") {
+      if (!otpValues[index] && index > 0) {
+        const newOtpValues = [...otpValues];
+        newOtpValues[index - 1] = "";
+        setOtpValues(newOtpValues);
+        inputRefs.current[index - 1]?.focus();
+      } else {
+        const newOtpValues = [...otpValues];
+        newOtpValues[index] = "";
+        setOtpValues(newOtpValues);
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pastedData) return;
+
+    const newOtpValues = [...otpValues];
+    const digits = pastedData.split("");
+    for (let i = 0; i < 6; i++) {
+      newOtpValues[i] = digits[i] || "";
+    }
+    setOtpValues(newOtpValues);
+
+    const focusIndex = Math.min(digits.length - 1, 5);
+    if (focusIndex >= 0) {
+      inputRefs.current[focusIndex]?.focus();
+    }
+  };
+
   const handleVerifyOtp = async () => {
     setError("");
     setSuccess("");
-    if (!otp) {
-      setError("Please enter the OTP code");
+    const finalOtp = otpValues.join("");
+    if (finalOtp.length < 6) {
+      setError("Please enter the 6-digit OTP code");
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
       return;
     }
     setLoading(true);
     try {
-      const data = await authApi.verifyOtp(email, otp, invitationId || undefined);
+      const data = await authApi.verifyOtp(email, finalOtp, invitationId || undefined);
       tokenStorage.save(data.accessToken, data.refreshToken);
       setSuccess("Verification successful!");
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
     } finally {
       setLoading(false);
     }
@@ -116,71 +186,110 @@ function Register() {
       className="font-heading flex h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${LoginBackground})` }}
     >
-      <div className="w-96 bg-white p-6 opacity-90">
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.4s ease-in-out;
+        }
+      `}</style>
+      <div className={`w-96 bg-white p-6 border-2 rounded-md border-gray-200 ${isShaking ? "animate-shake" : ""}`}>
         {stage === "register" ? (
           <>
             <h1 className="mb-4 text-2xl text-gray-800 font-semibold font-mono text-center tracking-widest">
               REGISTER
             </h1>
 
-            {/* PROFILE NAME */}
-            <div className="py-2">
-              <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
-                <LuUser className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
-                <input
-                  className="w-full bg-transparent text-[14px] outline-none"
-                  placeholder="display name"
-                  value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                />
-              </div>
-            </div>
+            {
+              (() => {
+                const isProfileNameError = error === "Please fill all fields" && !profileName;
+                const isEmailError = !!emailError || (error === "Please fill all fields" && !email) || (error && error.toLowerCase().includes("email"));
+                const isPasswordError = error === "Passwords do not match" || (error === "Please fill all fields" && !password) || (error && error.toLowerCase().includes("password"));
+                const isConfirmError = error === "Passwords do not match" || (error === "Please fill all fields" && !confirm);
 
-            {/* EMAIL */}
-            <div className="py-2">
-              <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
-                <IoMailOutline className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
-                <input
-                  className="w-full bg-transparent text-[14px] outline-none"
-                  placeholder="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (emailError) setEmailError("");
-                  }}
-                  onBlur={(e) => checkEmail(e.target.value)}
-                />
-              </div>
-              {emailError && <p className="text-xs text-red-500 mt-1 pl-1">{emailError}</p>}
-            </div>
+                return (
+                  <>
+                    {/* PROFILE NAME */}
+                    <div className="py-2">
+                      <div className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+                        isProfileNameError 
+                          ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
+                          : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
+                      }`}>
+                        <LuUser className={`text-[16px] transition-colors ${isProfileNameError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                        <input
+                          className="w-full bg-transparent text-[14px] outline-none"
+                          placeholder="display name"
+                          value={profileName}
+                          onChange={(e) => setProfileName(e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-            {/* PASSWORD */}
-            <div className="py-2">
-              <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
-                <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
-                <input
-                  type="password"
-                  className="w-full bg-transparent text-[14px] outline-none"
-                  placeholder="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
+                    {/* EMAIL */}
+                    <div className="py-2">
+                      <div className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+                        isEmailError 
+                          ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
+                          : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
+                      }`}>
+                        <IoMailOutline className={`text-[16px] transition-colors ${isEmailError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                        <input
+                          className="w-full bg-transparent text-[14px] outline-none"
+                          placeholder="email"
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (emailError) setEmailError("");
+                          }}
+                          onBlur={(e) => checkEmail(e.target.value)}
+                        />
+                      </div>
+                      {emailError && <p className="text-xs text-red-500 mt-1 pl-1">{emailError}</p>}
+                    </div>
 
-            {/* CONFIRM PASSWORD */}
-            <div className="py-2">
-              <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
-                <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
-                <input
-                  type="password"
-                  className="w-full bg-transparent text-[14px] outline-none"
-                  placeholder="confirm password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                />
-              </div>
-            </div>
+                    {/* PASSWORD */}
+                    <div className="py-2">
+                      <div className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+                        isPasswordError 
+                          ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
+                          : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
+                      }`}>
+                        <TbLock className={`text-[16px] transition-colors ${isPasswordError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                        <input
+                          type="password"
+                          className="w-full bg-transparent text-[14px] outline-none"
+                          placeholder="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* CONFIRM PASSWORD */}
+                    <div className="py-2">
+                      <div className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+                        isConfirmError 
+                          ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
+                          : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
+                      }`}>
+                        <TbLock className={`text-[16px] transition-colors ${isConfirmError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                        <input
+                          type="password"
+                          className="w-full bg-transparent text-[14px] outline-none"
+                          placeholder="confirm password"
+                          value={confirm}
+                          onChange={(e) => setConfirm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </>
+                );
+              })()
+            }
 
             {/* BACK TO LOGIN */}
             <div className="mt-3 flex justify-center">
@@ -188,7 +297,7 @@ function Register() {
                 onClick={() => navigate("/login")}
                 className="text-purple-900 text-xs font-bold tracking-[4px] hover:text-purple-700"
               >
-                BACK TO LOGIN
+                BACK TO SIGN IN 
               </button>
             </div>
 
@@ -224,17 +333,27 @@ function Register() {
               We have sent a 6-digit verification code to email <strong>{email}</strong>. Please check your inbox.
             </p>
 
-            {/* OTP INPUT */}
-            <div className="py-2">
-              <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
+            {/* OTP INPUTS */}
+            <div className={`py-2 flex justify-center gap-2 ${isShaking ? "animate-shake" : ""}`}>
+              {otpValues.map((value, idx) => (
                 <input
-                  className="w-full bg-transparent text-[16px] text-center tracking-[8px] font-bold outline-none"
-                  placeholder="******"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  key={idx}
+                  ref={(el) => { inputRefs.current[idx] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={1}
+                  className={`w-11 h-11 border rounded-lg text-center text-[18px] font-bold outline-none transition-all duration-200 ${
+                    error 
+                      ? "bg-red-50 border-red-300 text-red-600 focus:border-red-500 focus:ring-1 focus:ring-red-500" 
+                      : "bg-gray-100 border-transparent text-gray-800 focus:border-purple-800 focus:bg-white focus:ring-1 focus:ring-purple-800"
+                  }`}
+                  value={value}
+                  onChange={(e) => handleOtpChange(e.target.value, idx)}
+                  onKeyDown={(e) => handleOtpKeyDown(e, idx)}
+                  onPaste={handleOtpPaste}
                 />
-              </div>
+              ))}
             </div>
 
             {/* OTP OPTIONS */}
@@ -252,6 +371,7 @@ function Register() {
                   setStage("register");
                   setError("");
                   setSuccess("");
+                  setOtpValues(Array(6).fill(""));
                 }}
                 className="text-gray-500 hover:text-gray-700"
               >

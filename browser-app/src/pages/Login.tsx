@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import LoginBackground from "../assets/login-background.jpg";
 import { IoIosLogIn } from "react-icons/io";
 import { IoMailOutline } from "react-icons/io5";
@@ -15,13 +15,19 @@ interface CredentialResponse {
 interface GoogleIdConfiguration {
   client_id: string;
   callback: (response: CredentialResponse) => void;
+  ux_mode?: string;
 }
 
 interface GsiButtonConfiguration {
   type?: "standard" | "icon";
   theme?: "outline" | "filled_blue" | "filled_black";
   size?: "large" | "medium" | "small";
-  text?: "signin_with" | "signup_with" | "signin" | "continue_with" | "signin_to";
+  text?:
+    | "signin_with"
+    | "signup_with"
+    | "signin"
+    | "continue_with"
+    | "signin_to";
   shape?: "rectangular" | "pill" | "circle" | "square";
   logo_alignment?: "left" | "center";
   width?: number;
@@ -30,7 +36,10 @@ interface GsiButtonConfiguration {
 
 interface GoogleAccountsId {
   initialize(config: GoogleIdConfiguration): void;
-  renderButton(element: HTMLElement | null, config: GsiButtonConfiguration): void;
+  renderButton(
+    element: HTMLElement | null,
+    config: GsiButtonConfiguration,
+  ): void;
 }
 
 interface GoogleAccounts {
@@ -52,10 +61,17 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     setError("");
+    if (!email || !password) {
+      setError("Please fill all fields");
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+      return;
+    }
     setLoading(true);
     try {
       const data = await authApi.login({ email, password });
@@ -64,39 +80,52 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLoginResponse = useCallback(async (response: CredentialResponse) => {
-    setError("");
-    setLoading(true);
-    try {
-      const data = await authApi.googleLogin({ token: response.credential });
-      tokenStorage.save(data.accessToken, data.refreshToken);
-      window.electron?.loginSuccess();
-      onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google login failed");
-    } finally {
-      setLoading(false);
-    }
-  }, [onSuccess]);
+  const handleGoogleLoginResponse = useCallback(
+    async (response: CredentialResponse) => {
+      setError("");
+      setLoading(true);
+      try {
+        const data = await authApi.googleLogin({ token: response.credential });
+        tokenStorage.save(data.accessToken, data.refreshToken);
+        window.electron?.loginSuccess();
+        onSuccess();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Google login failed");
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 500);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onSuccess],
+  );
+
+  const googleInitialized = useRef(false);
 
   useEffect(() => {
+    if (googleInitialized.current) return;
+    googleInitialized.current = true;
+
     const initializeGoogle = () => {
-      if (window.google) {
-        const client_id = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-        window.google.accounts.id.initialize({
-          client_id: client_id,
-          callback: handleGoogleLoginResponse,
-        });
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-signin-btn"),
-          { theme: "outline", size: "large", width: 336, locale: "en" }
-        );
-      }
+      window.google?.accounts.id.initialize({
+        client_id:
+          import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+          "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+        callback: handleGoogleLoginResponse,
+        ux_mode: "popup",
+      });
+
+      window.google?.accounts.id.renderButton(
+        document.getElementById("google-signin-btn"),
+        { theme: "outline", size: "large", width: 336 },
+      );
     };
 
     if (window.google) {
@@ -111,20 +140,54 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     }
   }, [handleGoogleLoginResponse]);
 
+  const isEmailError =
+    error &&
+    (!email ||
+      error.toLowerCase().includes("email") ||
+      error.toLowerCase().includes("user not found"));
+
+  const isPasswordError =
+    error &&
+    (!password ||
+      error.toLowerCase().includes("password") ||
+      error.toLowerCase().includes("invalid") ||
+      error.toLowerCase().includes("credentials") ||
+      error.toLowerCase().includes("login failed"));
+
   return (
     <div
       className="font-heading flex h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${LoginBackground})` }}
     >
-      <div className="w-96 bg-white p-6 opacity-90 rounded-xl shadow-xl">
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.4s ease-in-out;
+        }
+      `}</style>
+      <div
+        className={`w-96 bg-white p-6 border-2 rounded-md border-gray-200 ${isShaking ? "animate-shake" : ""}`}
+      >
         <h1 className="mb-6 text-2xl text-gray-800 font-semibold font-mono text-center tracking-widest">
-          LOGIN
+          SIGN IN
         </h1>
 
         {/* EMAIL */}
         <div className="py-2">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
-            <IoMailOutline className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
+          <div
+            className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+              isEmailError
+                ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500"
+                : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
+            }`}
+          >
+            <IoMailOutline
+              className={`text-[16px] transition-colors ${isEmailError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`}
+            />
             <input
               className="w-full bg-transparent text-[14px] outline-none"
               placeholder="email"
@@ -136,8 +199,16 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
 
         {/* PASSWORD */}
         <div className="pt-5">
-          <div className="group flex items-center gap-3 rounded-lg bg-gray-100 px-3 py-2.5 border border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800 transition-all duration-200">
-            <TbLock className="text-gray-400 text-[16px] group-focus-within:text-purple-800 transition-colors" />
+          <div
+            className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+              isPasswordError
+                ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500"
+                : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
+            }`}
+          >
+            <TbLock
+              className={`text-[16px] transition-colors ${isPasswordError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`}
+            />
             <input
               type="password"
               className="w-full bg-transparent text-[14px] outline-none"
@@ -181,13 +252,18 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
         {/* OR DIVIDER */}
         <div className="my-4 flex items-center justify-between">
           <span className="w-1/4 border-b border-gray-300"></span>
-          <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">OR</span>
+          <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">
+            OR
+          </span>
           <span className="w-1/4 border-b border-gray-300"></span>
         </div>
 
         {/* GOOGLE SIGN IN BUTTON */}
         <div className="flex justify-center">
-          <div id="google-signin-btn" className="w-full flex justify-center"></div>
+          <div
+            id="google-signin-btn"
+            className="w-full flex justify-center"
+          ></div>
         </div>
       </div>
     </div>
