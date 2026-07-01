@@ -6,15 +6,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
-import type { Task, Status, User } from "../types/project";
+import type { Task, User } from "../types/project";
 import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
 import {
   apiUserToUI,
   issueToTask,
-  uiStatusToStatusId,
-  uiTypeToApi,
   categoryToUIStatus,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";

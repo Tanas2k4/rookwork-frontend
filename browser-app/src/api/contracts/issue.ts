@@ -34,7 +34,7 @@ export interface UserSummary {
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
   role?: string;
-
+  systemRole?: string;
 }
 
 export interface CreateIssueRequest {

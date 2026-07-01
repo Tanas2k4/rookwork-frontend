@@ -30,7 +30,7 @@ interface Props {
     priority: Priority,
     status: Status,
   ) => Promise<unknown> | void;
-  onMoveTask: (taskId: number, newStatus: Status) => void;
+  onMoveTask: (taskId: number, statusId: string) => void;
   onReorderTasks: (taskId: number, fromIndex: number, toIndex: number) => void;
   /** Called when user renames the column inline. Null statusId = non-editable column. */
   onRename?: (statusId: string, newName: string) => Promise<void>;

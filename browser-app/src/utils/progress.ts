@@ -13,13 +13,13 @@ export function computeAllProgress(issues: IssueResponse[]): Record<string, numb
   const progressMap: Record<string, number> = {};
 
   const getLeafProgress = (issue: IssueResponse): number => {
-    if (issue.status === "DONE") return 100;
+    if (issue.status?.statusCategory === "DONE") return 100;
     const subtasks = issue.subtasks || [];
     if (subtasks.length > 0) {
       const done = subtasks.filter((s) => s.isDone).length;
       return Math.round((done / subtasks.length) * 100);
     }
-    return issue.status === "IN_PROGRESS" ? 40 : 0;
+    return issue.status?.statusCategory === "IN_PROGRESS" ? 40 : 0;
   };
 
   const stories = issues.filter(

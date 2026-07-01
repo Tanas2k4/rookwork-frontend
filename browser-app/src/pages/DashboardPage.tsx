@@ -9,6 +9,7 @@ import type { TaskPriority, TaskStatus } from "../types/project";
 import MiniCalendar from "../calendar/MiniCalendar";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse } from "../api/contracts/issue";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue } from "../utils/date";
 import { priorityColorMap } from "../types/project";
@@ -46,11 +47,12 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
   to_do: "#94a3b8", in_progress: "#7c3aed", done: "#22c55e",
 };
 
-function toTaskStatus(s: string | null): TaskStatus {
+function toTaskStatus(s: ProjectStatusResponse | null | undefined): TaskStatus {
+  const category = s?.statusCategory;
   const map: Record<string, TaskStatus> = {
     TO_DO: "to_do", IN_PROGRESS: "in_progress", DONE: "done",
   };
-  return map[s ?? ""] ?? "to_do";
+  return map[category ?? ""] ?? "to_do";
 }
 
 function toTaskPriority(p: string | null): TaskPriority {
@@ -183,7 +185,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   }, []);
 
   const totalIssues = issues.length;
-  const doneIssues = issues.filter((i) => i.status === "DONE").length;
+  const doneIssues = issues.filter((i) => i.status?.statusCategory === "DONE").length;
   const overdueIssues = issues.filter(
     (i) => i.deadline && isOverdue(i.deadline, i.status),
   ).length;
@@ -212,12 +214,12 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
 
     // 2. Get tasks due today, fallback to general active tasks if none
     let filteredTasks = issues.filter((i) => {
-      if (i.status === "DONE" || !i.deadline) return false;
+      if (i.status?.statusCategory === "DONE" || !i.deadline) return false;
       return i.deadline.split("T")[0] === todayStr;
     });
     
     if (filteredTasks.length === 0) {
-      filteredTasks = issues.filter((i) => i.status !== "DONE").slice(0, 4);
+      filteredTasks = issues.filter((i) => i.status?.statusCategory !== "DONE").slice(0, 4);
     }
 
     const items = [
@@ -251,7 +253,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
 
     // Add issue deadline dots
     issues
-      .filter((i) => i.deadline && i.status !== "DONE")
+      .filter((i) => i.deadline && i.status?.statusCategory !== "DONE")
       .forEach((i) => {
         const dateKey = i.deadline!.split("T")[0];
         if (!dates[dateKey]) dates[dateKey] = [];

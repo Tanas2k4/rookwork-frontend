@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
-import type { Task, Status, Priority, User } from "../../../types/project";
+import type { Task, Priority, User } from "../../../types/project";
 import {
-  statuses,
   statusMap,
   priorities,
   priorityColorMap,

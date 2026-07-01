@@ -157,18 +157,18 @@ function actionLabel(a: ActivityResponse): string {
  */
 function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[]): OverviewData {
   const total = issues.length;
-  const done = issues.filter((i) => i.status === "DONE").length;
-  const inProgress  = issues.filter((i) => i.status === "IN_PROGRESS").length; 
+  const done = issues.filter((i) => i.status?.statusCategory === "DONE").length;
+  const inProgress  = issues.filter((i) => i.status?.statusCategory === "IN_PROGRESS").length; 
 
   const overdue = issues.filter(
-    (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status !== "DONE",
+    (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE",
   ).length;
   const dueSoon = issues.filter(
     (i) =>
       i.deadline &&
       getDaysLeft(i.deadline) >= 0 &&
       getDaysLeft(i.deadline) <= 7 &&
-      i.status !== "DONE",
+      i.status?.statusCategory !== "DONE",
   ).length;
   const progress = total === 0 ? 0 : Math.round((done / total) * 100);
 
@@ -184,8 +184,8 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
 
   // Attention — overdue first, then due soon, top 5
   const attentionTasks: OverviewIssue[] = [
-    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status !== "DONE"),
-    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) >= 0 && i.status !== "DONE"),
+    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE"),
+    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) >= 0 && i.status?.statusCategory !== "DONE"),
   ]
     .slice(0, 5)
     .map((i) => ({
