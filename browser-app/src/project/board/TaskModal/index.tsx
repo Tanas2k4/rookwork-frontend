@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
-import type { Task, Status, Priority, User } from "../../../types/project";
+import type { Task, Priority, User } from "../../../types/project";
 import { TaskModalHeader } from "./TaskModalHeader";
 import { TaskModalDetails } from "./TaskModalDetails";
 import { ChildrenSection } from "./ChildrenSection";

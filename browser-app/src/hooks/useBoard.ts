@@ -13,12 +13,11 @@ import type {
   User,
   Subtask,
 } from "../types/project";
-import { statusMap, priorityLabelMap } from "../types/project";
+import { priorityLabelMap } from "../types/project";
 import { issueApi } from "../api/services/issueApi";
 import { subtaskApi } from "../api/services/subtaskApi";
 import type { AttachmentResponse } from "../api/contracts/attachment";
 import {
-  uiTypeToApi,
   uiStatusToStatusId,
   uiPriorityToApi,
   uuidToId,

@@ -10,7 +10,7 @@ import { useEffect, useCallback, useContext, useRef } from "react";
 import { useBoard } from "../../hooks/useBoard";
 import { ProjectContext } from "../../context/ProjectContext";
 import { TaskModal } from "../board/TaskModal";
-import type { Task, Status, Priority, User } from "../../types/project";
+import type { Task, Priority, User } from "../../types/project";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask, uuidToId } from "../../utils/issueMapper";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
@@ -69,8 +69,8 @@ export function SharedIssueModal() {
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 
-  const changeStatus = useCallback((s: Status) => {
-    board.changeStatus(s);
+  const changeStatus = useCallback((statusId: string) => {
+    board.changeStatus(statusId);
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 

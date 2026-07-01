@@ -36,7 +36,7 @@ export interface UserSummary {
   notifyComment?: boolean;
   notifyEventInvited?: boolean;
   role?: string;
-
+  systemRole?: string;
 }
 
 export interface CreateIssueRequest {

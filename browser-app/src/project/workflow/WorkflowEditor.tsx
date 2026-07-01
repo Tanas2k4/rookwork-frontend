@@ -23,7 +23,6 @@ export function WorkflowEditor({
   onClose,
   statuses,
   currentTransitions,
-  isOpenWorkflow,
   onSave,
 }: Props) {
   const [selectedTransitions, setSelectedTransitions] = useState<AddTransitionRequest[]>([]);

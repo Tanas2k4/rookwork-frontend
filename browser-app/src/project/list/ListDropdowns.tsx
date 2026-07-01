@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdCheck } from "react-icons/md";
-import type { Task, User, Status } from "../../types/project";
+import type { Task, User } from "../../types/project";
 import { issueTypeIcons } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
