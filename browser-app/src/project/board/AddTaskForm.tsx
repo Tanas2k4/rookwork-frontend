@@ -4,7 +4,7 @@
  * @author Warmdrobe
  */
 
-import { useState } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { MdAdd } from "react-icons/md";
 import type { TaskType, Priority } from "../../types/project";
 import { priorities, priorityLabelMap } from "../../types/project";
@@ -27,6 +27,20 @@ export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<TaskType>("task");
   const [priority, setPriority] = useState<Priority>("medium");
+
+  // Keep selected type in sync with loaded project issue types
+  useEffect(() => {
+    if (issueTypes && issueTypes.length > 0) {
+      const hasTask = issueTypes.some((t) => t.name.toLowerCase() === "task");
+      startTransition(() => {
+        if (hasTask) {
+          setType("task");
+        } else {
+          setType(issueTypes[0].name.toLowerCase());
+        }
+      });
+    }
+  }, [issueTypes]);
 
   function handleSubmit() {
     if (!title.trim() || submitting) return;

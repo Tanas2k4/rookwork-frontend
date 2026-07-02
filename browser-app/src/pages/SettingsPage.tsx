@@ -66,11 +66,11 @@ export default function SettingsPage() {
                   setActiveTab(tab.id);
                 }}
                 className={`w-full flex items-center px-3 py-2.5 text-sm rounded-lg transition-colors ${isActive
-                    ? "bg-purple-50 text-purple-700"
+                    ? "bg-gray-100 text-gray-700 font-medium"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   }`}
               >
-                <Icon className={`mr-3 h-4 w-4 ${isActive ? "text-purple-700" : "text-gray-500"}`} />
+                <Icon className={`mr-3 h-4 w-4 ${isActive ? "text-gray-700" : "text-gray-500"}`} />
                 {tab.label}
               </button>
             );

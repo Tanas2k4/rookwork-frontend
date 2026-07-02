@@ -260,7 +260,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                               className="shrink-0"
                             />
                           )}
-                          <span className="truncate font-semibold uppercase text-xs tracking-wider text-gray-700">
+                          <span className="truncate font-semibold text-xs tracking-wider text-gray-700">
                             {currentType ? currentType.name : "Select Type"}
                           </span>
                         </div>
@@ -296,7 +296,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                                   style={{ color: option.color }}
                                   className="shrink-0"
                                 />
-                                <span className="uppercase tracking-wider truncate flex-1">
+                                <span className="tracking-wider truncate flex-1">
                                   {option.name}
                                 </span>
                               </button>

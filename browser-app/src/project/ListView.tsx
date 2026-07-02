@@ -10,6 +10,7 @@ import { ToastContainer } from "../components/common/ToastContainer";
 import { Button } from "../components/common/Button";
 import { ProjectContext } from "../context/ProjectContext";
 import { issueTypeIcons } from "../types/project";
+import type { TaskWithMeta } from "../types/project";
 
 // typeOptions removed as unused
 
@@ -187,13 +188,13 @@ export default function ListView() {
                             onDoubleClick={(e) => lv.openDropdownWithPosition(e, "status", task._uuid)}>
                             <span
                               style={
-                                (task as any)._statusMeta?.color
-                                  ? { backgroundColor: (task as any)._statusMeta.color + "20", color: (task as any)._statusMeta.color }
+                                (task as TaskWithMeta)._statusMeta?.color
+                                  ? { backgroundColor: (task as TaskWithMeta)._statusMeta!.color + "20", color: (task as TaskWithMeta)._statusMeta!.color }
                                   : undefined
                               }
-                              className={!(task as any)._statusMeta?.color ? `px-3 py-1 text-xs font-semibold rounded-full ${statusOpt.color}` : "px-3 py-1 text-xs font-semibold rounded-full"}
+                              className={!(task as TaskWithMeta)._statusMeta?.color ? `px-3 py-1 text-xs font-semibold rounded-full ${statusOpt.color}` : "px-3 py-1 text-xs font-semibold rounded-full"}
                             >
-                              {(task as any)._statusMeta?.statusName ?? statusOpt.label}
+                              {(task as TaskWithMeta)._statusMeta?.statusName ?? statusOpt.label}
                             </span>
                             <button onClick={(e) => lv.openDropdownWithPosition(e, "status", task._uuid)}
                               className="p-1 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition">

@@ -33,7 +33,7 @@ export function apiTypeToUI(t: IssueTypeResponse): TaskType {
  * Chuyển đổi loại công việc từ UI FE (viết thường) sang loại công việc của API BE (viết hoa).
  * @param t Loại công việc từ FE
  */
-export function uiTypeToApi(t: TaskType): any {
+export function uiTypeToApi(t: TaskType): string {
   return t.toUpperCase();
 }
 
@@ -175,6 +175,7 @@ export function issueToTask(
     priority: apiPriorityToUI(issue.priority),
     assigned_to: assignees,
     deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
+    startDate: issue.startDate ? issue.startDate.split("T")[0] : null,
     // status on UI is still the simple 3-value string for backward compat with rendering logic
     status: apiStatusToUI(issue.status),
     subtasks: (issue.subtasks ?? []).map((sub) => {
@@ -189,5 +190,6 @@ export function issueToTask(
     childIds: children,
     attachments: issue.attachments,
     issueType: issue.issueType,
+    dependencyIds: issue.dependencyIds || [],
   };
 }

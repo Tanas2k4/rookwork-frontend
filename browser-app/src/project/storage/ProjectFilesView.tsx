@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, startTransition } from "react";
 import { useLocation } from "react-router-dom";
 import { ProjectContext } from "../../context/ProjectContext";
 import { issueApi } from "../../api/services/issueApi";
@@ -43,7 +43,9 @@ export default function ProjectFilesView() {
   useEffect(() => {
     const state = location.state as { folderUuid?: string } | null;
     if (state?.folderUuid) {
-      setSelectedFolderUuid(state.folderUuid);
+      startTransition(() => {
+        setSelectedFolderUuid(state.folderUuid!);
+      });
     }
   }, [location.state]);
 

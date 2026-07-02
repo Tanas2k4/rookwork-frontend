@@ -1,4 +1,6 @@
 import type { Task, TaskType, TaskStatus } from "../../types/project";
+import type { IssueTypeResponse } from "../../api/contracts/issue";
+import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
 import { addDays, diffDays } from "../../utils/date";
 
 // Types
@@ -23,7 +25,8 @@ export interface GanttTask {
   status?: "todo" | "in_progress" | "done";
   type?: TaskType;
   _statusId?: string;
-  _statusMeta?: any;
+  _statusMeta?: ProjectStatusResponse | null;
+  dependencyIds?: string[];
 }
 
 // Constants
@@ -78,7 +81,7 @@ function inferStart(task: Task): Date {
 }
 
 export function taskToGantt(task: Task): GanttTask {
-  const t = task as Task & { _statusId?: string; _statusMeta?: any; issueType?: any };
+  const t = task as Task & { _statusId?: string; _statusMeta?: ProjectStatusResponse | null; issueType?: IssueTypeResponse };
   const rawGroupName = t.issueType?.name || "Task";
   const groupName = rawGroupName.charAt(0).toUpperCase() + rawGroupName.slice(1).toLowerCase();
 

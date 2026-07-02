@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoSearchSharp, IoFolderOpenOutline, IoDocumentTextOutline, IoFileTrayFullOutline } from "react-icons/io5";
+import {
+  IoSearchSharp,
+  IoFolderOpenOutline,
+  IoDocumentTextOutline,
+  IoFileTrayFullOutline,
+} from "react-icons/io5";
 import { searchApi } from "../../../api/services/searchApi";
 import type { SearchResponse } from "../../../api/contracts/search";
 
@@ -32,7 +37,10 @@ export function HeaderSearch() {
   // Click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -44,14 +52,16 @@ export function HeaderSearch() {
 
   // Debounced API Search
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setResults(null);
-      setLoading(false);
-      return;
-    }
+    const delay = searchTerm.trim() ? 250 : 0;
 
-    setLoading(true);
     const delayDebounce = setTimeout(async () => {
+      if (!searchTerm.trim()) {
+        setResults(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       try {
         const response = await searchApi.search(searchTerm);
         setResults(response);
@@ -61,7 +71,7 @@ export function HeaderSearch() {
       } finally {
         setLoading(false);
       }
-    }, 250);
+    }, delay);
 
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
@@ -140,7 +150,9 @@ export function HeaderSearch() {
       }
     } else if (e.key === "ArrowUp") {
       if (flatItems.length > 0) {
-        setSelectedIndex((prev) => (prev - 1 + flatItems.length) % flatItems.length);
+        setSelectedIndex(
+          (prev) => (prev - 1 + flatItems.length) % flatItems.length,
+        );
         e.preventDefault();
       }
     } else if (e.key === "Enter") {
@@ -152,7 +164,7 @@ export function HeaderSearch() {
     }
   };
 
-  const handleSelect = (item: typeof flatItems[0]) => {
+  const handleSelect = (item: (typeof flatItems)[0]) => {
     if (item.type === "issue" && results) {
       const originalIssue = results.issues.find((i) => i.id === item.id);
       if (originalIssue) {
@@ -201,7 +213,7 @@ export function HeaderSearch() {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="bg-gray-200 pl-10 pr-4 py-1 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 w-60 text-xs font-normal text-gray-700"
+          className="bg-gray-200 pl-10 pr-4 py-1.5 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 w-60 text-xs font-normal text-gray-700"
         />
       </div>
 
@@ -209,11 +221,11 @@ export function HeaderSearch() {
       {isOpen && (searchTerm.trim() || loading) && (
         <div
           ref={listRef}
-          className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 w-80 max-h-96 overflow-y-auto z-50 p-1 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150"
+          className="absolute flex flex-col w-xl max-h-96 top-full left-1/2 -translate-x-1/2 mt-2 shadow-sm bg-white rounded-md border border-gray-200 overflow-y-auto z-50 p-1 animate-in fade-in slide-in-from-top-1 duration-150"
         >
           {loading ? (
             <div className="py-6 flex flex-col items-center justify-center text-gray-400 gap-2">
-              <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-[10px]">Searching...</span>
             </div>
           ) : flatItems.length > 0 ? (
@@ -225,33 +237,45 @@ export function HeaderSearch() {
                     key={`${item.type}-${item.id}`}
                     data-active={isActive}
                     onClick={() => handleSelect(item)}
-                    className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${
-                      isActive ? "bg-purple-50 text-purple-950" : "hover:bg-gray-50 text-gray-700"
+                    className={`flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors ${
+                      isActive
+                        ? "bg-purple-50 text-purple-950"
+                        : "hover:bg-gray-50 text-gray-700"
                     }`}
                   >
                     {/* Icon matching Type */}
                     <div
                       className={`p-1.5 rounded-md shrink-0 ${
-                        isActive ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-500"
+                        isActive
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {item.type === "project" && <IoFolderOpenOutline size={15} />}
-                      {item.type === "issue" && <IoDocumentTextOutline size={15} />}
-                      {item.type === "file" && <IoFileTrayFullOutline size={15} />}
+                      {item.type === "project" && (
+                        <IoFolderOpenOutline size={15} />
+                      )}
+                      {item.type === "issue" && (
+                        <IoDocumentTextOutline size={15} />
+                      )}
+                      {item.type === "file" && (
+                        <IoFileTrayFullOutline size={15} />
+                      )}
                     </div>
 
                     {/* Content text */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 justify-between">
-                        <span className="font-medium text-xs truncate leading-none">{item.title}</span>
+                        <span className="font-medium text-[13px] truncate leading-none">
+                          {item.title}
+                        </span>
                         {item.tag && (
                           <span
                             className={`text-[8px] font-semibold uppercase tracking-wider px-1 rounded shrink-0 border leading-none py-0.5 ${
                               item.type === "project"
                                 ? "bg-blue-50 text-blue-700 border-blue-200"
                                 : item.type === "file"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-purple-50 text-purple-700 border-purple-200"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : "bg-purple-50 text-purple-700 border-purple-200"
                             }`}
                           >
                             {item.tag}
@@ -270,7 +294,8 @@ export function HeaderSearch() {
             </div>
           ) : (
             <div className="py-6 text-center text-gray-400 text-xs">
-              No results found for "<span className="font-semibold">{searchTerm}</span>"
+              No results found for "
+              <span className="font-semibold">{searchTerm}</span>"
             </div>
           )}
         </div>

@@ -45,7 +45,7 @@ export function FilterMenu({
     <div className="relative inline-block text-left" ref={ref}>
       <button
         onClick={onToggle}
-        className={`flex items-center gap-1 text-sm border font-semibold px-3 py-1.5 rounded-md hover:bg-gray-100 transition relative ${
+        className={`flex items-center gap-1 text-sm border  px-3 py-1.5 rounded-md hover:bg-gray-100 transition relative ${
           activeFilters > 0
             ? "border-purple-600 bg-purple-50 text-purple-700"
             : "border-gray-500 text-gray-700"

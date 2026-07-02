@@ -13,6 +13,7 @@ import {
 } from "react-icons/lu";
 import type { AttachmentResponse } from "../api/contracts/attachment";
 import type { IssueTypeResponse } from "../api/contracts/issue";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 
 // Enums / literal types
 export type TaskType = string;
@@ -43,13 +44,28 @@ export interface Task {
   priority: Priority;
   assigned_to: User[]; // multi-assignee
   deadline: string | null;
+  startDate: string | null;
   status: Status;
   subtasks: Subtask[];
   parentId?: number | null;
   childIds?: number[];
   attachments?: AttachmentResponse[];
   issueType: IssueTypeResponse;
+  dependencyIds?: string[];
 }
+
+/**
+ * Extended Task with server-side metadata fields injected by issueToTask().
+ * Use this type instead of `(task as any)` when accessing _uuid, _statusId, etc.
+ */
+export type TaskWithMeta = Task & {
+  _uuid?: string;
+  _statusId?: string;
+  _statusMeta?: ProjectStatusResponse | null;
+  _projectId?: string;
+  _assigneeUuids?: string[];
+};
+
 
 export interface Comment {
   id: number;

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { FiGlobe, FiLock } from "react-icons/fi";
+import { MdEdit, MdCheck, MdClose } from "react-icons/md";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 import { avatarUrl } from "../../utils/avatar";
@@ -29,10 +30,8 @@ const PrivacyToggle = ({
 
 export default function ProfileSettings({
   user,
-  onUnsavedChanges,
 }: {
   user: UserSummary | null;
-  onUnsavedChanges?: (val: boolean) => void;
 }) {
   const { toasts, addToast, removeToast } = useToast();
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -52,6 +51,9 @@ export default function ProfileSettings({
     user?.locationPublic ?? true,
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingProfileName, setIsEditingProfileName] = useState(false);
+  const [tempProfileName, setTempProfileName] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState(user?.picture || "");
   const [isUploading, setIsUploading] = useState(false);
@@ -136,38 +138,56 @@ export default function ProfileSettings({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<string>>,
-  ) => {
-    setter(e.target.value);
-    onUnsavedChanges?.(true);
-  };
+  ) => setter(e.target.value);
 
   const handleToggle = (
     setter: React.Dispatch<React.SetStateAction<boolean>>,
     val: boolean,
   ) => {
     setter(val);
-    onUnsavedChanges?.(true);
   };
+
+  // Shared payload builder — always sends the latest state for every field
+  const buildPayload = (overrides: { profileName?: string } = {}) => ({
+    profileName: overrides.profileName ?? profileName,
+    jobTitle,
+    organization,
+    location,
+    emailPublic,
+    jobTitlePublic,
+    organizationPublic,
+    locationPublic,
+  });
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await userApi.updateProfile({
-        profileName,
-        jobTitle,
-        organization,
-        location,
-        emailPublic,
-        jobTitlePublic,
-        organizationPublic,
-        locationPublic,
-      });
+      await userApi.updateProfile(buildPayload());
       addToast("Profile updated successfully!", "success");
-      onUnsavedChanges?.(false);
       window.dispatchEvent(new CustomEvent("profileUpdated"));
     } catch {
       addToast("Failed to update profile.", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveProfileName = async (val: string) => {
+    const trimmed = val.trim();
+    if (!trimmed) {
+      addToast("Display name cannot be empty.", "error");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await userApi.updateProfile(buildPayload({ profileName: trimmed }));
+      setProfileName(trimmed);
+      addToast("Display name updated successfully!", "success");
+      setIsEditingProfileName(false);
+      window.dispatchEvent(new CustomEvent("profileUpdated"));
+    } catch {
+      addToast("Failed to update display name.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -234,11 +254,9 @@ export default function ProfileSettings({
                   type="button"
                   onClick={() => setShowConfirmDelete(true)}
                   disabled={isUploading || isDeletingAvatar}
-                  className="px-3 py-1.5 bg-red-700 hover:bg-red-800  rounded-md text-xs font-medium text-white transition"
+                  className="px-3 py-1.5 bg-red-700 hover:bg-red-800  rounded-md text-xs font-medium text-white transition cursor-pointer"
                 >
-                  {isDeletingAvatar
-                    ? "Removing..."
-                    : "Remove avatar"}
+                  {isDeletingAvatar ? "Removing..." : "Remove avatar"}
                 </button>
               )}
             </div>
@@ -248,7 +266,8 @@ export default function ProfileSettings({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        {/* Email Address */}
+        <div className="grid grid-cols-1 gap-6 pt-4 border-t border-gray-100">
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-[13px] font-bold text-gray-700">
@@ -259,31 +278,71 @@ export default function ProfileSettings({
                 onClick={() => handleToggle(setEmailPublic, !emailPublic)}
               />
             </div>
-            <input
-              type="email"
-              value={email}
-              disabled={true}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-1.5 border text-sm border-gray-100 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-              required
-            />
+            <div className="w-full px-3 py-1.5 bg-gray-100 border border-gray-200 text-sm text-gray-500 rounded-md h-9 flex items-center select-all">
+              {email}
+            </div>
           </div>
+        </div>
+
+        {/* Display Name */}
+        <div className="grid grid-cols-1 gap-6 pt-4 border-t border-gray-100">
           <div>
             <label className="block text-[13px] font-bold text-gray-700 mb-2">
               Display Name
             </label>
-            <input
-              type="text"
-              value={profileName}
-              onChange={(e) => handleChange(e, setProfileName)}
-              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
-              required
-            />
+            {isEditingProfileName ? (
+              <div className="flex items-center gap-2 w-full">
+                <input
+                  type="text"
+                  value={tempProfileName}
+                  onChange={(e) => setTempProfileName(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-gray-500 rounded-md text-sm text-gray-700 focus:outline-none 
+                  focus:ring-1 focus:ring-purple-600 focus:border-transparent transition h-9 bg-white "
+                  placeholder="Display Name"
+                  maxLength={50}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSaveProfileName(tempProfileName)}
+                  disabled={isSaving}
+                  className="p-2 bg-purple-900 hover:bg-purple-800 text-white rounded-md transition cursor-pointer shrink-0 disabled:opacity-50"
+                  title="Save"
+                >
+                  <MdCheck size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfileName(false)}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-md transition cursor-pointer shrink-0"
+                  title="Cancel"
+                >
+                  <MdClose size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-4 py-1.5 border border-gray-200 rounded-md px-3 bg-gray-100 group h-9 w-full">
+                <span className="text-sm text-gray-500 tracking-wide">
+                  {profileName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempProfileName(profileName);
+                    setIsEditingProfileName(true);
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-purple-700 rounded-md transition cursor-pointer shrink-0"
+                  title="Edit Display Name"
+                >
+                  <MdEdit size={16} />
+                </button>
+              </div>
+            )}
           </div>
-          
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        {/* Job Title */}
+        <div className="grid grid-cols-1 gap-6 pt-4 border-t border-gray-100">
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-[13px] font-bold text-gray-700">
@@ -301,6 +360,10 @@ export default function ProfileSettings({
               className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
             />
           </div>
+        </div>
+
+        {/* Company / Organization */}
+        <div className="grid grid-cols-1 gap-6 pt-4 border-t border-gray-100">
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-[13px] font-bold text-gray-700">
@@ -323,7 +386,8 @@ export default function ProfileSettings({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        {/* Residence Location */}
+        <div className="grid grid-cols-1 gap-6 pt-4 border-t border-gray-100">
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-[13px] font-bold text-gray-700">
@@ -344,13 +408,14 @@ export default function ProfileSettings({
           </div>
         </div>
 
+        {/* Bulk Update Button */}
         <div className="pt-4 flex justify-end">
           <button
             type="submit"
             disabled={isSaving}
-            className="px-4 py-1.5 bg-purple-900 text-white text-[13px] rounded-md hover:bg-purple-800 transition-colors "
+            className="px-4 py-1.5 bg-purple-900 text-white text-[13px] rounded-md hover:bg-purple-800 transition-colors cursor-pointer"
           >
-            Update
+            {isSaving ? "Saving..." : "Update"}
           </button>
         </div>
       </form>
@@ -365,7 +430,6 @@ export default function ProfileSettings({
           />
           {/* Modal Container */}
           <div className="relative bg-white rounded-md border border-slate-200 p-6 max-w-sm w-full animate-in fade-in zoom-in-95 duration-200 z-10 flex flex-col">
-
             {/* Title */}
             <h3 className="flex items-center justify-start text-base font-bold text-slate-800 mb-2">
               Remove Avatar
