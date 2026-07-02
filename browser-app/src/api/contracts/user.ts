@@ -22,6 +22,6 @@ export interface UpdateNotificationsRequest {
 }
 
 export interface UpdatePasswordRequest {
-  currentPassword?: string;
+  otp?: string;
   newPassword?: string;
 }

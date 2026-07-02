@@ -339,9 +339,8 @@ export default function ProjectFilesView() {
               {fileTypeFilter === "others" && "Others"}
             </span>
             <svg
-              className={`fill-current h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${
-                isFilterDropdownOpen ? "rotate-180" : ""
-              }`}
+              className={`fill-current h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${isFilterDropdownOpen ? "rotate-180" : ""
+                }`}
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
             >
@@ -369,11 +368,10 @@ export default function ProjectFilesView() {
                       setFileTypeFilter(opt.value);
                       setIsFilterDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs transition cursor-pointer ${
-                      fileTypeFilter === opt.value
+                    className={`w-full text-left px-3 py-1.5 text-xs transition cursor-pointer ${fileTypeFilter === opt.value
                         ? "bg-purple-50 text-purple-800 font-bold"
                         : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -388,7 +386,7 @@ export default function ProjectFilesView() {
           <div className="flex justify-between text-[11px] text-gray-500">
             <span>Storage Used</span>
             <span className="font-bold text-gray-800">
-              {formatBytes(totalUsedBytes)} of 3.6 GB
+              {formatBytes(totalUsedBytes)} of 2 GB
             </span>
           </div>
           <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden border border-gray-200">
@@ -484,11 +482,10 @@ export default function ProjectFilesView() {
                       }}
                       onDragLeave={() => setDraggedOverFolderUuid(null)}
                       onDrop={(e) => handleDropOnFolder(e, group._uuid)}
-                      className={`group bg-white border ${
-                        draggedOverFolderUuid === group._uuid
+                      className={`group bg-white border ${draggedOverFolderUuid === group._uuid
                           ? "border-purple-800"
                           : "border-gray-200 hover:border-purple-800"
-                      } rounded-xl overflow-hidden transition-all flex flex-col h-52 relative cursor-pointer`}
+                        } rounded-xl overflow-hidden transition-all flex flex-col h-52 relative cursor-pointer`}
                     >
                       {/* Card Header (Folder Title) */}
                       <div className="h-11  bg-gray-50 border-b border-gray-200 px-3 flex items-center gap-2 select-none">
