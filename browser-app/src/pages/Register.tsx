@@ -1,14 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import LoginBackground from "../assets/login-background.jpg";
 import { IoIosPersonAdd } from "react-icons/io";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { LuUser } from "react-icons/lu";
 import { IoMailOutline } from "react-icons/io5";
 import { TbLock } from "react-icons/tb";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
 
-function Register() {
+function Register({ onSuccess }: { onSuccess?: () => void }) {
   const [profileName, setProfileName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,13 +18,36 @@ function Register() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<"register" | "otp">("register");
-  const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""));
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [otp, setOtp] = useState("");
   const [isShaking, setIsShaking] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get("invitationId");
+
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    const stageParam = searchParams.get("stage");
+    
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+    if (stageParam === "otp") {
+      setStage("otp");
+    } else {
+      const state = location.state as { email?: string; stage?: "register" | "otp"; message?: string } | null;
+      if (state?.email) {
+        setEmail(state.email);
+      }
+      if (state?.stage) {
+        setStage(state.stage);
+      }
+      if (state?.message) {
+        setSuccess(state.message);
+      }
+    }
+  }, [location, searchParams]);
 
   const checkEmail = async (val: string) => {
     setEmailError("");
@@ -79,74 +102,15 @@ function Register() {
     }
   };
 
-  const handleOtpChange = (value: string, index: number) => {
-    const numValue = value.replace(/\D/g, "");
-    if (!numValue && value !== "") return;
-
-    const newOtpValues = [...otpValues];
-    if (numValue.length > 1) {
-      const pastedDigits = numValue.slice(0, 6).split("");
-      for (let i = 0; i < 6; i++) {
-        if (pastedDigits[i]) {
-          newOtpValues[i] = pastedDigits[i];
-        }
-      }
-      setOtpValues(newOtpValues);
-      const focusIndex = Math.min(pastedDigits.length, 5);
-      inputRefs.current[focusIndex]?.focus();
-      return;
-    }
-
-    newOtpValues[index] = numValue;
-    setOtpValues(newOtpValues);
-
-    if (numValue && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === "Backspace") {
-      if (!otpValues[index] && index > 0) {
-        const newOtpValues = [...otpValues];
-        newOtpValues[index - 1] = "";
-        setOtpValues(newOtpValues);
-        inputRefs.current[index - 1]?.focus();
-      } else {
-        const newOtpValues = [...otpValues];
-        newOtpValues[index] = "";
-        setOtpValues(newOtpValues);
-      }
-    } else if (e.key === "ArrowLeft" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    } else if (e.key === "ArrowRight" && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pastedData) return;
-
-    const newOtpValues = [...otpValues];
-    const digits = pastedData.split("");
-    for (let i = 0; i < 6; i++) {
-      newOtpValues[i] = digits[i] || "";
-    }
-    setOtpValues(newOtpValues);
-
-    const focusIndex = Math.min(digits.length - 1, 5);
-    if (focusIndex >= 0) {
-      inputRefs.current[focusIndex]?.focus();
-    }
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtp(val);
   };
 
   const handleVerifyOtp = async () => {
     setError("");
     setSuccess("");
-    const finalOtp = otpValues.join("");
-    if (finalOtp.length < 6) {
+    if (otp.length < 6) {
       setError("Please enter the 6-digit OTP code");
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
@@ -154,9 +118,13 @@ function Register() {
     }
     setLoading(true);
     try {
-      const data = await authApi.verifyOtp(email, finalOtp, invitationId || undefined);
+      const data = await authApi.verifyOtp(email, otp, invitationId || undefined);
       tokenStorage.save(data.accessToken, data.refreshToken);
       setSuccess("Verification successful!");
+      window.electron?.loginSuccess();
+      if (onSuccess) {
+        onSuccess();
+      }
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -333,27 +301,23 @@ function Register() {
               We have sent a 6-digit verification code to email <strong>{email}</strong>. Please check your inbox.
             </p>
 
-            {/* OTP INPUTS */}
-            <div className={`py-2 flex justify-center gap-2 ${isShaking ? "animate-shake" : ""}`}>
-              {otpValues.map((value, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => { inputRefs.current[idx] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={1}
-                  className={`w-11 h-11 border rounded-lg text-center text-[18px] font-bold outline-none transition-all duration-200 ${
-                    error 
-                      ? "bg-red-50 border-red-300 text-red-600 focus:border-red-500 focus:ring-1 focus:ring-red-500" 
-                      : "bg-gray-100 border-transparent text-gray-800 focus:border-purple-800 focus:bg-white focus:ring-1 focus:ring-purple-800"
-                  }`}
-                  value={value}
-                  onChange={(e) => handleOtpChange(e.target.value, idx)}
-                  onKeyDown={(e) => handleOtpKeyDown(e, idx)}
-                  onPaste={handleOtpPaste}
-                />
-              ))}
+            {/* OTP INPUT */}
+            <div className={`py-2 flex justify-center ${isShaking ? "animate-shake" : ""}`}>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="000000"
+                className={`w-48 h-11 border rounded-lg text-center text-[22px] font-bold tracking-[8px] outline-none transition-all duration-200 ${
+                  error 
+                    ? "bg-red-50 border-red-300 text-red-600 focus:border-red-500 focus:ring-1 focus:ring-red-500" 
+                    : "bg-gray-100 border-transparent text-gray-800 focus:border-purple-800 focus:bg-white focus:ring-1 focus:ring-purple-800"
+                }`}
+                value={otp}
+                onChange={handleOtpChange}
+              />
             </div>
 
             {/* OTP OPTIONS */}
@@ -371,7 +335,7 @@ function Register() {
                   setStage("register");
                   setError("");
                   setSuccess("");
-                  setOtpValues(Array(6).fill(""));
+                  setOtp("");
                 }}
                 className="text-gray-500 hover:text-gray-700"
               >

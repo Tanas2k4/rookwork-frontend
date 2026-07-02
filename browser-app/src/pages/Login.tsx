@@ -79,7 +79,18 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
       window.electron?.loginSuccess();
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const errMsg = err instanceof Error ? err.message : "Login failed";
+      if (errMsg === "Account has not been activated via OTP") {
+        navigate("/register", {
+          state: {
+            email,
+            stage: "otp",
+            message: "Your account is not activated yet. Please enter the OTP verification code."
+          }
+        });
+        return;
+      }
+      setError(errMsg);
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
     } finally {

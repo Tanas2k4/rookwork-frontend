@@ -37,6 +37,9 @@ export interface UserSummary {
   notifyEventInvited?: boolean;
   role?: string;
   systemRole?: string;
+  hasPassword?: boolean;
+  passwordLimitReached?: boolean;
+  passwordChangesThisMonth?: number;
 }
 
 export interface CreateIssueRequest {
