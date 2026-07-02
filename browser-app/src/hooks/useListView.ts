@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
-import type { Task, User } from "../types/project";
+import type { Task, TaskWithMeta, User } from "../types/project";
 import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
@@ -207,7 +207,7 @@ export function useListView() {
     const targetStatus = projectStatuses.find((ps) => ps.id === statusId);
     if (!targetStatus) return;
 
-    if ((task as any)._statusId === statusId) {
+    if ((task as TaskWithMeta)._statusId === statusId) {
       closeDropdown();
       return;
     }
@@ -223,7 +223,7 @@ export function useListView() {
               status: uiStatus,
               _statusId: statusId,
               _statusMeta: targetStatus,
-            } as any)
+            } as TaskWithMeta)
           : t,
       ),
     );

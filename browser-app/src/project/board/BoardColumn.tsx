@@ -4,13 +4,19 @@
  * @author Warmdrobe
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, startTransition } from "react";
 import { MdAdd, MdCheck, MdClose, MdDeleteOutline } from "react-icons/md";
+import { GoGoal } from "react-icons/go";
 import { useDrop, useDrag } from "react-dnd";
-import type { Task, Status, TaskType, Priority } from "../../types/project";
+import type { Task, TaskWithMeta, Status, TaskType, Priority } from "../../types/project";
 import { statusMap } from "../../types/project";
 import { BoardCard } from "./BoardCard";
 import { AddTaskForm, AddTaskButton } from "./AddTaskForm";
+
+/** Shape of the item dragged via react-dnd from a BoardCard */
+interface DragItem {
+  task: TaskWithMeta;
+}
 
 interface Props {
   status: Status;
@@ -35,7 +41,10 @@ interface Props {
   /** Called when user renames the column inline. Null statusId = non-editable column. */
   onRename?: (statusId: string, newName: string) => Promise<void>;
   /** Check if a status transition is allowed. */
-  isTransitionAllowed: (fromStatusId: string | null | undefined, toStatusId: string | null | undefined) => boolean;
+  isTransitionAllowed: (
+    fromStatusId: string | null | undefined,
+    toStatusId: string | null | undefined,
+  ) => boolean;
   onReorderColumns?: (fromIndex: number, toIndex: number) => void;
   onPersistColumnOrder?: () => void;
   onDeleteColumn?: (statusId: string) => void;
@@ -80,7 +89,9 @@ export function BoardColumn({
   // Focus rename input when opened
   useEffect(() => {
     if (renaming) {
-      setRenameValue(displayLabel);
+      startTransition(() => {
+        setRenameValue(displayLabel);
+      });
       setTimeout(() => renameInputRef.current?.focus(), 40);
     }
   }, [renaming, displayLabel]);
@@ -110,21 +121,30 @@ export function BoardColumn({
   const [{ isOver, canDrop, isDragging }, drop] = useDrop(
     () => ({
       accept: "task",
-      canDrop: (item: any) => {
+      canDrop: (item: DragItem) => {
         if (!item || !item.task || !statusId) {
-          console.warn("canDrop: missing item, task, or statusId", { item, statusId });
+          console.warn("canDrop: missing item, task, or statusId", {
+            item,
+            statusId,
+          });
           return false;
         }
         const allowed = isTransitionAllowed(item.task._statusId, statusId);
-        console.log("canDrop:", {
-          task: item.task.title,
-          from: item.task._statusId,
-          to: statusId,
-          allowed
-        });
-        return allowed;
+        if (!allowed) return false;
+
+        // Block transition to In Progress or Done if predecessor tasks are not Done
+        if (status === "in_progress" || status === "done") {
+          const deps = item.task.dependencyIds || [];
+          for (const depUuid of deps) {
+            const depTask = allTasks.find((t: Task) => (t as TaskWithMeta)._uuid === depUuid);
+            if (depTask && depTask.status !== "done") {
+              return false;
+            }
+          }
+        }
+        return true;
       },
-      drop: (item: any) => {
+      drop: (item: DragItem) => {
         if (!item || !item.task) return;
         const task = item.task as Task & { _statusId?: string };
         if (task._statusId !== statusId && statusId) {
@@ -137,7 +157,7 @@ export function BoardColumn({
         }
         setDropIndex(-1);
       },
-      hover: (item: any, monitor) => {
+      hover: (item: DragItem, monitor) => {
         if (!item || !item.task) return;
         const task = item.task as Task & { _statusId?: string };
         if (task._statusId === statusId && columnRef.current) {
@@ -145,12 +165,15 @@ export function BoardColumn({
           const containerRect = columnRef.current.getBoundingClientRect();
           if (clientOffset) {
             const hoverClientY = clientOffset.y - containerRect.top;
-            const cardsContainer = columnRef.current.querySelector(".space-y-3");
+            const cardsContainer =
+              columnRef.current.querySelector(".space-y-3");
             if (cardsContainer) {
               const children = Array.from(cardsContainer.children);
               let targetIndex = children.length - 1;
               for (let i = 0; i < children.length; i++) {
-                const childRect = (children[i] as HTMLElement).getBoundingClientRect();
+                const childRect = (
+                  children[i] as HTMLElement
+                ).getBoundingClientRect();
                 const childY = childRect.top - containerRect.top;
                 if (hoverClientY < childY + childRect.height / 2) {
                   targetIndex = i;
@@ -168,7 +191,15 @@ export function BoardColumn({
         isDragging: monitor.getItemType() === "task",
       }),
     }),
-    [status, statusId, onMoveTask, onReorderTasks, dropIndex, tasks, isTransitionAllowed],
+    [
+      status,
+      statusId,
+      onMoveTask,
+      onReorderTasks,
+      dropIndex,
+      tasks,
+      isTransitionAllowed,
+    ],
   );
 
   // ── Column Drag-and-Drop (Jira-style reordering) ──
@@ -198,7 +229,8 @@ export function BoardColumn({
         if (dragIndex === hoverIndex) return;
 
         const hoverBoundingRect = columnRef.current.getBoundingClientRect();
-        const hoverMiddleX = (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
+        const hoverMiddleX =
+          (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
         const clientOffset = monitor.getClientOffset();
         if (!clientOffset) return;
         const hoverClientX = clientOffset.x - hoverBoundingRect.left;
@@ -219,9 +251,11 @@ export function BoardColumn({
     [index, onReorderColumns],
   );
 
-
-
-  async function handleSubmit(title: string, type: TaskType, priority: Priority) {
+  async function handleSubmit(
+    title: string,
+    type: TaskType,
+    priority: Priority,
+  ) {
     setSubmitting(true);
     try {
       await onCreateTask(title, type, priority, status);
@@ -232,7 +266,13 @@ export function BoardColumn({
   }
 
   /* ── Jira-style colored top bar ── */
-  const accentColor = statusColor ?? (status === "done" ? "#10B981" : status === "in_progress" ? "#3B82F6" : "#9CA3AF");
+  const accentColor =
+    statusColor ??
+    (status === "done"
+      ? "#10B981"
+      : status === "in_progress"
+        ? "#3B82F6"
+        : "#9CA3AF");
 
   // Determine styles based on drag and drop state
   let borderClass = "border-none";
@@ -278,7 +318,7 @@ export function BoardColumn({
           dragCol(node);
           dropCol(node);
         }}
-        className="flex items-center justify-between px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+        className="group flex items-center justify-between px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className={dotClass} style={dotStyle} />
@@ -293,7 +333,7 @@ export function BoardColumn({
                 onKeyDown={handleRenameKeyDown}
                 disabled={renameSaving}
                 className="flex-1 min-w-0 text-sm font-semibold bg-white border border-indigo-400 rounded px-2 py-0.5
-                  focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-800"
+            focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-800"
                 maxLength={50}
               />
               <button
@@ -312,9 +352,11 @@ export function BoardColumn({
             </div>
           ) : (
             <button
-              onClick={() => onRename && statusId ? setRenaming(true) : undefined}
+              onClick={() =>
+                onRename && statusId ? setRenaming(true) : undefined
+              }
               className={`text-sm font-semibold text-gray-700 tracking-wide truncate text-left
-                ${onRename && statusId ? "hover:text-indigo-600 cursor-text" : "cursor-default"}`}
+          ${onRename && statusId ? "hover:text-indigo-600 cursor-text" : "cursor-default"}`}
               title={onRename && statusId ? "Click to rename" : undefined}
             >
               {displayLabel}
@@ -327,11 +369,29 @@ export function BoardColumn({
               {tasks.length}
             </span>
           )}
+
+          {status === "done" && !renaming && (
+            <GoGoal
+              className="text-green-600 shrink-0"
+              size={16}
+              title="Goal Column"
+            />
+          )}
         </div>
 
+        {statusId && onDeleteColumn && (
+          <button
+            onClick={() => onDeleteColumn(statusId)}
+            className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-200 transition
+        opacity-0 group-hover:opacity-100"
+            title="Delete column"
+          >
+            <MdDeleteOutline size={18} />
+          </button>
+        )}
         {/* Actions container */}
         {!renaming && (
-          <div className="flex items-center gap-1.5 ml-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setAdding(true)}
               className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition"
@@ -339,21 +399,15 @@ export function BoardColumn({
             >
               <MdAdd size={18} />
             </button>
-            {statusId && onDeleteColumn && (
-              <button
-                onClick={() => onDeleteColumn(statusId)}
-                className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-200 transition"
-                title="Delete column"
-              >
-                <MdDeleteOutline size={18} />
-              </button>
-            )}
           </div>
         )}
       </div>
 
       {/* Colored accent line directly below the status name/header */}
-      <div className="h-0.5 mx-4 rounded-full" style={{ backgroundColor: accentColor }} />
+      <div
+        className="h-0.5 mx-4 rounded-full"
+        style={{ backgroundColor: accentColor }}
+      />
 
       {/* Cards area */}
       <div className="flex-1 p-3 space-y-2">

@@ -10,6 +10,7 @@ import type { Task, Priority, User } from "../../../types/project";
 import { TaskModalHeader } from "./TaskModalHeader";
 import { TaskModalDetails } from "./TaskModalDetails";
 import { ChildrenSection } from "./ChildrenSection";
+import { DependenciesSection } from "./DependenciesSection";
 import { SubtasksSection } from "./SubtasksSection";
 import { ActivitySection } from "./ActivitySection";
 import { AttachmentsSection } from "./AttachmentsSection";
@@ -36,6 +37,8 @@ interface Props {
   onChangePriority: (p: Priority) => void;
   onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
+  onSaveStartDate: (val: string) => void;
+  onSaveDependencies: (dependencyIds: string[]) => void;
   onDeleteTask: (task: Task) => void;
   onLink: (parentId: number, childId: number) => void;
   onUnlink: (parentId: number, childId: number) => void;
@@ -352,6 +355,8 @@ export function TaskModal({
   onChangePriority,
   onChangeAssignee,
   onSaveDeadline,
+  onSaveStartDate,
+  onSaveDependencies,
   onDeleteTask,
   onLink,
   onUnlink,
@@ -485,6 +490,13 @@ export function TaskModal({
                     />
                   )}
 
+                  <DependenciesSection
+                    task={task}
+                    allTasks={allTasks}
+                    onOpenTask={onOpenTask}
+                    onSaveDependencies={onSaveDependencies}
+                  />
+
                   <SubtasksSection
                     subtasks={task.subtasks}
                     onToggle={onToggleSubtask}
@@ -503,6 +515,7 @@ export function TaskModal({
                     onChangePriority={onChangePriority}
                     onChangeAssignee={onChangeAssignee}
                     onSaveDeadline={onSaveDeadline}
+                    onSaveStartDate={onSaveStartDate}
                     projectStatuses={projectStatuses}
                   />
 

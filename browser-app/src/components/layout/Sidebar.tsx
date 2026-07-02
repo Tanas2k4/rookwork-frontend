@@ -52,7 +52,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
           <div className="border-b border-gray-200">
             <button
               onClick={() => setSidebar(!sidebar)}
-              className="flex items-center w-full h-14 px-1 hover:bg-gray-50 transition-colors"
+              className="flex items-center w-full h-14 px-1 hover:bg-gray-100 transition-colors"
             >
               <div className="w-14 flex justify-center items-center shrink-0">
                 <GoSidebarCollapse
@@ -77,7 +77,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                 to="/my-issues"
                 className={({ isActive }) =>
                   `flex items-center h-10 rounded-lg transition-colors group ${
-                    isActive ? "bg-purple-50 text-purple-700 font-medium" : "hover:bg-gray-100"
+                    isActive ? "bg-gray-100 text-gray-700 font-medium" : "hover:bg-gray-100"
                   }`
                 }
               >
@@ -88,12 +88,12 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                   Issues
                 </span>
               </NavLink>
-
+                
               <NavLink
                 to="/events"
                 className={({ isActive }) =>
                   `flex items-center h-10 rounded-lg transition-colors group ${
-                    isActive ? "bg-purple-50 text-purple-700 font-medium" : "hover:bg-gray-100"
+                    isActive ? "bg-gray-100 text-gray-700 font-semibold" : "hover:bg-gray-100"
                   }`
                 }
               >
@@ -114,9 +114,9 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                   className="flex items-center w-full h-10 rounded-lg hover:bg-gray-100 transition-colors group"
                 >
                   <div className="w-12 flex justify-center items-center shrink-0">
-                    <BsFolder size={17} className="text-gray-600 group-hover:text-purple-800" />
+                    <BsFolder size={17} className="text-gray-600 group-hover:text-gray-800" />
                   </div>
-                  <span className={`flex-1 text-left font-medium truncate transition-all duration-300 group-hover:text-purple-800 ${sidebar ? "opacity-100" : "opacity-0"}`}>
+                  <span className={`flex-1 text-left font-medium truncate transition-all duration-300 group-hover:text-gray-800 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                     Projects
                   </span>
                   {sidebar && (
@@ -140,7 +140,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                         onClick={() => handleProjectClick(project.id)}
                         className={`flex items-center h-9 rounded-lg transition-colors ml-3 ${
                           isProjectActive(project.id)
-                            ? "bg-purple-50 text-purple-700 font-medium"
+                            ? "bg-gray-100 text-gray-700 font-medium"
                             : "hover:bg-gray-100"
                         }`}
                       >
@@ -167,7 +167,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
               to="/calendars"
               className={({ isActive }) =>
                 `flex items-center w-full h-10 rounded-lg transition-colors group ${
-                  isActive ? "bg-purple-50 text-purple-700 font-medium" : "hover:bg-gray-100"
+                  isActive ? "bg-gray-100 text-gray-700 font-medium" : "hover:bg-gray-100"
                 }`
               }
             >
@@ -183,7 +183,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
               to="/settings"
               className={({ isActive }) =>
                 `flex items-center w-full h-10 rounded-lg transition-colors group ${
-                  isActive ? "bg-purple-50 text-purple-700 font-medium" : "hover:bg-gray-100"
+                  isActive ? "bg-gray-100 text-gray-700 font-medium" : "hover:bg-gray-100"
                 }`
               }
             >

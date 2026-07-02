@@ -19,6 +19,7 @@ export interface CreateStatusRequest {
 export interface UpdateStatusRequest {
   statusName?: string;
   color?: string;
+  statusCategory?: StatusCategory;
 }
 
 export interface StatusOrder {

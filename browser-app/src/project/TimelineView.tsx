@@ -1,8 +1,7 @@
-import { useRef, useMemo, useContext } from "react";
+import { useRef, useMemo, useCallback, useContext, useState, useEffect } from "react";
 import { GanttBar } from "./timeline/GanttBar";
 import { TaskListPanel } from "./timeline/TaskListPanel";
 import { addDays, diffDays } from "../utils/date";
-import { useState } from "react";
 import type { ViewMode } from "./timeline/timelineUtils";
 import {
   buildTimelineColumns,
@@ -14,6 +13,7 @@ import {
 } from "./timeline/timelineUtils";
 import { useTimeline } from "../hooks/useTimeline";
 import { ProjectContext } from "../context/ProjectContext";
+import { issueApi } from "../api/services/issueApi";
 
 const GROUP_ORDER = ["Epic", "Story", "Task"];
 
@@ -80,9 +80,116 @@ export default function TimelineView() {
     });
   }
 
-  function dayToX(date: Date) {
-    return diffDays(timelineStart, date) * colWidth;
-  }
+  const dayToX = useCallback(
+    (date: Date) => diffDays(timelineStart, date) * colWidth,
+    [timelineStart, colWidth]
+  );
+
+  const handleUpdateTaskDates = async (taskId: string, newStart: Date, newEnd: Date) => {
+    if (!projectId) return;
+    try {
+      const startStr = newStart.toISOString().split("T")[0];
+      const endStr = newEnd.toISOString().split("T")[0];
+      await issueApi.update(projectId, taskId, {
+        startDate: startStr,
+        deadline: endStr,
+      });
+      reload();
+    } catch (err) {
+      console.error("Failed to update issue dates on timeline", err);
+    }
+  };
+
+  const [linkingSourceId, setLinkingSourceId] = useState<string | null>(null);
+  const [linkStart, setLinkStart] = useState<{ x: number; y: number } | null>(null);
+  const [linkCurrent, setLinkCurrent] = useState<{ x: number; y: number } | null>(null);
+
+  const handleStartLink = (taskId: string, startX: number, startY: number) => {
+    setLinkingSourceId(taskId);
+    setLinkStart({ x: startX, y: startY });
+    setLinkCurrent({ x: startX, y: startY });
+  };
+
+  const handleEndLink = async (targetId: string) => {
+    if (!linkingSourceId || !projectId) return;
+    try {
+      const targetTask = TASKS.find((t) => t.id === targetId);
+      if (!targetTask) return;
+
+      const currentDeps = targetTask.dependencyIds || [];
+      if (currentDeps.includes(linkingSourceId)) return;
+
+      const newDeps = [...currentDeps, linkingSourceId];
+      await issueApi.update(projectId, targetId, {
+        dependencyIds: newDeps,
+      });
+      reload();
+    } catch (err) {
+      console.error("Failed to link issues:", err);
+    } finally {
+      setLinkingSourceId(null);
+      setLinkStart(null);
+      setLinkCurrent(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!linkingSourceId || !scrollRef.current) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const rect = scrollRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const scrollLeft = scrollRef.current?.scrollLeft ?? 0;
+      const scrollTop = scrollRef.current?.scrollTop ?? 0;
+
+      const mouseX = e.clientX - rect.left + scrollLeft;
+      const mouseY = e.clientY - rect.top + scrollTop;
+
+      setLinkCurrent({ x: mouseX, y: mouseY });
+    };
+
+    const handleGlobalMouseUp = () => {
+      setTimeout(() => {
+        setLinkingSourceId(null);
+        setLinkStart(null);
+        setLinkCurrent(null);
+      }, 50);
+    };
+
+    document.addEventListener("mousemove", handleGlobalMouseMove);
+    document.addEventListener("mouseup", handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMouseMove);
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, [linkingSourceId]);
+
+  const taskCoords = useMemo(() => {
+    const coords: Record<string, { id: string; x: number; y: number; width: number }> = {};
+    let rowOffset = 0;
+    
+    groups.forEach((group) => {
+      const groupTasks = TASKS.filter((t) => (t.group || "Other") === group);
+      rowOffset++; // group header row
+      
+      if (!collapsedGroups.has(group)) {
+        groupTasks.forEach((task) => {
+          const rowTop = rowOffset++ * ROW_HEIGHT;
+          const x = dayToX(task.start);
+          const y = rowTop + (ROW_HEIGHT - 28) / 2;
+          const width = Math.max(
+            diffDays(task.start, task.end) * colWidth,
+            colWidth * 0.8,
+          );
+          coords[task.id] = { id: task.id, x, y, width };
+        });
+      }
+    });
+    
+    return coords;
+  }, [groups, TASKS, collapsedGroups, colWidth, dayToX]);
 
   //  Error state
   if (error) {
@@ -267,6 +374,78 @@ export default function TimelineView() {
                 </div>
               )}
 
+              {/* SVG Connector Lines */}
+              <svg className="absolute inset-0 pointer-events-none" style={{ width: totalWidth, height: "100%", zIndex: 5 }}>
+                <defs>
+                  <marker
+                    id="arrow"
+                    viewBox="0 0 10 10"
+                    refX="6"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 2 L 6 5 L 0 8 z" fill="#6366f1" />
+                  </marker>
+                </defs>
+                
+                {Object.values(taskCoords).flatMap((coordsB) => {
+                  const task = TASKS.find(t => t.id === coordsB.id);
+                  if (!task || !task.dependencyIds) return [];
+                  
+                  return task.dependencyIds.map((depId) => {
+                    const coordsA = taskCoords[depId];
+                    if (!coordsA) return null;
+                    
+                    const startX = coordsA.x + coordsA.width;
+                    const startY = coordsA.y + 14;
+                    const endX = coordsB.x;
+                    const endY = coordsB.y + 14;
+                    
+                    let d = "";
+                    if (endX >= startX + 16) {
+                      const midX = startX + (endX - startX) / 2;
+                      d = `M ${startX} ${startY} H ${midX} V ${endY} H ${endX}`;
+                    } else {
+                      const midX1 = startX + 12;
+                      const midX2 = endX - 12;
+                      
+                      const rowA = Math.floor(coordsA.y / ROW_HEIGHT);
+                      const rowB = Math.floor(coordsB.y / ROW_HEIGHT);
+                      const y_gutter = rowA < rowB ? rowB * ROW_HEIGHT : (rowB + 1) * ROW_HEIGHT;
+                      
+                      d = `M ${startX} ${startY} H ${midX1} V ${y_gutter} H ${midX2} V ${endY} H ${endX}`;
+                    }
+                    
+                    return (
+                      <path
+                        key={`${coordsA.id}->${coordsB.id}`}
+                        d={d}
+                        fill="none"
+                        stroke="#6366f1"
+                        strokeWidth="1.5"
+                        markerEnd="url(#arrow)"
+                        style={{ opacity: 0.7 }}
+                      />
+                    );
+                  });
+                })}
+
+                {linkStart && linkCurrent && (
+                  <line
+                    x1={linkStart.x}
+                    y1={linkStart.y}
+                    x2={linkCurrent.x}
+                    y2={linkCurrent.y}
+                    stroke="#4f46e5"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                    markerEnd="url(#arrow)"
+                  />
+                )}
+              </svg>
+
               {/* Task bars */}
               <div className="absolute inset-0 pointer-events-none">
                 {(() => {
@@ -292,6 +471,12 @@ export default function TimelineView() {
                           isHovered={hoveredTask === task.id}
                           onHover={setHoveredTask}
                           onOpenModal={openIssueModal}
+                          colWidth={colWidth}
+                          timelineStart={timelineStart}
+                          onUpdateDates={handleUpdateTaskDates}
+                          onStartLink={handleStartLink}
+                          onEndLink={handleEndLink}
+                          linkingSourceId={linkingSourceId}
                         />
                       );
                     });

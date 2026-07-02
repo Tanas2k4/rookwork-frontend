@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdCheck } from "react-icons/md";
-import type { Task, User } from "../../types/project";
+import type { Task, TaskWithMeta, User } from "../../types/project";
 import { issueTypeIcons } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
@@ -141,7 +141,7 @@ export function ListDropdowns({
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-44 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
             {(() => {
-              const currentStatusId = (currentTask as any)?._statusId || projectStatuses.find((ps) =>
+              const currentStatusId = (currentTask as TaskWithMeta)?._statusId || projectStatuses.find((ps) =>
                 ps.statusCategory === (currentTask?.status === "to_do" ? "TO_DO" : currentTask?.status === "in_progress" ? "IN_PROGRESS" : "DONE")
               )?.id;
 
@@ -152,7 +152,7 @@ export function ListDropdowns({
               return allowedStatuses.map((s) => (
                 <button key={s.id} onClick={() => onStatusChange(taskId, s.id)}
                   className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                    (currentTask as any)?._statusId === s.id ? "bg-purple-50" : ""
+                    (currentTask as TaskWithMeta)?._statusId === s.id ? "bg-purple-50" : ""
                   }`}>
                   <span className="px-3 py-1 text-xs font-semibold rounded-full"
                     style={{ backgroundColor: s.color + "20", color: s.color }}>

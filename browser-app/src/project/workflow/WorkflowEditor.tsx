@@ -5,9 +5,13 @@
  */
 
 import { useState, useEffect } from "react";
-import { MdClose, MdSettingsBackupRestore, MdCheck, MdSwapCalls } from "react-icons/md";
+import {
+  MdClose,
+  MdSettingsBackupRestore,
+  MdSwapCalls,
+} from "react-icons/md";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
-import type { AddTransitionRequest } from "../../api/contracts/workflow";
+import type { WorkflowResponse, AddTransitionRequest } from "../../api/contracts/workflow";
 
 interface Props {
   open: boolean;
@@ -15,7 +19,7 @@ interface Props {
   statuses: ProjectStatusResponse[];
   currentTransitions: AddTransitionRequest[];
   isOpenWorkflow: boolean;
-  onSave: (transitions: AddTransitionRequest[]) => Promise<any>;
+  onSave: (transitions: AddTransitionRequest[]) => Promise<WorkflowResponse | undefined>;
 }
 
 export function WorkflowEditor({
@@ -25,7 +29,9 @@ export function WorkflowEditor({
   currentTransitions,
   onSave,
 }: Props) {
-  const [selectedTransitions, setSelectedTransitions] = useState<AddTransitionRequest[]>([]);
+  const [selectedTransitions, setSelectedTransitions] = useState<
+    AddTransitionRequest[]
+  >([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,9 +39,10 @@ export function WorkflowEditor({
   useEffect(() => {
     if (open) {
       // Filter out any stale transitions referencing statuses that were deleted
-      const valid = currentTransitions.filter((t) =>
-        statuses.some((s) => s.id === t.fromStatusId) &&
-        statuses.some((s) => s.id === t.toStatusId)
+      const valid = currentTransitions.filter(
+        (t) =>
+          statuses.some((s) => s.id === t.fromStatusId) &&
+          statuses.some((s) => s.id === t.toStatusId),
       );
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedTransitions(valid);
@@ -47,7 +54,7 @@ export function WorkflowEditor({
 
   const isChecked = (fromId: string, toId: string) => {
     return selectedTransitions.some(
-      (t) => t.fromStatusId === fromId && t.toStatusId === toId
+      (t) => t.fromStatusId === fromId && t.toStatusId === toId,
     );
   };
 
@@ -56,11 +63,11 @@ export function WorkflowEditor({
 
     setSelectedTransitions((prev) => {
       const exists = prev.some(
-        (t) => t.fromStatusId === fromId && t.toStatusId === toId
+        (t) => t.fromStatusId === fromId && t.toStatusId === toId,
       );
       if (exists) {
         return prev.filter(
-          (t) => !(t.fromStatusId === fromId && t.toStatusId === toId)
+          (t) => !(t.fromStatusId === fromId && t.toStatusId === toId),
         );
       } else {
         return [...prev, { fromStatusId: fromId, toStatusId: toId }];
@@ -99,20 +106,24 @@ export function WorkflowEditor({
       await onSave(cleaned);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save workflow rules");
+      setError(
+        err instanceof Error ? err.message : "Failed to save workflow rules",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-md  w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2 text-indigo-600">
             <MdSwapCalls size={24} />
-            <h3 className="font-semibold text-gray-800 text-lg">Project Workflow Rules</h3>
+            <h3 className="font-semibold text-gray-800 text-lg">
+              Project Workflow Rules
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -126,12 +137,13 @@ export function WorkflowEditor({
         <div className="p-6 overflow-y-auto flex flex-col gap-5 flex-1 min-h-0">
           <div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Define which column transitions are allowed when users drag and drop issues.
-              Unchecked pairs will block users from moving cards between those columns.
+              Define which column transitions are allowed when users drag and
+              drop issues. Unchecked pairs will block users from moving cards
+              between those columns.
             </p>
-            <div className="mt-3 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center gap-2">
+            <div className="mt-3 p-3 bg-gray-100 rounded-md flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              <p className="text-xs text-indigo-700 font-medium">
+              <p className="text-xs text-gray-500 italic">
                 {selectedTransitions.length === 0
                   ? "Open Workflow is active: users can drag and drop issues freely to any column."
                   : `Custom Workflow is active: users may only transition issues via the ${selectedTransitions.length} allowed paths below.`}
@@ -150,7 +162,7 @@ export function WorkflowEditor({
             <button
               onClick={handleAllowAll}
               type="button"
-              className="text-xs font-semibold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition flex items-center gap-1.5"
+              className="text-xs px-3 py-1.5 bg-gray-100/90 hover:bg-gray-200 text-gray-700 rounded-md transition flex items-center gap-1.5"
             >
               <MdSettingsBackupRestore size={14} />
               Reset to Open (Allow all)
@@ -158,7 +170,7 @@ export function WorkflowEditor({
             <button
               onClick={handleStandardFlow}
               type="button"
-              className="text-xs font-semibold px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition flex items-center gap-1.5"
+              className="text-xs font-semibold px-3 py-1.5 bg-gray-200 hover:bg-gray-200/90 text-gray-800 rounded-md transition flex items-center gap-1.5"
             >
               <MdSwapCalls size={14} />
               Apply Linear Path (Left ⇆ Right)
@@ -166,7 +178,7 @@ export function WorkflowEditor({
           </div>
 
           {/* Matrix table */}
-          <div className="border border-gray-200 rounded-xl overflow-auto bg-gray-50/50 max-h-[380px] scrollbar-thin">
+          <div className="border border-gray-200 rounded-md overflow-auto bg-gray-50/50 max-h-95 scrollbar-thin">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-100/70 border-b border-gray-200">
@@ -181,7 +193,10 @@ export function WorkflowEditor({
                       title={s.statusName}
                     >
                       <div className="flex items-center justify-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: s.color }}
+                        />
                         {s.statusName}
                       </div>
                     </th>
@@ -190,9 +205,15 @@ export function WorkflowEditor({
               </thead>
               <tbody>
                 {statuses.map((rowStatus) => (
-                  <tr key={rowStatus.id} className="border-b border-gray-100 last:border-0 hover:bg-white/50 transition">
+                  <tr
+                    key={rowStatus.id}
+                    className="border-b border-gray-100 last:border-0 hover:bg-white/50 transition"
+                  >
                     <td className="p-3 text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: rowStatus.color }} />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: rowStatus.color }}
+                      />
                       {rowStatus.statusName}
                     </td>
                     {statuses.map((colStatus) => {
@@ -200,13 +221,17 @@ export function WorkflowEditor({
                       return (
                         <td key={colStatus.id} className="p-3 text-center">
                           {isSelf ? (
-                            <span className="text-gray-300 text-xs font-medium">—</span>
+                            <span className="text-gray-300 text-xs font-medium">
+                              —
+                            </span>
                           ) : (
                             <label className="inline-flex items-center justify-center cursor-pointer p-2 hover:bg-gray-100 rounded-md transition">
                               <input
                                 type="checkbox"
                                 checked={isChecked(rowStatus.id, colStatus.id)}
-                                onChange={() => handleToggle(rowStatus.id, colStatus.id)}
+                                onChange={() =>
+                                  handleToggle(rowStatus.id, colStatus.id)
+                                }
                                 className="w-4.5 h-4.5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
                               />
                             </label>
@@ -225,22 +250,17 @@ export function WorkflowEditor({
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition font-medium"
+            className="px-4 py-1.5 border border-gray-500 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium
+            className="px-5 py-1.5 bg-purple-900 hover:bg-purple-800 text-white rounded-md text-sm
               disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
           >
-            {saving ? "Saving..." : (
-              <>
-                <MdCheck size={16} />
-                Save changes
-              </>
-            )}
+            {saving ? "Updating..." : <>Update </>}
           </button>
         </div>
       </div>

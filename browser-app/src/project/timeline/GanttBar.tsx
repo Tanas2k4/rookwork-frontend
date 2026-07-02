@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, startTransition } from "react";
 import type { GanttTask } from "./timelineUtils";
 
 interface GanttBarProps {
@@ -7,21 +8,138 @@ interface GanttBarProps {
   width: number;
   isHovered: boolean;
   onHover: (id: string | null) => void;
-  /** Click vào bar → mở TaskModal đầy đủ */
   onOpenModal: (uuid: string) => void;
+  colWidth: number;
+  timelineStart: Date;
+  onUpdateDates?: (taskId: string, newStart: Date, newEnd: Date) => void;
+  onStartLink?: (taskId: string, startX: number, startY: number) => void;
+  onEndLink?: (targetId: string) => void;
+  linkingSourceId?: string | null;
 }
 
-export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }: GanttBarProps) {
+export function GanttBar({
+  task,
+  x,
+  y,
+  width,
+  isHovered,
+  onHover,
+  onOpenModal,
+  colWidth,
+  timelineStart,
+  onUpdateDates,
+  onStartLink,
+  onEndLink,
+  linkingSourceId,
+}: GanttBarProps) {
   const color = task.color || "#6366f1";
   const barH = 28;
+
+  const [dragState, setDragState] = useState<{
+    type: "move" | "resize-left" | "resize-right";
+    startX: number;
+    initialX: number;
+    initialWidth: number;
+  } | null>(null);
+
+  const [localX, setLocalX] = useState<number | null>(null);
+  const [localWidth, setLocalWidth] = useState<number | null>(null);
+  const didDrag = useRef(false);
+
+  useEffect(() => {
+    if (!dragState) {
+      startTransition(() => {
+        setLocalX(null);
+        setLocalWidth(null);
+      });
+    }
+  }, [x, width, dragState]);
+
+  const handleMouseDown = (
+    e: React.MouseEvent,
+    type: "move" | "resize-left" | "resize-right"
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    didDrag.current = false;
+    setDragState({
+      type,
+      startX: e.clientX,
+      initialX: x,
+      initialWidth: width,
+    });
+  };
+
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragState.startX;
+      if (Math.abs(dx) > 3) {
+        didDrag.current = true;
+      }
+
+      if (dragState.type === "move") {
+        setLocalX(dragState.initialX + dx);
+      } else if (dragState.type === "resize-left") {
+        const newX = dragState.initialX + dx;
+        const newWidth = dragState.initialWidth - dx;
+        if (newWidth >= colWidth * 0.4) {
+          setLocalX(newX);
+          setLocalWidth(newWidth);
+        }
+      } else if (dragState.type === "resize-right") {
+        const newWidth = dragState.initialWidth + dx;
+        if (newWidth >= colWidth * 0.4) {
+          setLocalWidth(newWidth);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      const finalX = localX !== null ? localX : x;
+      const finalWidth = localWidth !== null ? localWidth : width;
+
+      if (finalX !== x || finalWidth !== width) {
+        const startDays = Math.round(finalX / colWidth);
+        const endDays = Math.round((finalX + finalWidth) / colWidth);
+
+        const newStart = new Date(timelineStart);
+        newStart.setDate(newStart.getDate() + startDays);
+
+        const newEnd = new Date(timelineStart);
+        newEnd.setDate(newEnd.getDate() + endDays);
+
+        onUpdateDates?.(task.id, newStart, newEnd);
+      }
+      setDragState(null);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragState, localX, localWidth, x, width, colWidth, timelineStart, onUpdateDates, task.id]);
+
+  const displayX = localX !== null ? localX : x;
+  const displayWidth = localWidth !== null ? localWidth : width;
+
+  const handleConnectorMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onStartLink?.(task.id, displayX + displayWidth, y + 14);
+  };
 
   return (
     <div
       style={{
         position: "absolute",
         top: y,
-        left: x,
-        width,
+        left: displayX,
+        width: displayWidth,
         height: barH,
         borderRadius: 6,
         background: `${color}a6`,
@@ -30,16 +148,26 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
           ? `0 2px 12px ${color}33`
           : `0 1px 4px ${color}11`,
         pointerEvents: "all",
-        cursor: "pointer",
-        transition: "box-shadow 0.15s, transform 0.15s",
-        transform: isHovered ? "scaleY(1.08)" : "scaleY(1)",
+        cursor: dragState ? (dragState.type === "move" ? "grabbing" : "ew-resize") : "pointer",
+        transition: dragState ? "none" : "box-shadow 0.15s, transform 0.15s",
+        transform: isHovered && !dragState ? "scaleY(1.08)" : "scaleY(1)",
         display: "flex",
         alignItems: "center",
         overflow: "hidden",
       }}
       onMouseEnter={() => onHover(task.id)}
       onMouseLeave={() => onHover(null)}
-      onClick={() => onOpenModal(task.id)}
+      onMouseDown={(e) => handleMouseDown(e, "move")}
+      onMouseUp={(e) => {
+        if (linkingSourceId && linkingSourceId !== task.id) {
+          e.stopPropagation();
+          onEndLink?.(task.id);
+        }
+      }}
+      onClick={() => {
+        if (didDrag.current) return;
+        onOpenModal(task.id);
+      }}
       title={task.name}
     >
       {/* Progress fill */}
@@ -60,15 +188,15 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
       />
 
       {/* Content */}
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, paddingLeft: 8, paddingRight: 6, width: "100%", overflow: "hidden" }}>
-        {width > 80 && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, textShadow: "0 1px 3px rgba(15,23,42,0.6)" }}>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, paddingLeft: 8, paddingRight: 8, width: "100%", overflow: "hidden" }}>
+        {displayWidth > 80 && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, textShadow: "0 1px 3px rgba(15,23,42,0.6)", userSelect: "none" }}>
             {task.name}
           </span>
         )}
 
         {/* Avatar on bar */}
-        {width > 130 && task.assignees && task.assignees.map((a, i) => i < 2 && (
+        {displayWidth > 130 && task.assignees && task.assignees.map((a, i) => i < 2 && (
           <img
             key={a.id}
             src={a.avatar}
@@ -86,12 +214,65 @@ export function GanttBar({ task, x, y, width, isHovered, onHover, onOpenModal }:
           />
         ))}
 
-        {width > 60 && (
-          <span style={{ fontSize: 10, color: "#fff", fontWeight: 700, flexShrink: 0, marginLeft: "auto", paddingRight: 2, textShadow: "0 1px 3px rgba(15,23,42,0.6)" }}>
+        {displayWidth > 60 && (
+          <span style={{ fontSize: 10, color: "#fff", fontWeight: 700, flexShrink: 0, marginLeft: "auto", paddingRight: 2, textShadow: "0 1px 3px rgba(15,23,42,0.6)", userSelect: "none" }}>
             {task.progress}%
           </span>
         )}
       </div>
+
+      {/* Left resize handle */}
+      {isHovered && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: 6,
+            height: "100%",
+            cursor: "ew-resize",
+            zIndex: 10,
+          }}
+          onMouseDown={(e) => handleMouseDown(e, "resize-left")}
+        />
+      )}
+
+      {/* Right resize handle */}
+      {isHovered && (
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            width: 6,
+            height: "100%",
+            cursor: "ew-resize",
+            zIndex: 10,
+          }}
+          onMouseDown={(e) => handleMouseDown(e, "resize-right")}
+        />
+      )}
+
+      {/* Connector handle for dependency */}
+      {isHovered && !dragState && !linkingSourceId && (
+        <div
+          style={{
+            position: "absolute",
+            right: -6,
+            top: 7,
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            backgroundColor: "#4f46e5",
+            border: "2px solid #fff",
+            cursor: "crosshair",
+            zIndex: 30,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          }}
+          onMouseDown={handleConnectorMouseDown}
+          title="Drag to link dependency"
+        />
+      )}
     </div>
   );
 }

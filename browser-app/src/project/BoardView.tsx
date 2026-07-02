@@ -14,7 +14,7 @@ import { AddColumnButton } from "./board/AddColumnButton";
 import { FilterMenu } from "./board/FilterMenu";
 import { TaskModal } from "./board/TaskModal";
 import { WorkflowEditor } from "./workflow/WorkflowEditor";
-import type { Priority, TaskType } from "../types/project";
+import type { Priority, Task, TaskType } from "../types/project";
 import { categoryToUIStatus } from "../utils/issueMapper";
 import { projectStatusApi } from "../api/services/projectStatusApi";
 import type { StatusCategory } from "../api/contracts/projectStatus";
@@ -40,17 +40,27 @@ export default function BoardView() {
   const [deleteColumnId, setDeleteColumnId] = useState<string | null>(null);
   const [fallbackColumnId, setFallbackColumnId] = useState<string>("");
 
-  async function handleAddColumn(name: string, category: StatusCategory, color: string) {
+  async function handleAddColumn(
+    name: string,
+    category: StatusCategory,
+    color: string,
+  ) {
     if (!projectId) return;
     try {
-      await projectStatusApi.create(projectId, { statusName: name, statusCategory: category, color });
+      await projectStatusApi.create(projectId, {
+        statusName: name,
+        statusCategory: category,
+        color,
+      });
       await reloadStatuses();
       board.pushToast("Column created successfully", "success");
     } catch (err) {
       console.error("Failed to create column", err);
       board.pushToast(
-        err instanceof Error ? err.message : "Failed to create column. Only the project OWNER can manage workflow statuses.",
-        "error"
+        err instanceof Error
+          ? err.message
+          : "Failed to create column. Only the project OWNER can manage workflow statuses.",
+        "error",
       );
     }
   }
@@ -58,14 +68,18 @@ export default function BoardView() {
   async function handleRenameColumn(statusId: string, newName: string) {
     if (!projectId) return;
     try {
-      await projectStatusApi.update(projectId, statusId, { statusName: newName });
+      await projectStatusApi.update(projectId, statusId, {
+        statusName: newName,
+      });
       await reloadStatuses();
       board.pushToast("Column renamed successfully", "success");
     } catch (err) {
       console.error("Failed to rename column", err);
       board.pushToast(
-        err instanceof Error ? err.message : "Failed to rename column. Only the project OWNER can manage workflow statuses.",
-        "error"
+        err instanceof Error
+          ? err.message
+          : "Failed to rename column. Only the project OWNER can manage workflow statuses.",
+        "error",
       );
     }
   }
@@ -91,8 +105,10 @@ export default function BoardView() {
     } catch (err) {
       console.error("Failed to reorder columns", err);
       board.pushToast(
-        err instanceof Error ? err.message : "Failed to reorder columns. Only the project OWNER can manage workflow statuses.",
-        "error"
+        err instanceof Error
+          ? err.message
+          : "Failed to reorder columns. Only the project OWNER can manage workflow statuses.",
+        "error",
       );
       await reloadStatuses();
     }
@@ -104,9 +120,11 @@ export default function BoardView() {
       return;
     }
     setDeleteColumnId(statusId);
-    
+
     // Find valid targets allowed by the workflow
-    const allowedTargets = projectStatuses.filter((s) => s.id !== statusId && isTransitionAllowed(statusId, s.id));
+    const allowedTargets = projectStatuses.filter(
+      (s) => s.id !== statusId && isTransitionAllowed(statusId, s.id),
+    );
     if (allowedTargets.length > 0) {
       setFallbackColumnId(allowedTargets[0].id);
     } else {
@@ -121,16 +139,23 @@ export default function BoardView() {
   async function handleConfirmDeleteColumn() {
     if (!projectId || !deleteColumnId || !fallbackColumnId) return;
     try {
-      await projectStatusApi.delete(projectId, deleteColumnId, { fallbackStatusId: fallbackColumnId });
+      await projectStatusApi.delete(projectId, deleteColumnId, {
+        fallbackStatusId: fallbackColumnId,
+      });
       await reloadStatuses();
       board.reload(); // Reload tasks to see them migrated
       setDeleteColumnId(null);
-      board.pushToast("Column deleted and tasks migrated successfully", "success");
+      board.pushToast(
+        "Column deleted and tasks migrated successfully",
+        "success",
+      );
     } catch (err) {
       console.error("Failed to delete column", err);
       board.pushToast(
-        err instanceof Error ? err.message : "Failed to delete column. Only the project OWNER can manage workflow statuses.",
-        "error"
+        err instanceof Error
+          ? err.message
+          : "Failed to delete column. Only the project OWNER can manage workflow statuses.",
+        "error",
       );
     }
   }
@@ -153,7 +178,6 @@ export default function BoardView() {
       (filterPriority === "" || t.priority === filterPriority) &&
       (filterType === "" || t.type === filterType),
   );
-
 
   return (
     <div className="px-6 py-4 bg-gray-50 min-h-screen">
@@ -185,7 +209,7 @@ export default function BoardView() {
 
         <button
           onClick={() => setShowWorkflowEditor(true)}
-          className="flex items-center gap-1.5 bg-white border border-gray-500 hover:border-indigo-500 hover:text-indigo-600 rounded-md px-3 py-1.5 text-sm font-medium transition cursor-pointer text-gray-700"
+          className="flex items-center gap-1.5  border border-gray-500 hover:bg-gray-100 rounded-md px-3 py-1.5 text-sm transition cursor-pointer text-gray-700"
           title="Configure status transitions"
         >
           <MdSwapCalls className="text-indigo-500" size={16} />
@@ -210,7 +234,7 @@ export default function BoardView() {
                 statusColor={ps.color}
                 index={index}
                 tasks={filteredTasks.filter((t) => {
-                  const tStatusId = (t as any)._statusId;
+                  const tStatusId = (t as Task & { _statusId?: string })._statusId;
                   if (tStatusId) return tStatusId === ps.id;
                   return t.status === uiStatus;
                 })}
@@ -236,7 +260,9 @@ export default function BoardView() {
         })}
 
         {/* Add column button — appears after all columns */}
-        <AddColumnButton onAdd={handleAddColumn} />
+        {projectStatuses.length < 5 && (
+          <AddColumnButton onAdd={handleAddColumn} />
+        )}
       </div>
 
       {/* Task detail modal */}
@@ -252,6 +278,8 @@ export default function BoardView() {
         onChangePriority={board.changePriority}
         onChangeAssignee={board.changeAssignee}
         onSaveDeadline={board.saveDeadline}
+        onSaveStartDate={board.saveStartDate}
+        onSaveDependencies={board.saveDependencies}
         onDeleteTask={board.deleteTask}
         onLink={board.linkChild}
         onUnlink={board.unlinkChild}
@@ -259,7 +287,8 @@ export default function BoardView() {
         onAddSubtask={board.addSubtask}
         onDeleteSubtask={board.deleteSubtask}
         onUpdateAttachments={(attachments) =>
-          board.selectedTask && board.updateAttachments(board.selectedTask.id, attachments)
+          board.selectedTask &&
+          board.updateAttachments(board.selectedTask.id, attachments)
         }
         projectStatuses={projectStatuses}
       />
@@ -277,10 +306,12 @@ export default function BoardView() {
       {/* Delete Column Confirmation Modal */}
       {deleteColumnId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+          <div className="bg-white rounded-md shadow-xl w-full max-w-md overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800 text-lg">Delete Column</h3>
+              <h3 className="font-semibold text-gray-800 text-lg">
+                Delete Column
+              </h3>
               <button
                 onClick={() => setDeleteColumnId(null)}
                 className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-lg transition"
@@ -294,12 +325,17 @@ export default function BoardView() {
               <p className="text-sm text-gray-600 leading-relaxed">
                 Are you sure you want to delete the column{" "}
                 <span className="font-bold text-gray-800">
-                  "{projectStatuses.find((s) => s.id === deleteColumnId)?.statusName}"
+                  "
+                  {
+                    projectStatuses.find((s) => s.id === deleteColumnId)
+                      ?.statusName
+                  }
+                  "
                 </span>
                 ?
               </p>
-              
-              <div className="p-3.5 bg-amber-50 rounded-lg border border-amber-100">
+
+              <div className="p-3.5 bg-amber-50 rounded-md">
                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
                   Any tasks currently in this column must be migrated to another column.
                 </p>
@@ -313,7 +349,7 @@ export default function BoardView() {
                 <select
                   value={fallbackColumnId}
                   onChange={(e) => setFallbackColumnId(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="w-full bg-white border border-gray-500 rounded-md px-3 py-2 text-sm  transition"
                 >
                   {projectStatuses
                     .filter((s) => s.id !== deleteColumnId)
@@ -321,19 +357,22 @@ export default function BoardView() {
                       const allowed = isTransitionAllowed(deleteColumnId, s.id);
                       return (
                         <option key={s.id} value={s.id}>
-                          {s.statusName} {!allowed ? "(Not allowed by workflow)" : ""}
+                          {s.statusName}{" "}
+                          {!allowed ? "(Not allowed by workflow)" : ""}
                         </option>
                       );
                     })}
                 </select>
-                
+
                 {/* Warning if selected is not allowed by workflow */}
-                {fallbackColumnId && !isTransitionAllowed(deleteColumnId, fallbackColumnId) && (
-                  <p className="text-xs text-red-500 font-medium">
-                    ⚠️ The selected column is not allowed by the project's workflow rules. 
-                    Moving tasks here will bypass workflow rules for this operation.
-                  </p>
-                )}
+                {fallbackColumnId &&
+                  !isTransitionAllowed(deleteColumnId, fallbackColumnId) && (
+                    <p className="text-xs text-red-500 font-medium">
+                      The selected column is not allowed by the project's
+                      workflow rules. Moving tasks here will bypass workflow
+                      rules for this operation.
+                    </p>
+                  )}
               </div>
             </div>
 
@@ -341,13 +380,13 @@ export default function BoardView() {
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
               <button
                 onClick={() => setDeleteColumnId(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition font-medium"
+                className="px-3 py-1.5 border border-gray-500 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteColumn}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
+                className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-gray-200 rounded-md text-sm font-medium transition"
               >
                 Delete & Migrate
               </button>

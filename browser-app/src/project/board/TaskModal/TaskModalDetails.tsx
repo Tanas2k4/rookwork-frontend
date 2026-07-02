@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
-import type { Task, Priority, User } from "../../../types/project";
+import type { Task, TaskWithMeta, Priority, User } from "../../../types/project";
 import {
   statusMap,
   priorities,
@@ -19,6 +19,7 @@ interface Props {
   onChangePriority: (p: Priority) => void;
   onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
+  onSaveStartDate: (val: string) => void;
   projectStatuses: ProjectStatusResponse[];
 }
 
@@ -28,6 +29,7 @@ export function TaskModalDetails({
   onChangePriority,
   onChangeAssignee,
   onSaveDeadline,
+  onSaveStartDate,
   projectStatuses,
 }: Props) {
   const { members, isTransitionAllowed } = useProject();
@@ -37,6 +39,8 @@ export function TaskModalDetails({
   const [showAssigneeDd,  setShowAssigneeDd]  = useState(false);
   const [editingDeadline, setEditingDeadline] = useState(false);
   const [deadlineValue,   setDeadlineValue]   = useState(task.deadline ?? "");
+  const [editingStartDate, setEditingStartDate] = useState(false);
+  const [startDateValue,   setStartDateValue]   = useState(task.startDate ?? "");
   const assigneeDdRef = useRef<HTMLDivElement>(null);
 
   // Close assignee dropdown on outside click
@@ -100,7 +104,7 @@ export function TaskModalDetails({
             className="flex items-center gap-1.5 text-sm text-gray-700 px-2 py-1 transition"
           >
             {(() => {
-              const currentStatus = projectStatuses.find((ps) => ps.id === (task as any)._statusId) ||
+              const currentStatus = projectStatuses.find((ps) => ps.id === (task as TaskWithMeta)._statusId) ||
                 projectStatuses.find((ps) => ps.statusCategory === (task.status === "to_do" ? "TO_DO" : task.status === "in_progress" ? "IN_PROGRESS" : "DONE"));
               const color = currentStatus?.color ?? "#94a3b8";
               const label = currentStatus?.statusName ?? statusMap[task.status].label;
@@ -116,7 +120,7 @@ export function TaskModalDetails({
           {showStatusDd && (
             <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-48 max-h-60 overflow-y-auto">
               {(() => {
-                const currentStatusId = (task as any)._statusId || projectStatuses.find((ps) =>
+                const currentStatusId = (task as TaskWithMeta)._statusId || projectStatuses.find((ps) =>
                   ps.statusCategory === (task.status === "to_do" ? "TO_DO" : task.status === "in_progress" ? "IN_PROGRESS" : "DONE")
                 )?.id;
 
@@ -128,7 +132,7 @@ export function TaskModalDetails({
                   <button key={s.id}
                     onClick={() => { onChangeStatus(s.id); closeAll(); }}
                     className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                      (task as any)._statusId === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"
+                      (task as TaskWithMeta)._statusId === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"
                     }`}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                     <span className="truncate">{s.statusName}</span>
@@ -175,6 +179,35 @@ export function TaskModalDetails({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Start Date */}
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+          Start Date
+        </p>
+        {editingStartDate ? (
+          <input
+            autoFocus
+            type="datetime-local"
+            value={startDateValue ? startDateValue.slice(0, 16) : ""}
+            onChange={(e) => setStartDateValue(e.target.value)}
+            onBlur={() => { onSaveStartDate(startDateValue); setEditingStartDate(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditingStartDate(false);
+              if (e.key === "Enter") { onSaveStartDate(startDateValue); setEditingStartDate(false); }
+            }}
+            className="text-sm text-gray-700 outline-none border-b border-gray-400 bg-transparent"
+          />
+        ) : (
+          <p
+            onDoubleClick={() => { setStartDateValue(task.startDate ?? ""); setEditingStartDate(true); }}
+            className="text-sm text-gray-700 cursor-default hover:bg-gray-50 rounded px-2 py-1 -ml-2 transition inline-block"
+            title="Double-click to edit"
+          >
+            {task.startDate ? formatDeadline(task.startDate) : "None"}
+          </p>
+        )}
       </div>
 
       {/* Deadline */}
@@ -291,6 +324,7 @@ export function TaskModalDetails({
           )}
         </div>
       </div>
+
     </div>
   );
 }
