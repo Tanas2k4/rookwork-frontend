@@ -7,6 +7,7 @@ import { IoMailOutline } from "react-icons/io5";
 import { TbLock } from "react-icons/tb";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
+import { OtpInput } from "../components/common/OtpInput";
 
 function Register({ onSuccess }: { onSuccess?: () => void }) {
   const [profileName, setProfileName] = useState("");
@@ -102,15 +103,18 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+  const handleOtpChange = (val: string) => {
     setOtp(val);
+    if (val.length === 6) {
+      handleVerifyOtp(val);
+    }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (code?: string) => {
     setError("");
     setSuccess("");
-    if (otp.length < 6) {
+    const otpCode = typeof code === "string" ? code : otp;
+    if (otpCode.length < 6) {
       setError("Please enter the 6-digit OTP code");
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
@@ -118,7 +122,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
     }
     setLoading(true);
     try {
-      const data = await authApi.verifyOtp(email, otp, invitationId || undefined);
+      const data = await authApi.verifyOtp(email, otpCode, invitationId || undefined);
       tokenStorage.save(data.accessToken, data.refreshToken);
       setSuccess("Verification successful!");
       window.electron?.loginSuccess();
@@ -303,20 +307,11 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
 
             {/* OTP INPUT */}
             <div className={`py-2 flex justify-center ${isShaking ? "animate-shake" : ""}`}>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="000000"
-                className={`w-48 h-11 border rounded-lg text-center text-[22px] font-bold tracking-[8px] outline-none transition-all duration-200 ${
-                  error 
-                    ? "bg-red-50 border-red-300 text-red-600 focus:border-red-500 focus:ring-1 focus:ring-red-500" 
-                    : "bg-gray-100 border-transparent text-gray-800 focus:border-purple-800 focus:bg-white focus:ring-1 focus:ring-purple-800"
-                }`}
+              <OtpInput
                 value={otp}
                 onChange={handleOtpChange}
+                disabled={loading}
+                error={!!error}
               />
             </div>
 

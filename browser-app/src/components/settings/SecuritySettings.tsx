@@ -6,6 +6,7 @@ import { ToastContainer } from "../common/ToastContainer";
 import { FaCheckCircle } from "react-icons/fa";
 import { AiFillCloseCircle } from "react-icons/ai";
 import type { UserSummary } from "../../api/contracts/issue";
+import { OtpInput } from "../common/OtpInput";
 
 interface SecuritySettingsProps {
   user: UserSummary | null;
@@ -138,27 +139,26 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
         <div className="space-y-4">
           {hasPassword && (
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-2">OTP Verification Code</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="Enter 6-digit code"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  disabled={!!user?.passwordLimitReached}
-                  className="flex-1 px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100 disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400"
-                  required
-                />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-[13px] font-bold text-gray-700">OTP Verification Code</label>
                 <button
                   type="button"
                   onClick={handleSendOtp}
                   disabled={isSendingOtp || otpCooldown > 0 || !!user?.passwordLimitReached}
-                  className="px-4 py-1.5 bg-purple-100 text-purple-700 text-sm font-semibold rounded-md hover:bg-purple-200 disabled:opacity-50 disabled:bg-purple-50 disabled:text-purple-400 transition-colors shrink-0"
+                  className="text-xs font-bold text-purple-700 hover:text-purple-900 disabled:opacity-50 transition-colors"
                 >
                   {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : isSendingOtp ? "Sending..." : "Send OTP"}
                 </button>
               </div>
+              <div className="flex justify-start">
+                <OtpInput
+                  value={otp}
+                  onChange={setOtp}
+                  disabled={!!user?.passwordLimitReached}
+                />
+              </div>
+            </div>
             </div>
           )}
           <div>
