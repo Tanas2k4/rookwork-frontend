@@ -60,7 +60,7 @@ export interface Task {
  */
 export type TaskWithMeta = Task & {
   _uuid?: string;
-  _statusId?: string;
+  _statusId?: string | null;
   _statusMeta?: ProjectStatusResponse | null;
   _projectId?: string;
   _assigneeUuids?: string[];
