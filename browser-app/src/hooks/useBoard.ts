@@ -7,6 +7,7 @@
 import { useState, useRef, useEffect, useCallback, useContext } from "react";
 import type {
   Task,
+  TaskWithMeta,
   Status,
   Priority,
   TaskType,
@@ -119,6 +120,7 @@ export function useBoard(projectId: string | null) {
       status,
       assigned_to: [],
       deadline: null,
+      startDate: null,
       subtasks: [],
       parentId: null,
       childIds: [],
@@ -200,6 +202,7 @@ export function useBoard(projectId: string | null) {
     } catch (err) {
       console.error("Failed to update issue", err);
       pushToast(err instanceof Error ? err.message : "Failed to save change", "error");
+      throw err;
     }
   }
 
@@ -209,7 +212,10 @@ export function useBoard(projectId: string | null) {
     if (selectedTask.title === cleanTitle) return;
     updateTaskLocal(selectedTask.id, { title: cleanTitle });
     pushToast("Title updated");
-    patchIssue(selectedTask.id, { issueName: cleanTitle });
+    patchIssue(selectedTask.id, { issueName: cleanTitle }).catch((err) => {
+      console.error("Failed to update title, reloading issues", err);
+      loadIssues();
+    });
   }
 
   function saveDescription(description: string) {
@@ -217,28 +223,59 @@ export function useBoard(projectId: string | null) {
     if ((selectedTask.description ?? "") === (description ?? "")) return;
     updateTaskLocal(selectedTask.id, { description });
     pushToast("Description updated");
-    patchIssue(selectedTask.id, { description });
+    patchIssue(selectedTask.id, { description }).catch((err) => {
+      console.error("Failed to update description, reloading issues", err);
+      loadIssues();
+    });
   }
 
-  function changeTaskStatusId(taskId: number, statusId: string) {
+  async function changeTaskStatusId(taskId: number, statusId: string) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
     const targetStatus = projectStatuses.find((ps) => ps.id === statusId);
     if (!targetStatus) return;
-    const oldStatusId = (task as any)._statusId;
+    const oldStatusId = (task as TaskWithMeta)._statusId;
     if (oldStatusId === statusId) return;
     if (!isTransitionAllowed(oldStatusId, statusId)) {
       pushToast("This status transition is not allowed by the project's workflow rules", "error");
       return;
     }
+
+    const oldUiStatus = task.status;
+    const oldStatusMeta = (task as TaskWithMeta)._statusMeta;
+
     const uiStatus = categoryToUIStatus(targetStatus.statusCategory);
     updateTaskLocal(taskId, {
       status: uiStatus,
       _statusId: statusId,
       _statusMeta: targetStatus,
-    } as any);
+    } as TaskWithMeta);
     pushToast(`${task.title} → ${targetStatus.statusName}`);
-    patchIssue(taskId, { statusId });
+
+    try {
+      await patchIssue(taskId, { statusId });
+    } catch (err) {
+      // rollback
+      updateTaskLocal(taskId, {
+        status: oldUiStatus,
+        _statusId: oldStatusId,
+        _statusMeta: oldStatusMeta,
+      } as TaskWithMeta);
+      loadIssues();
+    }
+  }
+
+  async function saveDependencies(dependencyIds: string[]) {
+    if (!selectedTask) return;
+    const oldDependencyIds = selectedTask.dependencyIds || [];
+    updateTaskLocal(selectedTask.id, { dependencyIds });
+    try {
+      await patchIssue(selectedTask.id, { dependencyIds });
+      pushToast("Dependencies updated");
+    } catch (err) {
+      updateTaskLocal(selectedTask.id, { dependencyIds: oldDependencyIds });
+      loadIssues();
+    }
   }
 
   function changeStatus(statusId: string) {
@@ -280,6 +317,16 @@ export function useBoard(projectId: string | null) {
     pushToast("Deadline updated");
     // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
     patchIssue(selectedTask.id, { deadline: date ?? undefined });
+  }
+
+  function saveStartDate(val: string) {
+    if (!selectedTask) return;
+    const date = val ? val.split("T")[0] : null;
+    if (selectedTask.startDate === date) return;
+    updateTaskLocal(selectedTask.id, { startDate: date });
+    pushToast("Start Date updated");
+    // UpdateIssueRequest.startDate is LocalDate → send "YYYY-MM-DD" only
+    patchIssue(selectedTask.id, { startDate: date ?? undefined });
   }
 
   // linkchild
@@ -536,6 +583,7 @@ export function useBoard(projectId: string | null) {
     changePriority,
     changeAssignee,
     saveDeadline,
+    saveStartDate,
     reorderTasks,
     toggleSubtask,
     addSubtask,
@@ -545,5 +593,6 @@ export function useBoard(projectId: string | null) {
     updateAttachments,
     isTransitionAllowed,
     reload: loadIssues,
+    saveDependencies,
   };
 }

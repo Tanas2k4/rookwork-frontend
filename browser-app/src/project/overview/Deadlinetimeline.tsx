@@ -73,13 +73,13 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
         </div>
         <div className="flex items-center gap-2">
           {overdueCount > 0 && (
-            <span className="text-[11px] font-bold bg-red-50 text-red-600 border border-red-100 px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+            <span className="text-[11px] font-bold  text-red-600 px-3 py-1 rounded-full flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               {overdueCount} overdue
             </span>
           )}
           {dueSoonCount > 0 && (
-            <span className="text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-100 px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-orange-600 px-3 py-1 rounded-full flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-orange-500" />
               {dueSoonCount} due soon
             </span>

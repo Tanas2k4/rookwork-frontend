@@ -87,6 +87,16 @@ export function SharedIssueModal() {
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 
+  const saveStartDate = useCallback((val: string) => {
+    board.saveStartDate(val);
+    notifyIssueUpdated();
+  }, [board, notifyIssueUpdated]);
+
+  const saveDependencies = useCallback((dependencyIds: string[]) => {
+    board.saveDependencies(dependencyIds);
+    notifyIssueUpdated();
+  }, [board, notifyIssueUpdated]);
+
   const deleteTask = useCallback((task: Task) => {
     board.deleteTask(task);
     notifyIssueUpdated();
@@ -112,6 +122,8 @@ export function SharedIssueModal() {
       onChangePriority={changePriority}
       onChangeAssignee={changeAssignee}
       onSaveDeadline={saveDeadline}
+      onSaveStartDate={saveStartDate}
+      onSaveDependencies={saveDependencies}
       onDeleteTask={deleteTask}
       onLink={board.linkChild}
       onUnlink={board.unlinkChild}

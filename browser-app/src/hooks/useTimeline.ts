@@ -41,7 +41,9 @@ function issueToGantt(
 ): GanttTask {
   const minimalTask = issueToTask(issue);
   const gantt = taskToGantt(minimalTask);
-  const start = new Date(issue.createdAt);
+  const start = issue.startDate
+    ? new Date(issue.startDate)
+    : new Date(issue.createdAt);
   const end = issue.deadline
     ? new Date(issue.deadline)
     : addDaysToDate(
@@ -50,7 +52,7 @@ function issueToGantt(
       );
   const progress =
     progressMap[issue.id] !== undefined ? progressMap[issue.id] : gantt.progress;
-  return { ...gantt, id: issue.id, start, end, progress };
+  return { ...gantt, id: issue.id, start, end, progress, dependencyIds: issue.dependencyIds || [] };
 }
 
 //  Hook

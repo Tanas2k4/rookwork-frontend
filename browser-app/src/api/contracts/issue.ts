@@ -57,11 +57,13 @@ export interface UpdateIssueRequest {
   description?: string;
   issueTypeId?: string;
   priority?: PriorityType;
+  startDate?: string;
   deadline?: string;
   assigneeIds?: string[];
   /** UUID of the target ProjectStatus column. */
   statusId?: string;
   parentId?: string | null;
+  dependencyIds?: string[];
 }
 
 export interface IssueResponse {
@@ -75,9 +77,11 @@ export interface IssueResponse {
   parentId: string | null;
   projectId: string;
   assignees: UserSummary[];   // multi-assignee list
+  startDate: string;
   deadline: string | null;
   createdAt: string;
   updatedAt: string;
   attachments?: AttachmentResponse[];
   subtasks?: SubtaskResponse[];
+  dependencyIds: string[];
 }

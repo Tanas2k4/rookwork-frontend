@@ -618,7 +618,7 @@ export default function CreateEventModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-md text-sm font-heading border border-gray-550 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+            className="px-4 py-1.5 rounded-md text-sm font-heading border border-gray-550 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
           >
             Cancel
           </button>
@@ -626,7 +626,7 @@ export default function CreateEventModal({
             type="button"
             onClick={handleCreateEvent}
             disabled={!form.title || !form.date}
-            className="px-5 py-2 rounded-md text-sm font-heading text-gray-200 bg-purple-800 hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="px-5 py-1.5 rounded-md text-sm font-heading text-gray-200 bg-purple-800 hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             Create
           </button>
