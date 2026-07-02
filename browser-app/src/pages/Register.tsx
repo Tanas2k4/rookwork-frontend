@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import LoginBackground from "../assets/login-background.jpg";
 import { IoIosPersonAdd } from "react-icons/io";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";

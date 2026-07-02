@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
-import type { Task, TaskWithMeta, User } from "../types/project";
+import type { TaskWithMeta, User } from "../types/project";
 import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
@@ -35,7 +35,7 @@ export interface DropdownState {
 export function useListView() {
   const { projectId, issueUpdateTick, notifyIssueUpdated, issueTypes, projectStatuses } = useContext(ProjectContext);
 
-  const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
+  const [tasks, setTasks] = useState<(TaskWithMeta & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -218,12 +218,12 @@ export function useListView() {
     setTasks((p) =>
       p.map((t) =>
         t._uuid === taskId
-          ? ({
+          ? {
               ...t,
               status: uiStatus,
               _statusId: statusId,
               _statusMeta: targetStatus,
-            } as TaskWithMeta)
+            }
           : t,
       ),
     );

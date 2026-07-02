@@ -139,8 +139,9 @@ export default function WorkingHoursChart() {
   }>({ data: [], loading: true });
 
   useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     workLogApi
-      .getStats(period === "Weekly" ? "weekly" : "monthly")
+      .getStats(period === "Weekly" ? "weekly" : "monthly", tz)
       .then((res) =>
         setChartState({
           data: buildChartData(res.thisWeek, res.lastWeek),
