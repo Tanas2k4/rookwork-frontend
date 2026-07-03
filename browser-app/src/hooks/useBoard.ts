@@ -311,22 +311,36 @@ export function useBoard(projectId: string | null) {
 
   function saveDeadline(val: string) {
     if (!selectedTask) return;
-    const date = val ? val.split("T")[0] : null;
-    if (selectedTask.deadline === date) return;
-    updateTaskLocal(selectedTask.id, { deadline: date });
+    const isoString = val ? new Date(val).toISOString() : null;
+    if (selectedTask.deadline === isoString) return;
+
+    if (isoString && selectedTask.startDate) {
+      if (new Date(isoString) < new Date(selectedTask.startDate)) {
+        pushToast("Deadline cannot be before start date", "error");
+        return;
+      }
+    }
+
+    updateTaskLocal(selectedTask.id, { deadline: isoString });
     pushToast("Deadline updated");
-    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
-    patchIssue(selectedTask.id, { deadline: date ?? undefined });
+    patchIssue(selectedTask.id, { deadline: isoString ?? undefined });
   }
 
   function saveStartDate(val: string) {
     if (!selectedTask) return;
-    const date = val ? val.split("T")[0] : null;
-    if (selectedTask.startDate === date) return;
-    updateTaskLocal(selectedTask.id, { startDate: date });
+    const isoString = val ? new Date(val).toISOString() : null;
+    if (selectedTask.startDate === isoString) return;
+
+    if (isoString && selectedTask.deadline) {
+      if (new Date(isoString) > new Date(selectedTask.deadline)) {
+        pushToast("Start date cannot be after deadline", "error");
+        return;
+      }
+    }
+
+    updateTaskLocal(selectedTask.id, { startDate: isoString });
     pushToast("Start Date updated");
-    // UpdateIssueRequest.startDate is LocalDate → send "YYYY-MM-DD" only
-    patchIssue(selectedTask.id, { startDate: date ?? undefined });
+    patchIssue(selectedTask.id, { startDate: isoString ?? undefined });
   }
 
   // linkchild

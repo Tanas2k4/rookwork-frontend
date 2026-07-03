@@ -6,6 +6,7 @@ import { useToast } from "../../hooks/useToast";
 import { avatarUrl } from "../../utils/avatar";
 import { issueApi } from "../../api/services/issueApi";
 import { RichTextEditor } from "../../components/common/RichTextEditor";
+import { toDatetimeLocal } from "../../utils/date";
 import type {
   PriorityType,
   UserSummary,
@@ -550,6 +551,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                 <input
                   type="datetime-local"
                   value={dueDate}
+                  min={toDatetimeLocal(new Date())}
                   onChange={(e) => setDueDate(e.target.value)}
                   className="w-full px-4 py-1.5 text-sm border border-gray-500 rounded-md"
                 />
