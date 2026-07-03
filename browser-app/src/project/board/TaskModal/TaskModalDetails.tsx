@@ -11,6 +11,7 @@ import { useProject } from "../../../hooks/useProject";
 import { formatDeadline } from "../../shared/dropdownConstants";
 import { avatarUrl } from "../../../utils/avatar";
 import type { ProjectStatusResponse } from "../../../api/contracts/projectStatus";
+import { toDatetimeLocal } from "../../../utils/date";
 
 interface Props {
   task: Task;
@@ -189,7 +190,16 @@ export function TaskModalDetails({
           <input
             autoFocus
             type="datetime-local"
-            value={startDateValue ? startDateValue.slice(0, 16) : ""}
+            value={(() => {
+              if (!startDateValue) return "";
+              const d = new Date(startDateValue);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            max={(() => {
+              if (!task.deadline) return "";
+              const d = new Date(task.deadline);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
             onChange={(e) => setStartDateValue(e.target.value)}
             onBlur={() => { onSaveStartDate(startDateValue); setEditingStartDate(false); }}
             onKeyDown={(e) => {
@@ -218,7 +228,16 @@ export function TaskModalDetails({
           <input
             autoFocus
             type="datetime-local"
-            value={deadlineValue ? deadlineValue.slice(0, 16) : ""}
+            value={(() => {
+              if (!deadlineValue) return "";
+              const d = new Date(deadlineValue);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            min={(() => {
+              if (!task.startDate) return "";
+              const d = new Date(task.startDate);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
             onChange={(e) => setDeadlineValue(e.target.value)}
             onBlur={() => { onSaveDeadline(deadlineValue); setEditingDeadline(false); }}
             onKeyDown={(e) => {

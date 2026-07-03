@@ -250,6 +250,7 @@ function LogWorkSection({ task }: { task: Task }) {
                       if (e.key === "Enter") handleSubmit();
                     }}
                     placeholder="What did you work on?"
+                    maxLength={500}
                     className="w-full text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 outline-none transition bg-white focus:border-purple-500"
                   />
                 </div>

@@ -88,6 +88,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                   onKeyDown={handleTitleKeyDown}
                   className="text-5xl font-bold text-gray-800 border-b-2 border-purple-500 focus:outline-none bg-transparent py-1 max-w-xl"
                   autoFocus
+                  maxLength={50}
                   disabled={isSavingTitle}
                 />
                 <button

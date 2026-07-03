@@ -6,6 +6,7 @@ import type { DropdownState } from "../../hooks/useListView";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
 import type { IssueTypeResponse } from "../../api/contracts/issue";
 import { useProject } from "../../hooks/useProject";
+import { toDatetimeLocal } from "../../utils/date";
 
 interface Props {
   openDropdown: DropdownState;
@@ -119,7 +120,16 @@ export function ListDropdowns({
           </p>
           <input
             type="datetime-local"
-            value={currentTask?.deadline ? currentTask.deadline.slice(0, 16) : ""}
+            value={(() => {
+              if (!currentTask?.deadline) return "";
+              const d = new Date(currentTask.deadline);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            min={(() => {
+              if (!currentTask?.startDate) return "";
+              const d = new Date(currentTask.startDate);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
             onChange={(e) => onDeadlineChange(taskId, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             autoFocus
