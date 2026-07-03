@@ -317,6 +317,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                   placeholder={`Enter ${selectedTypeName} title...`}
                   className="w-full border border-gray-500 px-4 py-1.5 text-sm rounded-md 
                     focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
+                  maxLength={200}
                   required
                 />
               </div>

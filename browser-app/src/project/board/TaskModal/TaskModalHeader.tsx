@@ -75,6 +75,7 @@ export function TaskModalHeader({
               if (e.key === "Escape") setEditing(false);
             }}
             className="text-lg font-bold text-gray-800 w-full outline-none border-b border-gray-400 bg-transparent pb-0.5"
+            maxLength={200}
           />
         ) : (
           <h2

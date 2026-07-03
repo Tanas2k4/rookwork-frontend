@@ -311,6 +311,7 @@ export default function CreateEventModal({
               focus:border-purple-400 focus:ring-1 focus:ring-purple-700 transition bg-white"
               placeholder="e.g. Kickoff sprint"
               value={form.title}
+              maxLength={200}
               onChange={(e) =>
                 setForm((f) => ({ ...f, title: e.target.value }))
               }
@@ -450,6 +451,7 @@ export default function CreateEventModal({
               className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm font-heading outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-700 transition bg-white"
               placeholder="e.g. Online or Conference Room A"
               value={form.location}
+              maxLength={200}
               onChange={(e) =>
                 setForm((f) => ({ ...f, location: e.target.value }))
               }
@@ -608,6 +610,7 @@ export default function CreateEventModal({
               rows={2}
               placeholder="Additional notes..."
               value={form.note}
+              maxLength={1000}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
           </div>

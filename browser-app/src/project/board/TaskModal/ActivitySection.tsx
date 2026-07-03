@@ -136,6 +136,7 @@ function CommentEditor({
             onCancel();
           }
         }}
+        maxLength={3000}
         className="w-full text-sm text-gray-700 p-2.5 pb-1 resize-none outline-none bg-transparent h-16"
       />
       <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50/50 h-10 select-none">

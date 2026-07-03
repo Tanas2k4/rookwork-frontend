@@ -108,6 +108,7 @@ export function SubtasksSection({
               if (e.key === "Escape") setShowForm(false);
             }}
             placeholder="Subtask title..."
+            maxLength={200}
             className="flex text-sm text-gray-800 bg-transparent border border-gray-500 rounded-sm focus:border-purple-800"
           />
           <div className="flex justify-end gap-2">
