@@ -138,7 +138,7 @@ export function ChildrenSection({
                   />
                   <button
                     onClick={() => onOpenTask(child)}
-                    className="flex-1 text-left text-sm text-gray-700 hover:text-purple-700 truncate transition"
+                    className="flex-1 text-left text-sm text-gray-700 hover:text-purple-700 truncate transition min-w-0"
                   >
                     {child.title}
                   </button>

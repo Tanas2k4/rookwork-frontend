@@ -172,7 +172,7 @@ export function DependenciesSection({
                   />
                   <button
                     onClick={() => onOpenTask(depTask)}
-                    className="flex-1 text-left text-sm text-gray-700 hover:text-purple-700 truncate transition font-medium"
+                    className="flex-1 text-left text-sm text-gray-700 hover:text-purple-700 truncate transition font-medium min-w-0"
                   >
                     {depTask.title}
                   </button>

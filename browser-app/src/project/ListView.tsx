@@ -66,7 +66,7 @@ export default function ListView() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-200">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 tracking-wider border-r border-gray-300">
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 tracking-wider border-r border-gray-300 w-1/3 max-w-[320px]">
                     Title
                   </th>
                   {["Type", "Assigned to", "Deadline", "Status"].map((h) => (
@@ -97,10 +97,10 @@ export default function ListView() {
                     return (
                       <tr key={task._uuid} className="hover:bg-gray-50 transition-colors">
                         {/* Title */}
-                        <td className="px-4 py-3 border-r border-gray-200">
+                        <td className="px-4 py-3 border-r border-gray-200 w-1/3 max-w-[320px]">
                           <button
                             onClick={() => openIssueModal(task._uuid)}
-                            className="text-[13px] text-gray-700 font-medium hover:text-purple-700 hover:underline transition-colors text-left"
+                            className="text-[13px] text-gray-700 font-medium hover:text-purple-700 hover:underline transition-colors text-left truncate block w-full"
                             title="Click để xem chi tiết"
                           >
                             {task.title}

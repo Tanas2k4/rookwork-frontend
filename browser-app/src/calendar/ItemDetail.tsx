@@ -22,8 +22,8 @@ function EventCard({
       className={`rounded-xl p-3 flex flex-col gap-2 group cursor-pointer hover:shadow-sm transition-shadow ${colorStyles.className}`}
       style={colorStyles.style}
     >
-      <div className="flex items-start gap-2">
-        <p className="px-3 text-base font-heading font-medium tracking-wide leading-snug flex-1">
+      <div className="flex items-start gap-2 min-w-0">
+        <p className="px-3 text-base font-heading font-medium tracking-wide leading-snug flex-1 line-clamp-2 break-words break-all min-w-0" title={ev.title}>
           {ev.title}
         </p>
         <button
