@@ -356,6 +356,7 @@ export default function ProfileSettings({
               type="text"
               value={jobTitle}
               onChange={(e) => handleChange(e, setJobTitle)}
+              maxLength={100}
               className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
             />
           </div>
@@ -379,6 +380,7 @@ export default function ProfileSettings({
               type="text"
               value={organization}
               onChange={(e) => handleChange(e, setOrganization)}
+              maxLength={100}
               className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
               placeholder="e.g. Acme Corp"
             />
@@ -401,6 +403,7 @@ export default function ProfileSettings({
               type="text"
               value={location}
               onChange={(e) => handleChange(e, setLocation)}
+              maxLength={150}
               className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100"
               placeholder="e.g. Ho Chi Minh City, VN"
             />

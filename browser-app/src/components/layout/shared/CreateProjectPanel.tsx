@@ -104,6 +104,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                 onChange={(e) => { setProjectName(e.target.value); setError(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
                 placeholder="e.g. Mobile App Dev"
+                maxLength={50}
                 className={`w-full text-sm border-2 rounded-lg px-3 py-2 outline-none transition ${
                   error ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-purple-500"
                 }`}
@@ -121,6 +122,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What is this project about?"
                 rows={3}
+                maxLength={500}
                 className="w-full text-sm border-2 border-gray-300 rounded-lg px-3 py-2 outline-none transition focus:border-purple-500 resize-none"
               />
             </div>

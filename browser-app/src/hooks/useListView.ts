@@ -252,20 +252,25 @@ export function useListView() {
   function handleDeadlineChange(taskId: string, deadline: string) {
     const task = tasks.find((t) => t._uuid === taskId);
     if (!task) return;
-    const currentDeadline = task.deadline ? task.deadline.split("T")[0] : "";
-    const newDeadline = deadline ? deadline.split("T")[0] : "";
-    if (currentDeadline === newDeadline) {
+    const isoString = deadline ? new Date(deadline).toISOString() : null;
+    if (task.deadline === isoString) {
       closeDropdown();
       return;
     }
 
+    if (isoString && task.startDate) {
+      if (new Date(isoString) < new Date(task.startDate)) {
+        addToast("Deadline cannot be before start date", "error");
+        closeDropdown();
+        return;
+      }
+    }
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: deadline || null } : t));
+    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: isoString } : t));
     closeDropdown();
 
-    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
-    const formatted = deadline ? deadline.split("T")[0] : undefined;
-    updateIssue(taskId, { deadline: formatted },
+    updateIssue(taskId, { deadline: isoString ?? undefined },
       deadline ? "Deadline updated" : "Deadline cleared"
     );
   }

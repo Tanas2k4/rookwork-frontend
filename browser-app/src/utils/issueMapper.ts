@@ -174,8 +174,8 @@ export function issueToTask(
     type: apiTypeToUI(issue.issueType),
     priority: apiPriorityToUI(issue.priority),
     assigned_to: assignees,
-    deadline: issue.deadline ? issue.deadline.split("T")[0] : null,
-    startDate: issue.startDate ? issue.startDate.split("T")[0] : null,
+    deadline: issue.deadline ?? null,
+    startDate: issue.startDate ?? null,
     // status on UI is still the simple 3-value string for backward compat with rendering logic
     status: apiStatusToUI(issue.status),
     subtasks: (issue.subtasks ?? []).map((sub) => {

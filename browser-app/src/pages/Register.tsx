@@ -193,6 +193,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           className="w-full bg-transparent text-[14px] outline-none"
                           placeholder="display name"
                           value={profileName}
+                          maxLength={50}
                           onChange={(e) => setProfileName(e.target.value)}
                         />
                       </div>
@@ -233,6 +234,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           className="w-full bg-transparent text-[14px] outline-none"
                           placeholder="password"
                           value={password}
+                          maxLength={128}
                           onChange={(e) => setPassword(e.target.value)}
                         />
                       </div>
@@ -251,6 +253,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           className="w-full bg-transparent text-[14px] outline-none"
                           placeholder="confirm password"
                           value={confirm}
+                          maxLength={128}
                           onChange={(e) => setConfirm(e.target.value)}
                         />
                       </div>
