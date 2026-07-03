@@ -5,7 +5,7 @@ import { ProjectContext } from "../../context/ProjectContext";
 import { eventApi } from "../../api/services/eventApi";
 import type { CalendarEvent } from "../../types/calendar";
 import { mapToCalendarEvent } from "../../types/calendar";
-import { HiOutlineLocationMarker, HiOutlineClock } from "react-icons/hi";
+import { MapPinIcon, ClockIcon } from "@heroicons/react/24/outline";
 
 export default function ProjectCard({ data }: { data: OverviewData }) {
   const [tab, setTab] = useState<"event" | "activity">("event");
@@ -28,7 +28,7 @@ export default function ProjectCard({ data }: { data: OverviewData }) {
     .slice(0, 5);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200  overflow-hidden">
       <div className="flex border-b border-gray-100">
         {(["event", "activity"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
@@ -55,12 +55,12 @@ export default function ProjectCard({ data }: { data: OverviewData }) {
                     </span>
                   </div>
                   <div className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
-                    <HiOutlineClock className="text-gray-400 shrink-0" size={12} />
+                    <ClockIcon className="text-gray-400 shrink-0 w-3.5 h-3.5" />
                     <span>{ev.time} - {ev.endTime}</span>
                   </div>
                   {ev.location && (
                     <div className="text-[11px] text-gray-500 truncate flex items-center gap-1 mt-0.5">
-                      <HiOutlineLocationMarker className="text-gray-400 shrink-0" size={12} />
+                      <MapPinIcon className="text-gray-400 shrink-0 w-3.5 h-3.5" />
                       <span>{ev.location}</span>
                     </div>
                   )}

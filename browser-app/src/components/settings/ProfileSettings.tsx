@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
-import { FiGlobe, FiLock } from "react-icons/fi";
-import { MdEdit, MdCheck, MdClose } from "react-icons/md";
+import { GlobeAltIcon, LockClosedIcon, PencilSquareIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { userApi } from "../../api/services/userApi";
 import type { UserSummary } from "../../api/contracts/issue";
 import { avatarUrl } from "../../utils/avatar";
@@ -22,7 +21,7 @@ const PrivacyToggle = ({
       className={`flex items-center text-xs px-2 py-1 rounded transition-colors ${isPublic ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-100 text-gray-600 border border-gray-200"}`}
       title={isPublic ? "Visible to everyone" : "Only visible to you"}
     >
-      {isPublic ? <FiGlobe className="mr-1" /> : <FiLock className="mr-1" />}
+      {isPublic ? <GlobeAltIcon className="w-3.5 h-3.5 mr-1" /> : <LockClosedIcon className="w-3.5 h-3.5 mr-1" />}
       {isPublic ? "Public" : "Private"}
     </button>
   );
@@ -309,7 +308,7 @@ export default function ProfileSettings({
                   className="p-2 bg-purple-900 hover:bg-purple-800 text-white rounded-md transition cursor-pointer shrink-0 disabled:opacity-50"
                   title="Save"
                 >
-                  <MdCheck size={18} />
+                  <CheckIcon className="w-4.5 h-4.5" />
                 </button>
                 <button
                   type="button"
@@ -317,7 +316,7 @@ export default function ProfileSettings({
                   className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-md transition cursor-pointer shrink-0"
                   title="Cancel"
                 >
-                  <MdClose size={18} />
+                  <XMarkIcon className="w-4.5 h-4.5" />
                 </button>
               </div>
             ) : (
@@ -334,7 +333,7 @@ export default function ProfileSettings({
                   className="p-1.5 text-gray-400 hover:text-purple-700 rounded-md transition cursor-pointer shrink-0"
                   title="Edit Display Name"
                 >
-                  <MdEdit size={16} />
+                  <PencilSquareIcon className="w-4 h-4" />
                 </button>
               </div>
             )}

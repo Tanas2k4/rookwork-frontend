@@ -10,7 +10,7 @@ export default function WorkloadSection({
   const { workload, maxWorkload } = data;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm col-span-2">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6  col-span-2">
       <h2 className="text-sm font-semibold text-gray-800 mb-4">
         Assignment & Workload
       </h2>

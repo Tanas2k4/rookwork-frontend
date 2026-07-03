@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { adminApi } from "../../api/services/adminApi";
 import type { AdminStatsResponse } from "../../api/contracts/admin";
-import { TbUsers, TbStack2, TbChecklist, TbCurrencyDollar, TbArrowUpRight, TbArrowDownRight, TbAlertTriangle, TbX, TbCheck, TbCalendar, TbChevronDown } from "react-icons/tb";
+import { UsersIcon, RectangleStackIcon, CheckCircleIcon, CurrencyDollarIcon, ArrowUpRightIcon, ArrowDownRightIcon, ExclamationTriangleIcon, XMarkIcon, CheckIcon, CalendarIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 interface SparklineProps {
@@ -113,9 +113,9 @@ export function AdminOverview() {
   };
 
   const getAlertIcon = (type: string) => {
-    if (type === "warn") return <TbAlertTriangle className="text-amber-600" />;
-    if (type === "err") return <TbX className="text-rose-600" />;
-    return <TbCheck className="text-emerald-600" />;
+    if (type === "warn") return <ExclamationTriangleIcon className="w-4 h-4 text-amber-600" />;
+    if (type === "err") return <XMarkIcon className="w-4 h-4 text-rose-600" />;
+    return <CheckIcon className="w-4 h-4 text-emerald-600" />;
   };
 
   const chartData = stats.userGrowth.map((val, idx) => ({
@@ -148,7 +148,7 @@ export function AdminOverview() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-1.5 border border-neutral-200 bg-white rounded-lg px-3 py-2 text-[13px] font-medium text-neutral-700 cursor-pointer hover:bg-neutral-50 transition-colors"
             >
-              <TbCalendar />{rangeLabels[timeRange]}<TbChevronDown />
+              <CalendarIcon className="w-4 h-4" />{rangeLabels[timeRange]}<ChevronDownIcon className="w-3.5 h-3.5" />
             </button>
             {dropdownOpen && (
               <div className="absolute right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-10 w-44 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -176,18 +176,18 @@ export function AdminOverview() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">Total Users</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-indigo-50 text-indigo-700">
-              <TbUsers size={16} />
+              <UsersIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{stats.totalUsers.toLocaleString()}</div>
           <div className="flex items-center justify-between">
             {userGrowthVal >= 0 ? (
               <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-emerald-600">
-                <TbArrowUpRight />{userGrowthVal}%
+                <ArrowUpRightIcon className="w-3.5 h-3.5" />{userGrowthVal}%
               </span>
             ) : (
               <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-rose-600">
-                <TbArrowDownRight />{Math.abs(userGrowthVal)}%
+                <ArrowDownRightIcon className="w-3.5 h-3.5" />{Math.abs(userGrowthVal)}%
               </span>
             )}
             <div className="w-16 h-6">
@@ -200,18 +200,18 @@ export function AdminOverview() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">Active Workspaces</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-emerald-50 text-emerald-600">
-              <TbStack2 size={16} />
+              <RectangleStackIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{stats.activeWorkspaces.toLocaleString()}</div>
           <div className="flex items-center justify-between">
             {workspaceGrowthVal >= 0 ? (
               <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-emerald-600">
-                <TbArrowUpRight />{workspaceGrowthVal}%
+                <ArrowUpRightIcon className="w-3.5 h-3.5" />{workspaceGrowthVal}%
               </span>
             ) : (
               <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-rose-600">
-                <TbArrowDownRight />{Math.abs(workspaceGrowthVal)}%
+                <ArrowDownRightIcon className="w-3.5 h-3.5" />{Math.abs(workspaceGrowthVal)}%
               </span>
             )}
             <div className="w-16 h-6">
@@ -224,18 +224,18 @@ export function AdminOverview() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">Issues Created / Day</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-amber-50 text-amber-600">
-              <TbChecklist size={16} />
+              <CheckCircleIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{stats.issuesToday.toLocaleString()}</div>
           <div className="flex items-center justify-between">
             {issueGrowthVal >= 0 ? (
               <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-emerald-600">
-                <TbArrowUpRight />{issueGrowthVal}%
+                <ArrowUpRightIcon className="w-3.5 h-3.5" />{issueGrowthVal}%
               </span>
             ) : (
               <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-rose-600">
-                <TbArrowDownRight />{Math.abs(issueGrowthVal)}%
+                <ArrowDownRightIcon className="w-3.5 h-3.5" />{Math.abs(issueGrowthVal)}%
               </span>
             )}
             <div className="w-16 h-6">
@@ -248,12 +248,12 @@ export function AdminOverview() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">MRR</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-indigo-50 text-indigo-700">
-              <TbCurrencyDollar size={16} />
+              <CurrencyDollarIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{fmtCurr(stats.mrr)}</div>
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-emerald-600"><TbArrowUpRight />5.2%</span>
+            <span className="flex items-center gap-0.5 text-[12.5px] font-semibold text-emerald-600"><ArrowUpRightIcon className="w-3.5 h-3.5" />5.2%</span>
             <div className="w-16 h-6">
               <Sparkline data={[60, 62, 65, 63, 68, 70, 76]} color="#6657e6" />
             </div>

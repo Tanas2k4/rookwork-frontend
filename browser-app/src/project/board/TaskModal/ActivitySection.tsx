@@ -17,8 +17,7 @@ import {
 import { tokenStorage } from "../../../api/tokenStorage";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime } from "../../../utils/date";
-import { FiSmile, FiHeart, FiX } from "react-icons/fi";
-import { IoSend } from "react-icons/io5";
+import { FaceSmileIcon, HeartIcon, XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 
 //  Types
 
@@ -147,14 +146,14 @@ function CommentEditor({
             className="hover:text-purple-800 p-1 rounded-md transition"
             title="Emojis"
           >
-            <FiSmile size={16} />
+            <FaceSmileIcon className="w-4 h-4" />
           </button>
           <button
             type="button"
             className="hover:text-purple-800 p-1 rounded-md transition"
             title="Stickers"
           >
-            <FiHeart size={15} />
+            <HeartIcon className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -167,7 +166,7 @@ function CommentEditor({
               className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
               title="Cancel"
             >
-              <FiX size={15} />
+               <XMarkIcon className="w-3.5 h-3.5" />
             </button>
           )}
           <button
@@ -177,7 +176,7 @@ function CommentEditor({
             className={`p-1.5 rounded-full transition ${value.trim() ? "text-purple-800" : "text-gray-300 cursor-not-allowed"}`}
             title="Send"
           >
-            <IoSend size={15} />
+             <PaperAirplaneIcon className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

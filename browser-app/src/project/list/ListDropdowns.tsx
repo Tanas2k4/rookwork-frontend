@@ -1,6 +1,5 @@
 import type { RefObject } from "react";
-import { IoClose } from "react-icons/io5";
-import { MdCheck } from "react-icons/md";
+import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
 import type { Task, TaskWithMeta, User } from "../../types/project";
 import { issueTypeIcons } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
@@ -81,7 +80,7 @@ export function ListDropdowns({
             <button onClick={() => onAssignUser(taskId, null)}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition">
               <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                <IoClose size={14} className="text-gray-500" />
+                <XMarkIcon className="w-3.5 h-3.5 text-gray-500" />
               </div>
               <span className="italic text-gray-500">Unassigned (clear all)</span>
             </button>
@@ -101,7 +100,7 @@ export function ListDropdowns({
                   <span className={`w-4 h-4 rounded flex items-center justify-center border transition shrink-0 ${
                     isSelected ? "bg-purple-900 border-purple-900" : "border-gray-300"
                   }`}>
-                    {isSelected && <MdCheck size={11} className="text-white" />}
+                    {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
                   </span>
                   <img src={u.avt} className="w-6 h-6 rounded-full object-cover shrink-0" />
                   <span className="truncate">{u.display_name}</span>

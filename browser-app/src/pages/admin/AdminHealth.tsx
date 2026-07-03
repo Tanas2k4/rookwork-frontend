@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { adminApi } from "../../api/services/adminApi";
 import type { SystemHealthResponse } from "../../api/contracts/admin";
-import { TbCheck, TbX, TbAlertTriangle, TbActivity } from "react-icons/tb";
+import { CheckIcon, XMarkIcon, ExclamationTriangleIcon, HeartIcon } from "@heroicons/react/24/outline";
 
 export function AdminHealth() {
   const [health, setHealth] = useState<SystemHealthResponse | null>(null);
@@ -50,9 +50,9 @@ export function AdminHealth() {
   }
 
   const getLogIcon = (type: string) => {
-    if (type === "err") return <TbX className="text-rose-600" />;
-    if (type === "warn") return <TbAlertTriangle className="text-amber-600" />;
-    return <TbCheck className="text-emerald-600" />;
+    if (type === "err") return <XMarkIcon className="w-4 h-4 text-rose-600" />;
+    if (type === "warn") return <ExclamationTriangleIcon className="w-4 h-4 text-amber-600" />;
+    return <CheckIcon className="w-4 h-4 text-emerald-600" />;
   };
 
   return (
@@ -116,7 +116,7 @@ export function AdminHealth() {
               <div className="font-bold text-[14.5px] text-neutral-850">Live Server Resources (Actuator API)</div>
               <div className="text-xs text-neutral-400 mt-0.5">Refreshed every 5s</div>
             </div>
-            <TbActivity size={18} className="text-indigo-600 animate-pulse" />
+            <HeartIcon className="text-indigo-600 animate-pulse w-[18px] h-[18px]" />
           </div>
           <div className="flex flex-col gap-4">
             <div>

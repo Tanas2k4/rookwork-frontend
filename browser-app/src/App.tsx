@@ -39,6 +39,7 @@ function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [projects, setProjects] = useState<ProjectUI[]>([]);
   const [profileName, setProfileName] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [systemRole, setSystemRole] = useState<string>("USER");
   const reloadProjects = () => {
@@ -57,6 +58,7 @@ function App() {
       Promise.all([userApi.getMe(), projectApi.getAll()])
         .then(([user, projectsRes]) => {
           setProfileName(user.profileName);
+          setEmail(user.email ?? "");
           setAvatarUrl(user.picture ?? undefined);
           setSystemRole(user.systemRole ?? "USER");
           setProjects(
@@ -87,6 +89,7 @@ function App() {
     setLoggedIn(false);
     setProjects([]);
     setProfileName("");
+    setEmail("");
     setAvatarUrl(undefined);
     setSystemRole("USER");
   };
@@ -125,6 +128,7 @@ function App() {
                 <Header
                   setSidebar={setSidebar}
                   displayName={profileName}
+                  email={email}
                   avatarUrl={avatarUrl}
                   onLogout={handleLogout}
                   onProjectCreated={handleProjectCreated}

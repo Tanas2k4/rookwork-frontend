@@ -1,11 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import {
-  MdAdd,
-  MdClose,
-  MdKeyboardArrowDown,
-  MdChevronRight,
-} from "react-icons/md";
-import type { Task } from "../../../types/project";
+import { PlusIcon, XMarkIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import type { Task, TaskWithMeta } from "../../../types/project";
 import {
   statusMap,
   issueTypeIcons,
@@ -47,23 +42,23 @@ export function DependenciesSection({
 
   const dependencies = useMemo(() => {
     return allTasks.filter((t) => {
-      const tUuid = (t as Task & { _uuid?: string })._uuid;
+      const tUuid = (t as TaskWithMeta)._uuid;
       return tUuid && dependencyIds.includes(tUuid);
     });
   }, [allTasks, dependencyIds]);
 
   const candidates = useMemo(() => {
     return allTasks.filter((t) => {
-      const tUuid = (t as Task & { _uuid?: string })._uuid;
+      const tUuid = (t as TaskWithMeta)._uuid;
       if (!tUuid) return false;
-      if (t.id === task.id || tUuid === (task as Task & { _uuid?: string })._uuid) return false; // exclude self
+      if (t.id === task.id || tUuid === (task as TaskWithMeta)._uuid) return false; // exclude self
       if (dependencyIds.includes(tUuid)) return false; // exclude already selected
       if (search.trim()) {
         return t.title.toLowerCase().includes(search.toLowerCase());
       }
       return true;
     });
-  }, [allTasks, task.id, (task as Task & { _uuid?: string })._uuid, dependencyIds, search]);
+  }, [allTasks, task.id, (task as TaskWithMeta)._uuid, dependencyIds, search]);
 
   const handleAddDependency = (uuid: string) => {
     const newDeps = [...dependencyIds, uuid];
@@ -85,9 +80,9 @@ export function DependenciesSection({
           className="flex items-center gap-1 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
         >
           {expanded ? (
-            <MdKeyboardArrowDown size={14} />
+            <ChevronDownIcon className="w-3.5 h-3.5" />
           ) : (
-            <MdChevronRight size={14} />
+            <ChevronRightIcon className="w-3.5 h-3.5" />
           )}
           Depends On ({dependencies.length})
         </button>
@@ -100,7 +95,7 @@ export function DependenciesSection({
             }}
             className="flex items-center gap-0.5 text-xs text-purple-700 hover:text-purple-900 transition"
           >
-            <MdAdd size={13} />
+            <PlusIcon className="w-3.5 h-3.5" />
             Add Dependency
           </button>
           {showLinkDd && (
@@ -125,11 +120,11 @@ export function DependenciesSection({
                     candidates.map((c) => {
                       const cit = c.issueType;
                       const Icon = issueTypeIcons[cit?.iconKey || "task"] || issueTypeIcons.task;
-                      const tUuid = (c as Task & { _uuid?: string })._uuid;
+                      const tUuid = (c as TaskWithMeta)._uuid;
                       return (
                         <button
                           key={c.id}
-                          onClick={() => handleAddDependency(tUuid)}
+                          onClick={() => tUuid && handleAddDependency(tUuid)}
                           className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700 truncate"
                           title={c.title}
                         >
@@ -160,7 +155,7 @@ export function DependenciesSection({
             dependencies.map((depTask) => {
               const cit = depTask.issueType;
               const Icon = issueTypeIcons[cit?.iconKey || "task"] || issueTypeIcons.task;
-              const depUuid = (depTask as Task & { _uuid?: string })._uuid;
+              const depUuid = (depTask as TaskWithMeta)._uuid;
               
               // Get status display
               const currentStatus = statusMap[depTask.status] || { label: "To Do", badgeColor: "bg-gray-100 text-gray-800" };
@@ -188,11 +183,11 @@ export function DependenciesSection({
                       {currentStatus.label}
                     </span>
                     <button
-                      onClick={() => handleRemoveDependency(depUuid)}
+                      onClick={() => depUuid && handleRemoveDependency(depUuid)}
                       className="opacity-0 group-hover/child:opacity-100 text-gray-300 hover:text-red-400 transition"
                       title="Remove dependency"
                     >
-                      <MdClose size={13} />
+                      <XMarkIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

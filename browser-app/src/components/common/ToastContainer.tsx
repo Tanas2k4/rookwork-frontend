@@ -4,7 +4,7 @@
  * @author Warmdrobe
  */
 
-import { MdCheckCircle, MdClose } from "react-icons/md";
+import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import type { Toast } from "../../types/project";
 
 interface Props {
@@ -30,13 +30,13 @@ export function ToastContainer({ toasts, onRemove }: Props) {
                 : "bg-blue-600"
           }`}
         >
-          <MdCheckCircle size={16} />
+          <CheckCircleIcon className="w-4 h-4" />
           {t.message}
           <button
             onClick={() => onRemove(t.id)}
             className="ml-2 opacity-70 hover:opacity-100"
           >
-            <MdClose size={14} />
+            <XMarkIcon className="w-3.5 h-3.5" />
           </button>
         </div>
       ))}

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-body: "Inter", sans-serif;
-  --font-heading: "Inter", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-heading: "IBM Plex Sans", sans-serif;
 }
 
 body {

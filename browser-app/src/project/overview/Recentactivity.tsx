@@ -17,7 +17,7 @@ export default function RecentActivity({ data }: { data: OverviewData }) {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 ">
       <h2 className="text-sm font-semibold text-gray-800 mb-4">
         Recent Activity
       </h2>

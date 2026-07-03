@@ -1,6 +1,4 @@
-import { IoCloseSharp } from "react-icons/io5";
-import { BiCopy } from "react-icons/bi";
-import { FiMinus } from "react-icons/fi";
+import { XMarkIcon, MinusIcon, Square2StackIcon } from "@heroicons/react/24/outline";
 
 function Titlebar() {
   if (!window.electron) return null;
@@ -20,7 +18,7 @@ function Titlebar() {
           className="h-full w-10 flex items-center justify-center
              text-gray-400 hover:text-white hover:bg-white/10"
         >
-          <FiMinus size={14} />
+          <MinusIcon className="w-3.5 h-3.5" />
         </button>
 
         <button
@@ -28,7 +26,7 @@ function Titlebar() {
           className="h-full w-10 flex items-center justify-center
              text-gray-400 hover:text-white hover:bg-white/10"
         >
-          <BiCopy size={14} />
+          <Square2StackIcon className="w-3.5 h-3.5" />
         </button>
 
         <button
@@ -36,7 +34,7 @@ function Titlebar() {
           className="h-full w-10 flex items-center justify-center
              text-gray-400 hover:text-white hover:bg-red-600"
         >
-          <IoCloseSharp size={16} />
+          <XMarkIcon className="w-4 h-4" />
         </button>
       </div>
     </div>

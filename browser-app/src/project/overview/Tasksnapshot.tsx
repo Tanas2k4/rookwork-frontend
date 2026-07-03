@@ -31,7 +31,7 @@ export default function TaskSnapshot({ data }: { data: OverviewData }) {
   const { totalTasks, doneTasks, overdueCount, dueSoonCount, attentionTasks } = data;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm col-span-2">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6  col-span-2">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-gray-800">Task Snapshot</h2>
         <button className="text-xs text-gray-700 border border-gray-500 font-semibold hover:bg-gray-100 px-2.5 py-1 rounded-md transition-colors">

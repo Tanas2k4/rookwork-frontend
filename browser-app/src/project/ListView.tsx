@@ -1,7 +1,4 @@
-import { IoSearchSharp } from "react-icons/io5";
-import { LiaSortSolid } from "react-icons/lia";
-import { FaCaretDown } from "react-icons/fa";
-import { MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { MagnifyingGlassIcon, BarsArrowDownIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useContext } from "react";
 import { useListView } from "../hooks/useListView";
 import { ListFilterPanel } from "./list/ListFilterPanel";
@@ -32,7 +29,7 @@ export default function ListView() {
         {/* Toolbar */}
         <div className="flex items-center gap-3 mb-5">
           <div className="relative w-80">
-            <IoSearchSharp className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
             <input
               type="text"
               placeholder="Search"
@@ -77,7 +74,7 @@ export default function ListView() {
                       <div className="flex items-center justify-between">
                         <span>{h}</span>
                         <button className="p-1 hover:bg-gray-300 rounded transition">
-                          <LiaSortSolid size={14} />
+                          <BarsArrowDownIcon className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </th>
@@ -133,7 +130,7 @@ export default function ListView() {
                             })()}
                             <button onClick={(e) => lv.openDropdownWithPosition(e, "type", task._uuid)}
                               className="p-1 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition">
-                              <FaCaretDown className="text-gray-500" />
+                              <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                             </button>
                           </div>
                         </td>
@@ -165,7 +162,7 @@ export default function ListView() {
                             )}
                             <button onClick={(e) => lv.openDropdownWithPosition(e, "user", task._uuid)}
                               className="p-1 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition">
-                              <FaCaretDown className="text-gray-500" />
+                              <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                             </button>
                           </div>
                         </td>
@@ -198,7 +195,7 @@ export default function ListView() {
                             </span>
                             <button onClick={(e) => lv.openDropdownWithPosition(e, "status", task._uuid)}
                               className="p-1 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition">
-                              <FaCaretDown className="text-gray-500" />
+                              <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                             </button>
                           </div>
                         </td>
@@ -240,7 +237,7 @@ export default function ListView() {
                 disabled={lv.currentPage === 1}
                 className="px-2.5! py-2!"
               >
-                <MdChevronLeft size={18} />
+                <ChevronLeftIcon className="w-4.5 h-4.5" />
               </Button>
 
               {/* Page numbers */}
@@ -282,7 +279,7 @@ export default function ListView() {
                 disabled={lv.currentPage === lv.totalPages}
                 className="px-2.5! py-2!"
               >
-                <MdChevronRight size={18} />
+                <ChevronRightIcon className="w-4.5 h-4.5" />
               </Button>
             </div>
           </div>

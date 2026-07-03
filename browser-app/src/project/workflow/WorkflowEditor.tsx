@@ -5,11 +5,7 @@
  */
 
 import { useState, useEffect } from "react";
-import {
-  MdClose,
-  MdSettingsBackupRestore,
-  MdSwapCalls,
-} from "react-icons/md";
+import { XMarkIcon, ArrowPathIcon, ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
 import type { WorkflowResponse, AddTransitionRequest } from "../../api/contracts/workflow";
 
@@ -120,7 +116,7 @@ export function WorkflowEditor({
         {/* Header */}
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2 text-indigo-600">
-            <MdSwapCalls size={24} />
+            <ArrowsRightLeftIcon className="w-6 h-6 text-indigo-650" />
             <h3 className="font-semibold text-gray-800 text-lg">
               Project Workflow Rules
             </h3>
@@ -129,7 +125,7 @@ export function WorkflowEditor({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-lg transition"
           >
-            <MdClose size={20} />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -164,7 +160,7 @@ export function WorkflowEditor({
               type="button"
               className="text-xs px-3 py-1.5 bg-gray-100/90 hover:bg-gray-200 text-gray-700 rounded-md transition flex items-center gap-1.5"
             >
-              <MdSettingsBackupRestore size={14} />
+              <ArrowPathIcon className="w-3.5 h-3.5" />
               Reset to Open (Allow all)
             </button>
             <button
@@ -172,7 +168,7 @@ export function WorkflowEditor({
               type="button"
               className="text-xs font-semibold px-3 py-1.5 bg-gray-200 hover:bg-gray-200/90 text-gray-800 rounded-md transition flex items-center gap-1.5"
             >
-              <MdSwapCalls size={14} />
+              <ArrowsRightLeftIcon className="w-3.5 h-3.5" />
               Apply Linear Path (Left ⇆ Right)
             </button>
           </div>

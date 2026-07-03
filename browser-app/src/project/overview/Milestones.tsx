@@ -20,7 +20,7 @@ export default function Milestones({ data, animated }: { data: OverviewData; ani
   const completed = milestones.filter((m) => m.status === "done").length;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm col-span-3">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6  col-span-3">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-gray-800">Milestones</h2>
         <span className="text-xs text-gray-400">{completed}/{milestones.length} completed</span>
