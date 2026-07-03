@@ -1,10 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { FiCheck, FiX } from "react-icons/fi";
+import { CheckIcon, XMarkIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import { userApi } from "../../api/services/userApi";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
-import { FaCheckCircle } from "react-icons/fa";
-import { AiFillCloseCircle } from "react-icons/ai";
 import type { UserSummary } from "../../api/contracts/issue";
 import { OtpInput } from "../common/OtpInput";
 
@@ -193,8 +191,8 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
                   {passwordChecks.map((check) => (
                     <li key={check.label} className="flex items-center gap-2 text-xs">
                       {check.met
-                        ? <FaCheckCircle className="text-green-700 shrink-0" size={14} />
-                        : <AiFillCloseCircle   className="text-red-600 shrink-0" size={15} />
+                        ? <CheckCircleIcon className="text-green-700 shrink-0 w-3.5 h-3.5" />
+                        : <XCircleIcon className="text-red-600 shrink-0 w-3.5 h-3.5" />
                       }
                       <span className={check.met ? "text-green-700" : "text-gray-500"}>{check.label}</span>
                     </li>
@@ -215,12 +213,12 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
             />
             {confirmPassword.length > 0 && !passwordsMatch && (
               <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
-                <FiX size={12} /> Passwords do not match
+                <XMarkIcon className="w-3 h-3 text-red-500" /> Passwords do not match
               </p>
             )}
             {passwordsMatch && (
               <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
-                <FiCheck size={12} /> Passwords match
+                <CheckIcon className="w-3 h-3 text-green-600" /> Passwords match
               </p>
             )}
           </div>

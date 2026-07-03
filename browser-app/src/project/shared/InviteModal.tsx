@@ -5,11 +5,14 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { LuComponent, LuUndo2 } from "react-icons/lu";
-import { IoClose } from "react-icons/io5";
-import { IoIosArrowDown } from "react-icons/io";
-import { GiLinkedRings } from "react-icons/gi";
-import { RxCopy } from "react-icons/rx";
+import {
+  CubeTransparentIcon,
+  ArrowUturnLeftIcon,
+  XMarkIcon,
+  ChevronDownIcon,
+  LinkIcon,
+  ClipboardDocumentIcon,
+} from "@heroicons/react/24/outline";
 import type { ProjectResponse } from "../../api/contracts/project";
 import type { UserSummary } from "../../api/contracts/issue";
 import { userApi } from "../../api/services/userApi";
@@ -290,7 +293,7 @@ export default function InviteModal({
           <div className="flex items-start gap-4">
             {/* App icon */}
             <div className="items-center justify-center w-12 h-12 rounded-xl text-white bg-sky-700 flex  shrink-0">
-              <LuComponent size={26} />
+              <CubeTransparentIcon className="w-6.5 h-6.5" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900 leading-snug">
@@ -305,7 +308,7 @@ export default function InviteModal({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-full transition-colors ml-2 shrink-0"
           >
-            <IoClose size={18} />
+            <XMarkIcon className="w-[18px] h-[18px]" />
           </button>
         </div>
 
@@ -315,7 +318,7 @@ export default function InviteModal({
             <div className="flex items-center justify-between  border border-gray-200 rounded-xl px-4 py-3 bg-gray-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center shrink-0">
-                  <GiLinkedRings />
+                  <LinkIcon className="w-5 h-5 text-gray-500" />
                 </div>
                 <div className="min-w-0">
                   <div className="relative">
@@ -324,7 +327,7 @@ export default function InviteModal({
                       className="flex items-center gap-1 text-sm font-semibold text-gray-800"
                     >
                       {linkAccess}
-                      <IoIosArrowDown />
+                      <ChevronDownIcon className="w-4 h-4 text-gray-500" />
                     </button>
                     {linkDropdown && (
                       <div className="absolute left-0 mt-1 w-60 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
@@ -362,7 +365,7 @@ export default function InviteModal({
                 className="flex items-center justify-center gap-1.5 w-22.5 text-sm text-gray-700 rounded-lg py-1.5 
                 border border-gray-200 bg-gray-100 hover:bg-gray-50 transition-colors cursor-pointer shrink-0"
               >
-                <RxCopy />
+                <ClipboardDocumentIcon className="w-4 h-4" />
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
@@ -492,7 +495,7 @@ export default function InviteModal({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-bold text-green-700   py-0.5 rounded-full tracking-wider shrink-0">
+                          <span className="text-xs font-medium text-green-700 py-0.5 tracking-wider shrink-0">
                             Pending
                           </span>
                           {isCurrentUserOwner && (
@@ -501,7 +504,7 @@ export default function InviteModal({
                               className="text-[11px] font-bold text-red-600 hover:text-red-400  px-1 py-0.5 rounded-md  transition-colors cursor-pointer shrink-0"
                               title="Invoke"
                             >
-                              <LuUndo2 size={15} />
+                              <ArrowUturnLeftIcon className="w-3.75 h-3.75" />
                             </button>
                           )}
                         </div>
@@ -519,15 +522,15 @@ export default function InviteModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 text-sm  text-gray-700 border border-gray-250 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+              className="flex items-center gap-2 text-sm active:text-gray-500 text-gray-700 border border-gray-250 rounded-lg px-4 py-1.5 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
             >
-              <RxCopy />
+              <ClipboardDocumentIcon className="w-4 h-4" />
               Copy link
             </button>
           </div>
           <button
             onClick={onClose}
-            className="bg-purple-800 hover:bg-purple-900 active:bg-purple-950 text-white text-sm px-6 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
+            className="bg-purple-900 hover:bg-purple-800 active:bg-purple-950 text-white text-sm px-6 py-1.5 rounded-lg transition-colors shadow-sm cursor-pointer"
           >
             Done
           </button>

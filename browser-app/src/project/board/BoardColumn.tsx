@@ -5,8 +5,7 @@
  */
 
 import { useState, useRef, useEffect, startTransition } from "react";
-import { MdAdd, MdCheck, MdClose, MdDeleteOutline } from "react-icons/md";
-import { GoGoal } from "react-icons/go";
+import { PlusIcon, CheckIcon, XMarkIcon, TrashIcon, FlagIcon } from "@heroicons/react/24/outline";
 import { useDrop, useDrag } from "react-dnd";
 import type { Task, TaskWithMeta, Status, TaskType, Priority } from "../../types/project";
 import { statusMap } from "../../types/project";
@@ -332,22 +331,22 @@ export function BoardColumn({
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={handleRenameKeyDown}
                 disabled={renameSaving}
-                className="flex-1 min-w-0 text-sm font-semibold bg-white border border-indigo-400 rounded px-2 py-0.5
-            focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-800"
+                className="flex-1 min-w-0 text-sm font-semibold bg-white border border-gray-500 rounded px-2 py-0.5
+            focus:outline-none focus:ring-1 focus:ring-purple-400 focus:border-purple-500 text-gray-800"
                 maxLength={50}
               />
               <button
                 onClick={commitRename}
                 disabled={renameSaving}
-                className="text-indigo-600 hover:text-indigo-800 p-0.5 disabled:opacity-40"
+                className="text-green-600 hover:text-green-800 p-0.5 disabled:opacity-40"
               >
-                <MdCheck size={16} />
+                 <CheckIcon className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setRenaming(false)}
                 className="text-gray-400 hover:text-gray-600 p-0.5"
               >
-                <MdClose size={14} />
+                 <XMarkIcon className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
@@ -371,11 +370,10 @@ export function BoardColumn({
           )}
 
           {status === "done" && !renaming && (
-            <GoGoal
-              className="text-green-600 shrink-0"
-              size={16}
-              title="Goal Column"
-            />
+             <FlagIcon
+               className="text-green-600 shrink-0 w-4 h-4"
+               title="Goal Column"
+             />
           )}
         </div>
 
@@ -386,7 +384,7 @@ export function BoardColumn({
         opacity-0 group-hover:opacity-100"
             title="Delete column"
           >
-            <MdDeleteOutline size={18} />
+             <TrashIcon className="w-4.5 h-4.5" />
           </button>
         )}
         {/* Actions container */}
@@ -397,7 +395,7 @@ export function BoardColumn({
               className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition"
               title="Add task"
             >
-              <MdAdd size={18} />
+               <PlusIcon className="w-4.5 h-4.5" />
             </button>
           </div>
         )}

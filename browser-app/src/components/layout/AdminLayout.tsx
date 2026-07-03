@@ -5,7 +5,15 @@ import { AdminWorkspaces } from "../../pages/admin/AdminWorkspaces";
 import { AdminBilling } from "../../pages/admin/AdminBilling";
 import { AdminHealth } from "../../pages/admin/AdminHealth";
 import { AdminSettings } from "../../pages/admin/AdminSettings";
-import { TbLayoutDashboard, TbUsers, TbStack2, TbCreditCard, TbActivity, TbSettings, TbLogout } from "react-icons/tb";
+import {
+  HomeIcon,
+  UsersIcon,
+  RectangleStackIcon,
+  CreditCardIcon,
+  HeartIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+} from "@heroicons/react/24/outline";
 import { avatarUrl as helperAvatarUrl } from "../../utils/avatar";
 import { adminApi } from "../../api/services/adminApi";
 
@@ -55,11 +63,11 @@ export function AdminLayout({ profileName, avatarUrl, systemRole, onLogout }: Ad
   };
 
   const menuItems: { view: "overview" | "users" | "workspaces" | "billing" | "health"; label: string; icon: React.ReactNode; count?: string }[] = [
-    { view: "overview", label: "Overview", icon: <TbLayoutDashboard /> },
-    { view: "users", label: "Users", icon: <TbUsers />, count: stats ? stats.totalUsers.toLocaleString() : "..." },
-    { view: "workspaces", label: "Workspaces", icon: <TbStack2 />, count: stats ? stats.activeWorkspaces.toLocaleString() : "..." },
-    { view: "billing", label: "Billing & Plans", icon: <TbCreditCard /> },
-    { view: "health", label: "System Health", icon: <TbActivity />, count: "OK" },
+    { view: "overview", label: "Overview", icon: <HomeIcon className="w-4.5 h-4.5" /> },
+    { view: "users", label: "Users", icon: <UsersIcon className="w-4.5 h-4.5" />, count: stats ? stats.totalUsers.toLocaleString() : "..." },
+    { view: "workspaces", label: "Workspaces", icon: <RectangleStackIcon className="w-4.5 h-4.5" />, count: stats ? stats.activeWorkspaces.toLocaleString() : "..." },
+    { view: "billing", label: "Billing & Plans", icon: <CreditCardIcon className="w-4.5 h-4.5" /> },
+    { view: "health", label: "System Health", icon: <HeartIcon className="w-4.5 h-4.5" />, count: "OK" },
   ];
 
   return (
@@ -104,7 +112,7 @@ export function AdminLayout({ profileName, avatarUrl, systemRole, onLogout }: Ad
             }`}
             onClick={() => setActiveView("settings")}
           >
-            <span className="text-lg"><TbSettings /></span>
+            <span className="text-lg"><Cog6ToothIcon className="w-4.5 h-4.5" /></span>
             System Settings
           </div>
           
@@ -112,7 +120,7 @@ export function AdminLayout({ profileName, avatarUrl, systemRole, onLogout }: Ad
             className="flex items-center gap-2.5 p-[9px_10px] rounded-lg text-[13.5px] font-medium transition-colors cursor-pointer mt-4 text-rose-600 hover:bg-rose-50"
             onClick={onLogout}
           >
-            <span className="text-lg"><TbLogout /></span>
+            <span className="text-lg"><ArrowRightOnRectangleIcon className="w-4.5 h-4.5" /></span>
             Sign Out
           </div>
         </nav>

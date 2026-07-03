@@ -1,6 +1,5 @@
 import type { RefObject } from "react";
-import { CiFilter } from "react-icons/ci";
-import { MdKeyboardArrowDown } from "react-icons/md";
+import { FunnelIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
 import type { User } from "../../types/project";
 
@@ -44,12 +43,12 @@ export function ListFilterPanel({
       <button onClick={onToggle}
         className={`flex items-center gap-2 px-3 py-1.5 border rounded-md border-gray-500 text-sm transition
           ${hasActiveFilters ? "border-purple-500 bg-purple-50 text-purple-700" : "border-gray-300 hover:bg-gray-50 text-gray-700"}`}>
-        <CiFilter size={16} />
+        <FunnelIcon className="w-4 h-4" />
         Filter
         {hasActiveFilters && (
           <span className="bg-purple-500 text-white text-xs px-1.5 rounded-full">{count}</span>
         )}
-        <MdKeyboardArrowDown className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDownIcon className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import {
   DAYS,
   MONTHS,
@@ -72,13 +72,13 @@ export default function MiniCalendar({
             onClick={onPrevMonth}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-800 transition"
           >
-            <HiChevronLeft size={16} />
+            <ChevronLeftIcon className="w-4 h-4" />
           </button>
           <button
             onClick={onNextMonth}
             className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-800 transition"
           >
-            <HiChevronRight size={16} />
+            <ChevronRightIcon className="w-4 h-4" />
           </button>
         </div>
 

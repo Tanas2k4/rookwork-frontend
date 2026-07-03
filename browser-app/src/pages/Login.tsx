@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import LoginBackground from "../assets/login-background.jpg";
-import { IoIosLogIn } from "react-icons/io";
-import { IoMailOutline } from "react-icons/io5";
-import { TbLock } from "react-icons/tb";
+import { ArrowRightOnRectangleIcon, EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
@@ -196,8 +194,8 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
                 : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
             }`}
           >
-            <IoMailOutline
-              className={`text-[16px] transition-colors ${isEmailError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`}
+            <EnvelopeIcon
+              className={`text-[16px] w-4.5 h-4.5 transition-colors ${isEmailError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`}
             />
             <input
               className="w-full bg-transparent text-[14px] outline-none"
@@ -217,8 +215,8 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
                 : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
             }`}
           >
-            <TbLock
-              className={`text-[16px] transition-colors ${isPasswordError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`}
+            <LockClosedIcon
+              className={`text-[16px] w-4.5 h-4.5 transition-colors ${isPasswordError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`}
             />
             <input
               type="password"
@@ -255,7 +253,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
             {loading ? (
               <span className="text-xs tracking-widest">...</span>
             ) : (
-              <IoIosLogIn size={22} />
+              <ArrowRightOnRectangleIcon className="w-5.5 h-5.5" />
             )}
           </button>
         </div>

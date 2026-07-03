@@ -17,22 +17,14 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Typography from "@tiptap/extension-typography";
 import { useEffect, useState } from "react";
 import {
-  FiBold,
-  FiItalic,
-  FiUnderline,
-  FiList,
-  FiCheckSquare,
-  FiCode,
-  FiRotateCcw,
-  FiRotateCw,
-} from "react-icons/fi";
-import {
-  MdFormatListNumbered,
-  MdStrikethroughS,
-  MdOutlineFormatColorText,
-  MdFormatColorFill,
-} from "react-icons/md";
-import { FaCode } from "react-icons/fa6";
+  BoldIcon,
+  ListBulletIcon,
+  CheckCircleIcon,
+  CodeBracketIcon,
+  CodeBracketSquareIcon,
+  ArrowUturnLeftIcon,
+  ArrowUturnRightIcon,
+} from "@heroicons/react/24/outline";
 
 interface RichTextEditorProps {
   initialValue: string;
@@ -159,7 +151,7 @@ export function RichTextEditor({
             }`}
             title="Bold (Ctrl+B)"
           >
-            <FiBold size={15} />
+            <BoldIcon className="w-[15px] h-[15px]" />
           </button>
 
           {/* Italic */}
@@ -173,7 +165,7 @@ export function RichTextEditor({
             }`}
             title="Italic (Ctrl+I)"
           >
-            <FiItalic size={15} />
+            <span className="text-[13px] font-italic font-serif">I</span>
           </button>
 
           {/* Underline */}
@@ -187,7 +179,7 @@ export function RichTextEditor({
             }`}
             title="Underline (Ctrl+U)"
           >
-            <FiUnderline size={15} />
+            <span className="text-[13px] underline">U</span>
           </button>
 
           {/* Strike */}
@@ -201,7 +193,7 @@ export function RichTextEditor({
             }`}
             title="Strikethrough"
           >
-            <MdStrikethroughS size={17} />
+            <span className="text-[13px] line-through">S</span>
           </button>
 
           <div className="w-px h-4 bg-gray-300 mx-1" />
@@ -263,7 +255,7 @@ export function RichTextEditor({
             }`}
             title="Bullet List"
           >
-            <FiList size={15} />
+            <ListBulletIcon className="w-[15px] h-[15px]" />
           </button>
 
           {/* Numbered List */}
@@ -277,7 +269,7 @@ export function RichTextEditor({
             }`}
             title="Numbered List"
           >
-            <MdFormatListNumbered size={17} />
+            <span className="text-[13px] font-mono">1.</span>
           </button>
 
           {/* Task List */}
@@ -291,7 +283,7 @@ export function RichTextEditor({
             }`}
             title="Task List / Checklist"
           >
-            <FiCheckSquare size={15} />
+            <CheckCircleIcon className="w-[15px] h-[15px]" />
           </button>
 
           <div className="w-px h-4 bg-gray-300 mx-1" />
@@ -311,7 +303,7 @@ export function RichTextEditor({
               }`}
               title="Text Color"
             >
-              <MdOutlineFormatColorText size={17} />
+              <span className="text-[13px] font-bold" style={{ color: 'currentColor' }}>A</span>
             </button>
             {textColorOpen && (
               <div className="absolute left-0 mt-1 p-1.5 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex gap-1">
@@ -358,7 +350,7 @@ export function RichTextEditor({
               }`}
               title="Highlight Color"
             >
-              <MdFormatColorFill size={17} />
+              <span className="text-[13px] font-bold bg-yellow-200 px-0.5 leading-none">A</span>
             </button>
             {highlightOpen && (
               <div className="absolute left-0 mt-1 p-1.5 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex gap-1">
@@ -407,7 +399,7 @@ export function RichTextEditor({
             }`}
             title="Inline Code"
           >
-            <FaCode size={17} />
+            <CodeBracketIcon className="w-[17px] h-[17px]" />
           </button>
 
           {/* Code Block */}
@@ -421,7 +413,7 @@ export function RichTextEditor({
             }`}
             title="Code Block"
           >
-            <FiCode size={15} />
+            <CodeBracketSquareIcon className="w-[15px] h-[15px]" />
           </button>
         </div>
 
@@ -434,7 +426,7 @@ export function RichTextEditor({
             className="p-1.5 rounded text-gray-500 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent transition"
             title="Undo"
           >
-            <FiRotateCcw size={15} />
+            <ArrowUturnLeftIcon className="w-[15px] h-[15px]" />
           </button>
           <button
             type="button"
@@ -443,7 +435,7 @@ export function RichTextEditor({
             className="p-1.5 rounded text-gray-500 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent transition"
             title="Redo"
           >
-            <FiRotateCw size={15} />
+            <ArrowUturnRightIcon className="w-[15px] h-[15px]" />
           </button>
         </div>
       </div>

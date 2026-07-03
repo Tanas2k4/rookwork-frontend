@@ -67,7 +67,7 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
       )}
 
       {/* Title */}
-      <div className="flex items-start gap-2.5 mb-3">
+      <div className="flex items-start gap-2.5 mb-2">
         <TypeIcon style={{ color: typeColor }} className="mt-0.5 shrink-0" />
         <span className="text-[14px] font-medium text-gray-800 flex-1 leading-snug">
           {task.title}
@@ -75,9 +75,9 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
       </div>
 
       {/* Meta */}
-      <div className="space-y-2 ml-5">
+      <div className="space-y-2">
         {task.assigned_to.length > 0 ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
               {task.assigned_to.slice(0, 2).map((u, i) => (
                 <img key={i} src={u.avt} title={u.display_name} className="w-5 h-5 rounded-full object-cover border-2 border-white shrink-0" />
@@ -98,11 +98,11 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
           <span className="text-[12px] text-gray-300 italic">Unassigned</span>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-2">
             {/* Subtask counter */}
             <div className="flex items-center gap-1 text-gray-400">
-              <TbSubtask size={13} />
+              <TbSubtask  className="w-3.5 h-3.5" />
               <span className="text-[12px] bg-gray-100 px-1.5 rounded-full">
                 {doneCount}/{task.subtasks.length}
               </span>
@@ -113,7 +113,7 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
                 {task.type === "epic" ? (
                   <FaBook size={9} className="text-emerald-700 shrink-0" />
                 ) : (
-                  <FaTasks size={9} className="text-blue-700 shrink-0" />
+                  <FaTasks size={9} className="text-gray-500 shrink-0" />
                 )}
                 <span className="text-[10px] font-semibold">{task.childIds!.length}</span>
               </span>
@@ -129,7 +129,7 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
       </div>
 
       {/* Priority bar */}
-      <div className="flex gap-0.5 h-1 mt-3 ml-5">
+      <div className="flex gap-0.5 h-1 mt-3 ">
         {priorities.map((p, i) => (
           <div
             key={p}

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { MdClose } from "react-icons/md";
-import { FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import { XMarkIcon, EllipsisVerticalIcon, TrashIcon } from "@heroicons/react/24/outline";
 import type { Task } from "../../../types/project";
 import {
   typeLabelMap,
@@ -102,7 +101,7 @@ export function TaskModalHeader({
             }`}
             title="Actions"
           >
-            <FiMoreVertical size={15} />
+            <EllipsisVerticalIcon className="w-4 h-4" />
           </button>
           {menuOpen && (
             <>
@@ -118,7 +117,7 @@ export function TaskModalHeader({
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition flex items-center gap-2"
                 >
-                  <FiTrash2 size={15} />
+                  <TrashIcon className="w-4 h-4" />
                   Delete issue
                 </button>
               </div>
@@ -129,7 +128,7 @@ export function TaskModalHeader({
           onClick={onClose}
           className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition shrink-0"
         >
-          <MdClose size={20} />
+          <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
 

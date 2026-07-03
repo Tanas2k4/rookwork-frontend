@@ -18,7 +18,7 @@ import { workLogApi } from "../../../api/services/workLogApi";
 import { tokenStorage } from "../../../api/tokenStorage";
 import type { WorkLogResponse } from "../../../api/contracts/worklog";
 import type { AttachmentResponse } from "../../../api/contracts/attachment";
-import { RiTimeLine } from "react-icons/ri";
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime, toDatetimeLocal } from "../../../utils/date";
 import DOMPurify from "dompurify";
@@ -228,9 +228,8 @@ function LogWorkSection({ task }: { task: Task }) {
                 {/* Computed hours preview */}
                 {computedHours !== null && computedHours > 0 && (
                   <div className="flex items-center gap-2 bg-purple-50 rounded-lg px-2.5 py-1.5 border border-purple-100">
-                    <RiTimeLine
-                      size={13}
-                      className="text-purple-500 shrink-0"
+                    <ClockIcon
+                      className="text-purple-500 shrink-0 w-3.5 h-3.5"
                     />
                     <span className="text-xs text-purple-700 font-medium">
                       {computedHours.toFixed(2)} hours
@@ -260,7 +259,7 @@ function LogWorkSection({ task }: { task: Task }) {
                   disabled={loading || !computedHours || computedHours <= 0}
                   className="w-full flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-60 text-white text-xs font-medium py-2 rounded-lg transition"
                 >
-                  <RiTimeLine size={13} />
+                  <ClockIcon className="w-3.5 h-3.5" />
                   {loading ? "Logging..." : success ? "✓ Logged!" : "Log Work"}
                 </button>
               </>

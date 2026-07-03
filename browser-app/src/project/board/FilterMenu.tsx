@@ -1,6 +1,5 @@
 import { useRef, useEffect, useContext } from "react";
-import { CiFilter } from "react-icons/ci";
-import { MdKeyboardArrowDown } from "react-icons/md";
+import { FunnelIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import type { TaskType, Priority } from "../../types/project";
 import {
   priorities,
@@ -51,14 +50,14 @@ export function FilterMenu({
             : "border-gray-500 text-gray-700"
         }`}
       >
-        <CiFilter size={16} />
+        <FunnelIcon className="w-4 h-4" />
         Filters
         {activeFilters > 0 && (
           <span className="ml-1 bg-purple-700 text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
             {activeFilters}
           </span>
         )}
-        <MdKeyboardArrowDown size={14} className="text-gray-400" />
+        <ChevronDownIcon className="w-3.5 h-3.5 text-gray-400" />
       </button>
 
       {open && (

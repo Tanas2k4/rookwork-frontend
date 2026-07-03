@@ -4,7 +4,7 @@ import { invitationApi } from "../api/services/invitationApi";
 import WorkingHoursChart from "../dashboard/WorkingHoursChart";
 import ActiveProjects from "../dashboard/ActiveProjects";
 import { type ProjectUI } from "../api/contracts/projectUI";
-import { RiCheckLine } from "react-icons/ri";
+import { CheckIcon } from "@heroicons/react/24/solid";
 import Image from "../assets/image.png";
 import type { TaskPriority, TaskStatus } from "../types/project";
 import MiniCalendar from "../calendar/MiniCalendar";
@@ -402,7 +402,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                         className="relative z-10 mt-1 w-3.5 h-3.5 -ml-4 rounded-full border-2 shrink-0 flex items-center justify-center"
                         style={{ borderColor: isDone ? accentColor : "#e5e7eb", background: isDone ? accentColor : "white" }}
                       >
-                        {isDone && <RiCheckLine size={8} color="white" />}
+                        {isDone && <CheckIcon className="w-2 h-2 text-white" />}
                       </div>
                       <Link
                         to={`/projects/${issue.projectId}/issues/${issue.id}`}

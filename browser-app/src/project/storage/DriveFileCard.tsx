@@ -1,5 +1,5 @@
 import React from "react";
-import { RiDownload2Line } from "react-icons/ri";
+import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { isImageFile, getFileIcon, getFileLargeIcon } from "./storageUtils";
 
 export interface FlatFile {
@@ -124,7 +124,7 @@ export function DriveFileCard({
             className="w-8 h-8 rounded-full bg-white text-gray-700 hover:text-purple-800 hover:scale-105 flex items-center justify-center transition-all"
             title="Download file"
           >
-            <RiDownload2Line size={15} />
+            <ArrowDownTrayIcon className="w-[15px] h-[15px]" />
           </a>
         </div>
       </div>

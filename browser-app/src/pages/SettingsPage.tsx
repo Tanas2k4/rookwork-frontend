@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiUser, FiSettings, FiBell, FiShield } from "react-icons/fi";
+import { UserIcon, Cog6ToothIcon, BellIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { userApi } from "../api/services/userApi";
 import type { UserSummary } from "../api/contracts/issue";
 import ProfileSettings from "../components/settings/ProfileSettings";
@@ -8,10 +8,10 @@ import NotificationSettings from "../components/settings/NotificationSettings";
 import SecuritySettings from "../components/settings/SecuritySettings";
 
 const TABS = [
-  { id: "profile", label: "Profile", icon: FiUser },
-  { id: "preferences", label: "Preferences", icon: FiSettings },
-  { id: "notifications", label: "Notifications", icon: FiBell },
-  { id: "security", label: "Account & Security", icon: FiShield },
+  { id: "profile", label: "Profile", icon: UserIcon },
+  { id: "preferences", label: "Preferences", icon: Cog6ToothIcon },
+  { id: "notifications", label: "Notifications", icon: BellIcon },
+  { id: "security", label: "Account & Security", icon: ShieldCheckIcon },
 ];
 
 export default function SettingsPage() {

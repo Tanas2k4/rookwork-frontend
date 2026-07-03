@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "../components/common/RichTextEditor";
-import { MdOutlineExpandMore } from "react-icons/md";
-import { IoIosArrowBack } from "react-icons/io";
+import { ChevronDownIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
@@ -225,7 +224,7 @@ export default function IssueDetailPage() {
       {/* Breadcrumb */}
       <div onClick={() => navigate(backPath)}
         className="flex items-center gap-2 px-8 pt-5 text-gray-700 hover:text-purple-700 transition cursor-pointer w-fit">
-        <IoIosArrowBack />
+        <ChevronLeftIcon className="w-4 h-4 text-gray-700" />
         <button className="text-sm">{backLabel}</button>
       </div>
 
@@ -245,7 +244,7 @@ export default function IssueDetailPage() {
                 <span className="flex items-center gap-1.5 border border-gray-500 rounded-md px-2 py-1">
                   <span className={`w-2 h-2 rounded-full ${statusMap[status].dotColor}`} />
                   {statusMap[status].label}
-                  <MdOutlineExpandMore className="text-gray-500" />
+                  <ChevronDownIcon className="text-gray-500 w-3.5 h-3.5" />
                 </span>
               }>
                 {statuses.map((s) => (
@@ -269,7 +268,7 @@ export default function IssueDetailPage() {
                 <span className="flex items-center gap-1.5 border border-gray-500 rounded-md px-2 py-1">
                   <PriorityBars priority={priority} />
                   {priorityLabelMap[priority]}
-                  <MdOutlineExpandMore className="text-gray-500" />
+                  <ChevronDownIcon className="text-gray-500 w-3.5 h-3.5" />
                 </span>
               }>
                 {priorities.map((p) => (

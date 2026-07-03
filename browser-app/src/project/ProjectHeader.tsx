@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { ImPencil } from "react-icons/im";
-import { TbUserEdit } from "react-icons/tb";
-import { IoAdd, IoClose } from "react-icons/io5";
+import {
+  PencilSquareIcon,
+  UsersIcon,
+  PlusIcon,
+  XMarkIcon,
+  CheckIcon,
+} from "@heroicons/react/24/outline";
 import InviteModal from "./shared/InviteModal";
-import { FaCheck } from "react-icons/fa6";
 import { useProject } from "../hooks/useProject";
 import { avatarUrl } from "../utils/avatar";
 import { projectApi } from "../api/services/projectApi";
@@ -73,8 +76,8 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
 
   return (
     <>
-      <div className="py-3 px-8 bg-white">
-        <div className="flex flex-row items-center gap-3 mb-3">
+      <div className="pt-3 px-8 bg-white">
+        <div className="flex flex-row items-center gap-3 pb-1">
           {isEditingTitle ? (
             <div className="flex flex-col gap-1">
               <div className="flex flex-row items-center gap-2">
@@ -93,7 +96,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                   className="text-green-700 p-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition disabled:opacity-50"
                   title="Save title"
                 >
-                  <FaCheck size={14} />
+                  <CheckIcon className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => {
@@ -104,7 +107,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                   className="text-red-700 p-1 bg-red-100 hover:bg-red-200 rounded-lg transition disabled:opacity-50"
                   title="Cancel"
                 >
-                  <IoClose size={18} />
+                  <XMarkIcon className="w-4.5 h-4.5" />
                 </button>
               </div>
               {saveTitleError && (
@@ -115,20 +118,22 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
             </div>
           ) : (
             <>
-              <h1 className="text-5xl font-bold text-gray-800">
-                {project?.projectName ?? "Project"}
-              </h1>
-              <button
-                onClick={() => {
-                  setEditTitleValue(project?.projectName ?? "");
-                  setIsEditingTitle(true);
-                  setSaveTitleError("");
-                }}
-                className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition"
-                title="Edit project name"
-              >
-                <ImPencil size={14} />
-              </button>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-gray-800 whitespace-nowrap">
+                  {project?.projectName ?? "Project"}
+                </h1>
+                <button
+                  onClick={() => {
+                    setEditTitleValue(project?.projectName ?? "");
+                    setIsEditingTitle(true);
+                    setSaveTitleError("");
+                  }}
+                  className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition"
+                  title="Edit project name"
+                >
+                  <PencilSquareIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </>
           )}
           <button
@@ -136,37 +141,37 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
             className="text-purple-700 p-1.5 bg-purple-100 hover:bg-purple-200 rounded-lg transition"
             title="Invite members"
           >
-            <TbUserEdit size={15} />
+            <UsersIcon className="w-3.75 h-3.75" />
           </button>
-        </div>
-
-        <div className="flex gap-3 items-center">
-          <button
-            onClick={() => setShowCreateIssue(true)}
-            className="flex flex-row items-center gap-1.5 px-3 py-1.5 text-sm
-             text-gray-700 border border-gray-500 rounded-md transition font-medium"
-          >
-            Create task
-            <IoAdd size={18} />
-          </button>
-
-          <div className="flex items-center gap-2">
-            {/* Member avatars */}
-            <div className="flex -space-x-2">
-              {members.length > 0 ? (
-                members.map((member) => (
-                  <img
-                    key={member.id}
-                    src={avatarUrl(member.profileName, member.picture)}
-                    alt={member.profileName}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-white shrink-0"
-                    title={member.profileName}
-                  />
-                ))
-              ) : (
-                <span className="text-xs text-gray-400 italic">No members</span>
-              )}
+          <div className="flex gap-3 items-center w-full justify-end">
+            <div className="flex items-center gap-2">
+              {/* Member avatars */}
+              <div className="flex -space-x-2">
+                {members.length > 0 ? (
+                  members.map((member) => (
+                    <img
+                      key={member.id}
+                      src={avatarUrl(member.profileName, member.picture)}
+                      alt={member.profileName}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-white shrink-0"
+                      title={member.profileName}
+                    />
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-400 italic">
+                    No members
+                  </span>
+                )}
+              </div>
             </div>
+            <button
+              onClick={() => setShowCreateIssue(true)}
+              className="flex flex-row items-center gap-1.5 px-3 py-1.5 text-xs
+             text-gray-700 border border-gray-500 active:bg-gray-100 active:border-gray-400 rounded-md transition font-medium"
+            >
+              Create task
+              <PlusIcon className="w-4.5 h-4.5" />
+            </button>
           </div>
         </div>
       </div>

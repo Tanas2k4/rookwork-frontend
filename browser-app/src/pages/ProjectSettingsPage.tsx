@@ -7,17 +7,18 @@ import type { IssueTypeResponse, UserSummary } from "../api/contracts/issue";
 import { issueTypeIcons } from "../types/project";
 import { ToastContainer } from "../components/common/ToastContainer";
 import {
-  FaTrash,
-  FaCheck,
-  FaRegFolder,
-  FaTasks,
-  FaUsers,
-} from "react-icons/fa";
-import { MdEdit, MdClose, MdCheck } from "react-icons/md";
+  TrashIcon,
+  CheckIcon,
+  FolderIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
+import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import { FlagIcon } from "@heroicons/react/24/outline";
+import { FaTasks } from "react-icons/fa";
 import { projectApi } from "../api/services/projectApi";
 import { projectStatusApi } from "../api/services/projectStatusApi";
 import { WorkflowEditor } from "../project/workflow/WorkflowEditor";
-import { GoGoal } from "react-icons/go";
 import { avatarUrl } from "../utils/avatar";
 
 const COLOR_PALETTE = [
@@ -59,9 +60,8 @@ const ColorPalette = ({
         title={c}
       >
         {selected === c && (
-          <FaCheck
-            size={size < 6 ? 6 : 8}
-            className="text-white drop-shadow-sm"
+          <CheckIcon
+            className="text-white drop-shadow-sm w-4 h-4"
           />
         )}
       </button>
@@ -395,7 +395,7 @@ export default function ProjectSettingsPage() {
                 : "text-gray-500 hover:text-gray-855 hover:bg-gray-50"
             }`}
           >
-            <FaRegFolder size={16} />
+            <FolderIcon className="w-4 h-4" />
             General Settings
           </button>
           <button
@@ -417,7 +417,7 @@ export default function ProjectSettingsPage() {
                 : "text-gray-500 hover:text-gray-855 hover:bg-gray-50"
             }`}
           >
-            <FaUsers size={16} />
+            <UsersIcon className="w-4 h-4" />
             Project Members
           </button>
         </div>
@@ -460,7 +460,7 @@ export default function ProjectSettingsPage() {
                         className="p-2 bg-purple-900 hover:bg-purple-800 text-white rounded-md transition cursor-pointer shrink-0 disabled:opacity-50"
                         title="Save"
                       >
-                        <MdCheck size={18} />
+                        <CheckIcon className="w-4.5 h-4.5" />
                       </button>
                       <button
                         type="button"
@@ -468,7 +468,7 @@ export default function ProjectSettingsPage() {
                         className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-md transition cursor-pointer shrink-0"
                         title="Cancel"
                       >
-                        <MdClose size={18} />
+                        <XMarkIcon className="w-4.5 h-4.5" />
                       </button>
                     </div>
                   ) : (
@@ -489,7 +489,7 @@ export default function ProjectSettingsPage() {
                         className="p-1.5 text-gray-400 hover:text-purple-700 rounded-md transition cursor-pointer shrink-0"
                         title="Edit Project Name"
                       >
-                        <MdEdit size={16} />
+                        <PencilSquareIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
@@ -547,7 +547,7 @@ export default function ProjectSettingsPage() {
                         className="p-1.5 text-gray-400 hover:text-purple-700 rounded-md transition cursor-pointer shrink-0 mt-0.5"
                         title="Edit Description"
                       >
-                        <MdEdit size={16} />
+                        <PencilSquareIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
@@ -626,7 +626,7 @@ export default function ProjectSettingsPage() {
                                 className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition cursor-pointer"
                                 title="Delete custom issue type"
                               >
-                                <FaTrash size={13} />
+                                <TrashIcon className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
@@ -791,9 +791,8 @@ export default function ProjectSettingsPage() {
                 {/* Dedicated Goal Column Configuration Card */}
                 <div className="bg-gray-100 rounded-md p-4 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <GoGoal
-                      className="text-green-600 shrink-0 animate-pulse"
-                      size={20}
+                    <FlagIcon
+                      className="text-green-600 shrink-0 animate-pulse w-5 h-5"
                     />
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
@@ -857,14 +856,14 @@ export default function ProjectSettingsPage() {
                                     className="p-1 text-green-600 hover:text-green-800 rounded hover:bg-gray-50 transition cursor-pointer shrink-0"
                                     title="Save"
                                   >
-                                    <MdCheck size={18} />
+                                    <CheckIcon className="w-4.5 h-4.5" />
                                   </button>
                                   <button
                                     onClick={() => setEditingStatusId(null)}
                                     className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 transition cursor-pointer shrink-0"
                                     title="Cancel"
                                   >
-                                    <MdClose size={18} />
+                                    <XMarkIcon className="w-4.5 h-4.5" />
                                   </button>
                                 </div>
                               </div>
@@ -886,9 +885,8 @@ export default function ProjectSettingsPage() {
                                 {s.statusName}
                               </span>
                               {s.statusCategory === "DONE" && (
-                                <GoGoal
-                                  className="text-green-600 shrink-0"
-                                  size={16}
+                                <FlagIcon
+                                  className="text-green-600 shrink-0 w-4 h-4"
                                   title="Goal Column"
                                 />
                               )}
@@ -906,7 +904,7 @@ export default function ProjectSettingsPage() {
                               className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 transition cursor-pointer"
                               title="Rename column"
                             >
-                              <MdEdit size={16} />
+                              <PencilSquareIcon className="w-4 h-4" />
                             </button>
                             {/* Can delete columns as long as we have more than 1 column left */}
                             {projectStatuses.length > 1 && (
@@ -915,7 +913,7 @@ export default function ProjectSettingsPage() {
                                 className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-55 transition cursor-pointer"
                                 title="Delete column and migrate tasks"
                               >
-                                <FaTrash size={12} />
+                                <TrashIcon className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>

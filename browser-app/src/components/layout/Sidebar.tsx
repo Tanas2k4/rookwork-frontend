@@ -1,11 +1,16 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
-import { GoSidebarCollapse } from "react-icons/go";
-import { IoCalendarOutline, IoSettingsOutline } from "react-icons/io5";
-import { MdKeyboardArrowDown, MdKeyboardArrowRight } from "react-icons/md";
-import { BsCalendar2Event, BsFolder } from "react-icons/bs";
-import { AiOutlineCheckSquare } from "react-icons/ai";
+import {
+  Bars3Icon,
+  CalendarDaysIcon,
+  Cog6ToothIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CalendarIcon,
+  FolderIcon,
+} from "@heroicons/react/24/outline";
+import { CheckCircleIcon } from "@heroicons/react/24/outline";
 import type { ProjectUI } from "../../api/contracts/projectUI";
 
 interface SidebarProps {
@@ -55,9 +60,8 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
               className="flex items-center w-full h-14 px-1 hover:bg-gray-100 transition-colors"
             >
               <div className="w-14 flex justify-center items-center shrink-0">
-                <GoSidebarCollapse
-                  size={20}
-                  className={`transition-transform duration-300 ${!sidebar ? "rotate-180" : ""}`}
+                <Bars3Icon
+                  className={`w-5 h-5 transition-transform duration-300 ${!sidebar ? "rotate-180" : ""}`}
                 />
               </div>
               <span
@@ -82,7 +86,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                 }
               >
                 <div className="w-12 flex justify-center items-center shrink-0">
-                  <AiOutlineCheckSquare size={20} />
+                  <CheckCircleIcon className="w-5 h-5" />
                 </div>
                 <span className={`truncate transition-all duration-300 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                   Issues
@@ -98,7 +102,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                 }
               >
                 <div className="w-12 flex justify-center items-center shrink-0">
-                  <BsCalendar2Event size={17} />
+                  <CalendarDaysIcon className="w-[17px] h-[17px]" />
                 </div>
                 <span className={`truncate transition-all duration-300 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                   Events
@@ -114,7 +118,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                   className="flex items-center w-full h-10 rounded-lg hover:bg-gray-100 transition-colors group"
                 >
                   <div className="w-12 flex justify-center items-center shrink-0">
-                    <BsFolder size={17} className="text-gray-600 group-hover:text-gray-800" />
+                    <FolderIcon className="w-[17px] h-[17px] text-gray-600 group-hover:text-gray-800" />
                   </div>
                   <span className={`flex-1 text-left font-medium truncate transition-all duration-300 group-hover:text-gray-800 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                     Projects
@@ -122,8 +126,8 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
                   {sidebar && (
                     <div className="w-8 flex justify-center items-center shrink-0">
                       {projectsExpanded
-                        ? <MdKeyboardArrowDown size={20} className="text-gray-500" />
-                        : <MdKeyboardArrowRight size={20} className="text-gray-500" />
+                        ? <ChevronDownIcon className="w-5 h-5 text-gray-500" />
+                        : <ChevronRightIcon className="w-5 h-5 text-gray-500" />
                       }
                     </div>
                   )}
@@ -172,7 +176,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
               }
             >
               <div className="w-12 flex justify-center items-center shrink-0">
-                <IoCalendarOutline size={20} />
+                <CalendarIcon className="w-5 h-5" />
               </div>
               <span className={`truncate transition-all duration-300 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                 Calendar
@@ -188,7 +192,7 @@ const Sidebar = ({ sidebar, setSidebar, projects }: SidebarProps) => {
               }
             >
               <div className="w-12 flex justify-center items-center shrink-0">
-                <IoSettingsOutline size={20} />
+                <Cog6ToothIcon className="w-5 h-5" />
               </div>
               <span className={`truncate transition-all duration-300 ${sidebar ? "opacity-100" : "opacity-0"}`}>
                 Settings
