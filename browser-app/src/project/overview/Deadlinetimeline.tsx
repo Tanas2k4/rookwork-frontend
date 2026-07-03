@@ -64,7 +64,7 @@ export default function DeadlineTimeline({ data }: { data: OverviewData }) {
   }, [hoveredData]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm col-span-2 flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-gray-200 p-5  col-span-2 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>

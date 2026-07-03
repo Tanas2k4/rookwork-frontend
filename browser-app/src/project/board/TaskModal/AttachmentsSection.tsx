@@ -1,13 +1,5 @@
 import { useState, useRef } from "react";
-import {
-  RiAttachment2,
-  RiDeleteBin6Line,
-  RiFilePdfLine,
-  RiFileExcelLine,
-  RiFileTextLine,
-} from "react-icons/ri";
-import { IoMdAdd } from "react-icons/io";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { PaperClipIcon, TrashIcon, DocumentIcon, PlusIcon, ArrowPathIcon, TableCellsIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { issueApi } from "../../../api/services/issueApi";
 import type { AttachmentResponse } from "../../../api/contracts/attachment";
 
@@ -158,11 +150,11 @@ export function AttachmentsSection({
   function getFileIcon(type: "image" | "pdf" | "excel" | "document") {
     switch (type) {
       case "pdf":
-        return <RiFilePdfLine size={24} className="text-red-500" />;
+        return <DocumentIcon className="w-6 h-6 text-red-500" />;
       case "excel":
-        return <RiFileExcelLine size={24} className="text-green-600" />;
+        return <TableCellsIcon className="w-6 h-6 text-green-600" />;
       default:
-        return <RiFileTextLine size={24} className="text-blue-500" />;
+        return <DocumentTextIcon className="w-6 h-6 text-blue-500" />;
     }
   }
 
@@ -185,7 +177,7 @@ export function AttachmentsSection({
         <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
           <span>Attachments ({attachments.length})</span>
           {isUploading && (
-            <AiOutlineLoading3Quarters size={12} className="animate-spin text-purple-700" />
+            <ArrowPathIcon className="w-3 h-3 animate-spin text-purple-700" />
           )}
         </div>
         <button
@@ -194,7 +186,7 @@ export function AttachmentsSection({
           disabled={isUploading}
           className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-900 transition disabled:opacity-50"
         >
-          <IoMdAdd size={14} />
+          <PlusIcon className="w-3.5 h-3.5" />
           Add attachment
         </button>
       </div>
@@ -215,14 +207,12 @@ export function AttachmentsSection({
           className="border-2 border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50/20 rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1"
         >
           {isUploading ? (
-            <AiOutlineLoading3Quarters
-              size={22}
-              className="text-purple-700 animate-spin mb-1"
+            <ArrowPathIcon
+              className="text-purple-700 animate-spin mb-1 w-5.5 h-5.5"
             />
           ) : (
-            <RiAttachment2
-              size={22}
-              className="text-gray-400 rotate-45 mb-1 animate-pulse"
+            <PaperClipIcon
+              className="text-gray-400 rotate-45 mb-1 animate-pulse w-5.5 h-5.5"
             />
           )}
           <p className="text-xs text-gray-500 font-medium">
@@ -284,9 +274,9 @@ export function AttachmentsSection({
                     title="Delete file"
                   >
                     {isDeleting ? (
-                      <AiOutlineLoading3Quarters size={13} className="animate-spin" />
+                      <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <RiDeleteBin6Line size={13} />
+                      <TrashIcon className="w-3.5 h-3.5" />
                     )}
                   </button>
                 </div>

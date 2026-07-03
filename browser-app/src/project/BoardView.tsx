@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { IoSearchSharp } from "react-icons/io5";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useBoard } from "../hooks/useBoard";
 import { useProject } from "../hooks/useProject";
 import { ToastContainer } from "../components/common/ToastContainer";
@@ -186,7 +186,7 @@ export default function BoardView() {
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-5">
         <div className="relative w-80">
-          <IoSearchSharp className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           <input
             type="text"
             placeholder="Search"

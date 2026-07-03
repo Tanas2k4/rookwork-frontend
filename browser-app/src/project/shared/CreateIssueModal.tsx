@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { IoClose } from "react-icons/io5";
-import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
+import { XMarkIcon, ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
 // react-icons/fa removed as unused
 import { useProject } from "../../hooks/useProject";
 import { useToast } from "../../hooks/useToast";
@@ -217,7 +216,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
             onClick={resetForm}
             className="p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 rounded-full transition"
           >
-            <IoClose size={20} />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -264,10 +263,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                             {currentType ? currentType.name : "Select Type"}
                           </span>
                         </div>
-                        <MdOutlineExpandMore
-                          size={18}
-                          className="text-gray-400 shrink-0"
-                        />
+                        <ChevronDownIcon className="w-[18px] h-[18px] text-gray-400 shrink-0" />
                       </button>
 
                       {showTypeDd && (
@@ -394,10 +390,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                   ) : (
                     <span className="italic text-gray-400">Unassigned</span>
                   )}
-                  <MdOutlineExpandMore
-                    size={16}
-                    className="text-gray-400 shrink-0 ml-auto"
-                  />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
                 </button>
 
                 {showAssigneeDd && (
@@ -408,7 +401,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                       className="w-full text-left px-3 py-1.5 text-sm text-gray-500 italic hover:bg-gray-50 flex items-center gap-2"
                     >
                       <div className="p-1 bg-gray-200 rounded-full flex items-center justify-center">
-                        <IoClose size={12} className="text-gray-500" />
+                        <XMarkIcon className="w-3.5 h-3.5 text-gray-500" />
                       </div>
                       Unassigned (clear all)
                     </button>
@@ -447,7 +440,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                               }`}
                             >
                               {isSelected && (
-                                <MdCheck size={11} className="text-white" />
+                                <CheckIcon className="w-3 h-3 text-white" />
                               )}
                             </span>
                             <img
@@ -502,10 +495,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                       })}
                     </div>
                   </div>
-                  <MdOutlineExpandMore
-                    size={16}
-                    className="text-gray-400 shrink-0 ml-auto"
-                  />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
                 </button>
 
                 {showPriorityDd && (
@@ -584,10 +574,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                     />
                     <span>{selectedStatusOpt.label}</span>
                   </div>
-                  <MdOutlineExpandMore
-                    size={16}
-                    className="text-gray-400 shrink-0 ml-auto"
-                  />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
                 </button>
 
                 {showStatusDd && (
@@ -611,10 +598,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                         />
                         <span className="flex-1 text-left">{opt.label}</span>
                         {status === opt.value && (
-                          <MdCheck
-                            size={16}
-                            className="text-purple-700 shrink-0 ml-auto"
-                          />
+                          <CheckIcon className="w-4 h-4 text-purple-700 shrink-0 ml-auto" />
                         )}
                       </button>
                     ))}

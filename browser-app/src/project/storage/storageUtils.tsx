@@ -1,11 +1,10 @@
 import {
-  RiFilePdfLine,
-  RiFileExcelLine,
-  RiImageLine,
-  RiFileZipLine,
-  RiFileWordLine,
-  RiFileTextLine,
-} from "react-icons/ri";
+  DocumentIcon,
+  TableCellsIcon,
+  PhotoIcon,
+  ArchiveBoxIcon,
+  DocumentTextIcon,
+} from "@heroicons/react/24/outline";
 
 export function formatBytes(bytes: number, decimals = 1) {
   if (bytes === 0) return "0 Bytes";
@@ -23,42 +22,42 @@ export function isImageFile(fileName: string) {
 
 export function getFileIcon(fileName: string) {
   const ext = fileName.split(".").pop()?.toLowerCase();
-  const size = 16;
+
   if (ext === "pdf") {
-    return <RiFilePdfLine size={size} className="text-red-500 shrink-0" />;
+    return <DocumentIcon className="w-4 h-4 text-red-500 shrink-0" />;
   }
   if (["xls", "xlsx", "csv"].includes(ext || "")) {
-    return <RiFileExcelLine size={size} className="text-green-600 shrink-0" />;
+    return <TableCellsIcon className="w-4 h-4 text-green-600 shrink-0" />;
   }
   if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext || "")) {
-    return <RiImageLine size={size} className="text-blue-500 shrink-0" />;
+    return <PhotoIcon className="w-4 h-4 text-blue-500 shrink-0" />;
   }
   if (["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) {
-    return <RiFileZipLine size={size} className="text-amber-600 shrink-0" />;
+    return <ArchiveBoxIcon className="w-4 h-4 text-amber-600 shrink-0" />;
   }
   if (["doc", "docx"].includes(ext || "")) {
-    return <RiFileWordLine size={size} className="text-blue-600 shrink-0" />;
+    return <DocumentTextIcon className="w-4 h-4 text-blue-600 shrink-0" />;
   }
-  return <RiFileTextLine size={size} className="text-gray-500 shrink-0" />;
+  return <DocumentTextIcon className="w-4 h-4 text-gray-500 shrink-0" />;
 }
 
 export function getFileLargeIcon(fileName: string) {
   const ext = fileName.split(".").pop()?.toLowerCase();
-  const size = 36;
+
   if (ext === "pdf") {
-    return <RiFilePdfLine size={size} className="text-red-400" />;
+    return <DocumentIcon className="w-9 h-9 text-red-400" />;
   }
   if (["xls", "xlsx", "csv"].includes(ext || "")) {
-    return <RiFileExcelLine size={size} className="text-green-500" />;
+    return <TableCellsIcon className="w-9 h-9 text-green-500" />;
   }
   if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext || "")) {
-    return <RiImageLine size={size} className="text-blue-400" />;
+    return <PhotoIcon className="w-9 h-9 text-blue-400" />;
   }
   if (["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) {
-    return <RiFileZipLine size={size} className="text-amber-500" />;
+    return <ArchiveBoxIcon className="w-9 h-9 text-amber-500" />;
   }
   if (["doc", "docx"].includes(ext || "")) {
-    return <RiFileWordLine size={size} className="text-blue-500" />;
+    return <DocumentTextIcon className="w-9 h-9 text-blue-500" />;
   }
-  return <RiFileTextLine size={size} className="text-gray-400" />;
+  return <DocumentTextIcon className="w-9 h-9 text-gray-400" />;
 }

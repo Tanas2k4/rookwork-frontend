@@ -1,4 +1,4 @@
-import { TbCurrencyDollar, TbTrendingUp, TbTrendingDown, TbAlertTriangle, TbCheck, TbX, TbClock, TbDownload } from "react-icons/tb";
+import { CurrencyDollarIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, ExclamationTriangleIcon, CheckIcon, XMarkIcon, ClockIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 
 interface BillingStats {
   mrr: number;
@@ -85,7 +85,7 @@ export function AdminBilling() {
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-1.5 border border-neutral-200 bg-white rounded-lg px-3 py-2 text-[13px] font-medium text-neutral-700 cursor-pointer hover:bg-neutral-50 transition-colors">
-            <TbDownload />Export Report
+            <ArrowDownTrayIcon className="w-4 h-4" />Export Report
           </button>
         </div>
       </div>
@@ -95,12 +95,12 @@ export function AdminBilling() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">MRR (Monthly Revenue)</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-indigo-50 text-indigo-700">
-              <TbCurrencyDollar size={16} />
+              <CurrencyDollarIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{fmtCurr(mockStats.mrr)}</div>
           <div className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
-            <TbTrendingUp /> +5.2% vs. last month
+            <ArrowTrendingUpIcon className="w-3 h-3" /> +5.2% vs. last month
           </div>
         </div>
 
@@ -108,12 +108,12 @@ export function AdminBilling() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">ARR (Annualized Revenue)</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-emerald-50 text-emerald-700">
-              <TbTrendingUp size={16} />
+              <ArrowTrendingUpIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{fmtCurr(mockStats.arr)}</div>
           <div className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
-            <TbTrendingUp /> +4.8% vs. last year
+            <ArrowTrendingUpIcon className="w-3 h-3" /> +4.8% vs. last year
           </div>
         </div>
 
@@ -121,12 +121,12 @@ export function AdminBilling() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">Churn Rate</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-rose-50 text-rose-700">
-              <TbTrendingDown size={16} />
+              <ArrowTrendingDownIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{mockStats.churnRate}</div>
           <div className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
-            <TbTrendingDown /> -0.3% improvement
+            <ArrowTrendingDownIcon className="w-3 h-3" /> -0.3% improvement
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export function AdminBilling() {
           <div className="flex items-start justify-between">
             <span className="text-[13px] text-neutral-500 font-medium">Failed Payments</span>
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm bg-amber-50 text-amber-700">
-              <TbAlertTriangle size={16} />
+              <ExclamationTriangleIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="text-3xl font-bold mt-2 mb-1.5 tracking-tight text-neutral-900">{mockStats.failedPayments}</div>
@@ -167,9 +167,9 @@ export function AdminBilling() {
           <div className="flex flex-col">
             {recentTransactions.map((tx) => {
               const getTxIcon = (type: string) => {
-                if (type === "ok") return <TbCheck className="text-emerald-600" />;
-                if (type === "err") return <TbX className="text-rose-600" />;
-                return <TbClock className="text-amber-600" />;
+                if (type === "ok") return <CheckIcon className="w-4 h-4 text-emerald-600" />;
+                if (type === "err") return <XMarkIcon className="w-4 h-4 text-rose-600" />;
+                return <ClockIcon className="w-4 h-4 text-amber-600" />;
               };
               const dotColor = tx.type === "ok" ? "bg-emerald-50 text-emerald-700" : (tx.type === "err" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700");
               return (

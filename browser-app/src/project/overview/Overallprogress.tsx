@@ -65,7 +65,7 @@ export default function OverallProgress({ data, animated }: { data: OverviewData
   const textCls = p === 100 ? "text-green-600" : p >= 80 ? "text-green-500" : p >= 60 ? "text-yellow-500" : p >= 30 ? "text-orange-500" : "text-red-500";
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 ">
       <h2 className="text-sm font-semibold text-gray-800 mb-3">Overall Progress</h2>
       <div className="mb-1">
         <div className="flex justify-between text-[11px] font-semibold text-gray-700 mb-1.5">

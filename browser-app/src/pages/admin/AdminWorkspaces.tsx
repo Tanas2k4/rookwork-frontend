@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { adminApi } from "../../api/services/adminApi";
 import type { RecentWorkspace } from "../../api/contracts/admin";
-import { TbSearch, TbChevronLeft, TbChevronRight } from "react-icons/tb";
+import { MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 export function AdminWorkspaces() {
   const [workspaces, setWorkspaces] = useState<RecentWorkspace[]>([]);
@@ -33,7 +33,7 @@ export function AdminWorkspaces() {
           <p className="mt-0.5 text-[13px] text-neutral-500">Monitor projects, members count, and workspace subscriptions.</p>
         </div>
         <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-lg px-3 py-2 w-72 text-neutral-400 focus-within:border-indigo-600 transition-colors">
-          <TbSearch />
+          <MagnifyingGlassIcon className="w-4 h-4" />
           <input 
             type="text" 
             placeholder="Search workspaces..." 
@@ -144,9 +144,9 @@ export function AdminWorkspaces() {
             <div className="flex items-center justify-between mt-3.5 text-[12.5px] text-neutral-450">
               <span>Showing {filteredWorkspaces.length} of {workspaces.length} workspaces</span>
               <div className="flex gap-1.5">
-                <button disabled className="w-7 h-7 rounded border border-neutral-200 bg-white text-neutral-400 cursor-not-allowed flex items-center justify-center text-xs"><TbChevronLeft /></button>
+                <button disabled className="w-7 h-7 rounded border border-neutral-200 bg-white text-neutral-400 cursor-not-allowed flex items-center justify-center text-xs"><ChevronLeftIcon className="w-3.5 h-3.5" /></button>
                 <button className="w-7 h-7 rounded bg-neutral-900 text-white border border-neutral-900 flex items-center justify-center text-xs">1</button>
-                <button disabled className="w-7 h-7 rounded border border-neutral-200 bg-white text-neutral-400 cursor-not-allowed flex items-center justify-center text-xs"><TbChevronRight /></button>
+                <button disabled className="w-7 h-7 rounded border border-neutral-200 bg-white text-neutral-400 cursor-not-allowed flex items-center justify-center text-xs"><ChevronRightIcon className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           </div>

@@ -1,10 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import {
-  MdAdd,
-  MdClose,
-  MdKeyboardArrowDown,
-  MdChevronRight,
-} from "react-icons/md";
+import { PlusIcon, XMarkIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import type { Task, TaskWithMeta } from "../../../types/project";
 import {
   statusMap,
@@ -85,9 +80,9 @@ export function DependenciesSection({
           className="flex items-center gap-1 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
         >
           {expanded ? (
-            <MdKeyboardArrowDown size={14} />
+            <ChevronDownIcon className="w-3.5 h-3.5" />
           ) : (
-            <MdChevronRight size={14} />
+            <ChevronRightIcon className="w-3.5 h-3.5" />
           )}
           Depends On ({dependencies.length})
         </button>
@@ -100,7 +95,7 @@ export function DependenciesSection({
             }}
             className="flex items-center gap-0.5 text-xs text-purple-700 hover:text-purple-900 transition"
           >
-            <MdAdd size={13} />
+            <PlusIcon className="w-3.5 h-3.5" />
             Add Dependency
           </button>
           {showLinkDd && (
@@ -192,7 +187,7 @@ export function DependenciesSection({
                       className="opacity-0 group-hover/child:opacity-100 text-gray-300 hover:text-red-400 transition"
                       title="Remove dependency"
                     >
-                      <MdClose size={13} />
+                      <XMarkIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

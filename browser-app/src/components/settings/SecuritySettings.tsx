@@ -1,11 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { FiCheck, FiX } from "react-icons/fi";
+import { CheckIcon, XMarkIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import { userApi } from "../../api/services/userApi";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
-import { FaCheckCircle } from "react-icons/fa";
-import { AiFillCloseCircle } from "react-icons/ai";
 import type { UserSummary } from "../../api/contracts/issue";
+import { OtpInput } from "../common/OtpInput";
 
 interface SecuritySettingsProps {
   user: UserSummary | null;
@@ -138,27 +137,26 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
         <div className="space-y-4">
           {hasPassword && (
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-2">OTP Verification Code</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="Enter 6-digit code"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  disabled={!!user?.passwordLimitReached}
-                  className="flex-1 px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100 disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400"
-                  required
-                />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-[13px] font-bold text-gray-700">OTP Verification Code</label>
                 <button
                   type="button"
                   onClick={handleSendOtp}
                   disabled={isSendingOtp || otpCooldown > 0 || !!user?.passwordLimitReached}
-                  className="px-4 py-1.5 bg-purple-100 text-purple-700 text-sm font-semibold rounded-md hover:bg-purple-200 disabled:opacity-50 disabled:bg-purple-50 disabled:text-purple-400 transition-colors shrink-0"
+                  className="text-xs font-bold text-purple-700 hover:text-purple-900 disabled:opacity-50 transition-colors"
                 >
                   {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : isSendingOtp ? "Sending..." : "Send OTP"}
                 </button>
               </div>
+              <div className="flex justify-start">
+                <OtpInput
+                  value={otp}
+                  onChange={setOtp}
+                  disabled={!!user?.passwordLimitReached}
+                />
+              </div>
+            </div>
             </div>
           )}
           <div>
@@ -193,8 +191,8 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
                   {passwordChecks.map((check) => (
                     <li key={check.label} className="flex items-center gap-2 text-xs">
                       {check.met
-                        ? <FaCheckCircle className="text-green-700 shrink-0" size={14} />
-                        : <AiFillCloseCircle   className="text-red-600 shrink-0" size={15} />
+                        ? <CheckCircleIcon className="text-green-700 shrink-0 w-3.5 h-3.5" />
+                        : <XCircleIcon className="text-red-600 shrink-0 w-3.5 h-3.5" />
                       }
                       <span className={check.met ? "text-green-700" : "text-gray-500"}>{check.label}</span>
                     </li>
@@ -215,12 +213,12 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
             />
             {confirmPassword.length > 0 && !passwordsMatch && (
               <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
-                <FiX size={12} /> Passwords do not match
+                <XMarkIcon className="w-3 h-3 text-red-500" /> Passwords do not match
               </p>
             )}
             {passwordsMatch && (
               <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
-                <FiCheck size={12} /> Passwords match
+                <CheckIcon className="w-3 h-3 text-green-600" /> Passwords match
               </p>
             )}
           </div>

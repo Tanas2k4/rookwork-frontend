@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { HiChevronDown } from "react-icons/hi";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import type { CalendarEvent, ViewMode } from "../types/calendar";
 import {
   VIEW_OPTIONS,
@@ -208,13 +208,13 @@ export default function CalendarView() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-2 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-3 text-[55px] text-gray-800 font-semibold tracking-wide">
+          <div className="flex items-center gap-3 text-5xl text-gray-800 font-semibold tracking-wide">
             Calendar
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={goToday}
-              className="px-4 py-1.5 bg-purple-900 rounded-md text-sm font-heading font-medium text-gray-200 hover:bg-purple-800 transition-colors"
+              className="px-4 py-1.5 bg-purple-900 rounded-md text-sm font-heading text-gray-200 hover:bg-purple-800 transition-colors"
             >
               Today
             </button>
@@ -223,13 +223,12 @@ export default function CalendarView() {
             <div className="relative" ref={viewDropdownRef}>
               <button
                 onClick={() => setShowViewDropdown((v) => !v)}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-md border border-gray-500 bg-white text-sm font-heading font-medium text-gray-700
+                className="flex items-center gap-1.5 px-4 py-1.25 rounded-md border border-gray-500 bg-white text-sm font-heading font-medium text-gray-700
                  hover:bg-gray-50 transition-all cursor-pointer"
               >
                 {viewMode}
-                <HiChevronDown
-                  size={14}
-                  className={`transition-transform duration-200 ${showViewDropdown ? "rotate-180" : ""}`}
+                <ChevronDownIcon
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${showViewDropdown ? "rotate-180" : ""}`}
                 />
               </button>
               {showViewDropdown && (

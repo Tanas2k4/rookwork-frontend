@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { IoClose } from "react-icons/io5";
-import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
+import { XMarkIcon, ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
 import type { Task, TaskWithMeta, Priority, User } from "../../../types/project";
 import {
   statusMap,
@@ -115,7 +114,7 @@ export function TaskModalDetails({
                 </>
               );
             })()}
-            <MdOutlineExpandMore size={16} className="text-gray-400" />
+            <ChevronDownIcon className="w-4 h-4 text-gray-400" />
           </button>
           {showStatusDd && (
             <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-48 max-h-60 overflow-y-auto">
@@ -162,7 +161,7 @@ export function TaskModalDetails({
                 }`} />
               ))}
             </div>
-            <MdOutlineExpandMore size={16} className="text-gray-400" />
+            <ChevronDownIcon className="w-4 h-4 text-gray-400" />
           </button>
           {showPriorityDd && (
             <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-40">
@@ -277,7 +276,7 @@ export function TaskModalDetails({
               <span className="italic text-gray-400">
                 Unassigned</span>
             )}
-            <MdOutlineExpandMore size={16} className="text-gray-400 shrink-0 ml-auto" />
+            <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
           </button>
 
           {showAssigneeDd && (
@@ -288,7 +287,7 @@ export function TaskModalDetails({
                 className="w-full text-left pl-3 py-1.5 text-sm text-gray-500 italic hover:bg-gray-50 flex items-center"
               >
                 <div className="p-1.5 bg-gray-200 rounded-full ml-1">
-                  <IoClose size={14} className=" text-gray-500" />
+                  <XMarkIcon className="w-3.5 h-3.5 text-gray-500" />
                 </div>
                 <span className="w-3 h-4" />
                 Unassigned (clear all)
@@ -312,7 +311,7 @@ export function TaskModalDetails({
                           ? "bg-purple-900 border-purple-900"
                           : "border-gray-300"
                       }`}>
-                        {isSelected && <MdCheck size={11} className="text-white" />}
+                        {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
                       </span>
                       <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
                       <span className="truncate">{u.display_name}</span>

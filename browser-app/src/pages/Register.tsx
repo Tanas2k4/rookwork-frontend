@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import LoginBackground from "../assets/login-background.jpg";
-import { IoIosPersonAdd } from "react-icons/io";
+import { UserPlusIcon, UserIcon, EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { LuUser } from "react-icons/lu";
-import { IoMailOutline } from "react-icons/io5";
-import { TbLock } from "react-icons/tb";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
+import { OtpInput } from "../components/common/OtpInput";
 
 function Register({ onSuccess }: { onSuccess?: () => void }) {
   const [profileName, setProfileName] = useState("");
@@ -102,15 +100,18 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+  const handleOtpChange = (val: string) => {
     setOtp(val);
+    if (val.length === 6) {
+      handleVerifyOtp(val);
+    }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (code?: string) => {
     setError("");
     setSuccess("");
-    if (otp.length < 6) {
+    const otpCode = typeof code === "string" ? code : otp;
+    if (otpCode.length < 6) {
       setError("Please enter the 6-digit OTP code");
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
@@ -118,7 +119,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
     }
     setLoading(true);
     try {
-      const data = await authApi.verifyOtp(email, otp, invitationId || undefined);
+      const data = await authApi.verifyOtp(email, otpCode, invitationId || undefined);
       tokenStorage.save(data.accessToken, data.refreshToken);
       setSuccess("Verification successful!");
       window.electron?.loginSuccess();
@@ -187,7 +188,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
                           : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
                       }`}>
-                        <LuUser className={`text-[16px] transition-colors ${isProfileNameError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                         <UserIcon className={`text-[16px] w-4.5 h-4.5 transition-colors ${isProfileNameError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
                         <input
                           className="w-full bg-transparent text-[14px] outline-none"
                           placeholder="display name"
@@ -204,7 +205,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
                           : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
                       }`}>
-                        <IoMailOutline className={`text-[16px] transition-colors ${isEmailError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                         <EnvelopeIcon className={`text-[16px] w-4.5 h-4.5 transition-colors ${isEmailError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
                         <input
                           className="w-full bg-transparent text-[14px] outline-none"
                           placeholder="email"
@@ -226,7 +227,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
                           : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
                       }`}>
-                        <TbLock className={`text-[16px] transition-colors ${isPasswordError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                         <LockClosedIcon className={`text-[16px] w-4.5 h-4.5 transition-colors ${isPasswordError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
                         <input
                           type="password"
                           className="w-full bg-transparent text-[14px] outline-none"
@@ -244,7 +245,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                           ? "bg-red-50 border-red-300 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500" 
                           : "bg-gray-100 border-transparent focus-within:border-purple-800 focus-within:ring-1 focus-within:ring-purple-800"
                       }`}>
-                        <TbLock className={`text-[16px] transition-colors ${isConfirmError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
+                         <LockClosedIcon className={`text-[16px] w-4.5 h-4.5 transition-colors ${isConfirmError ? "text-red-500" : "text-gray-400 group-focus-within:text-purple-800"}`} />
                         <input
                           type="password"
                           className="w-full bg-transparent text-[14px] outline-none"
@@ -287,7 +288,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                 {loading ? (
                   <span className="tracking-widest">...</span>
                 ) : (
-                  <IoIosPersonAdd size={22} />
+                   <UserPlusIcon className="w-5.5 h-5.5" />
                 )}
               </button>
             </div>
@@ -303,20 +304,11 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
 
             {/* OTP INPUT */}
             <div className={`py-2 flex justify-center ${isShaking ? "animate-shake" : ""}`}>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="000000"
-                className={`w-48 h-11 border rounded-lg text-center text-[22px] font-bold tracking-[8px] outline-none transition-all duration-200 ${
-                  error 
-                    ? "bg-red-50 border-red-300 text-red-600 focus:border-red-500 focus:ring-1 focus:ring-red-500" 
-                    : "bg-gray-100 border-transparent text-gray-800 focus:border-purple-800 focus:bg-white focus:ring-1 focus:ring-purple-800"
-                }`}
+              <OtpInput
                 value={otp}
                 onChange={handleOtpChange}
+                disabled={loading}
+                error={!!error}
               />
             </div>
 
@@ -355,7 +347,7 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
             <div className="pt-4">
               <button
                 className="w-full flex items-center justify-center bg-purple-900 py-2.5 text-white text-xs font-bold tracking-[4px] rounded-lg hover:bg-purple-800 disabled:opacity-60"
-                onClick={handleVerifyOtp}
+                 onClick={() => handleVerifyOtp()}
                 disabled={loading}
               >
                 {loading ? "..." : "VERIFY"}

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  IoSearchSharp,
-  IoFolderOpenOutline,
-  IoDocumentTextOutline,
-  IoFileTrayFullOutline,
-} from "react-icons/io5";
+  MagnifyingGlassIcon,
+  FolderOpenIcon,
+  DocumentTextIcon,
+  InboxIcon,
+} from "@heroicons/react/24/outline";
 import { searchApi } from "../../../api/services/searchApi";
 import type { SearchResponse } from "../../../api/contracts/search";
 
@@ -201,7 +201,7 @@ export function HeaderSearch() {
   return (
     <div ref={containerRef} className="relative">
       <div className="relative flex items-center">
-        <IoSearchSharp className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -252,13 +252,13 @@ export function HeaderSearch() {
                       }`}
                     >
                       {item.type === "project" && (
-                        <IoFolderOpenOutline size={15} />
+                        <FolderOpenIcon className="w-3.75 h-3.75" />
                       )}
                       {item.type === "issue" && (
-                        <IoDocumentTextOutline size={15} />
+                        <DocumentTextIcon className="w-3.75 h-3.75" />
                       )}
                       {item.type === "file" && (
-                        <IoFileTrayFullOutline size={15} />
+                        <InboxIcon className="w-3.75 h-3.75" />
                       )}
                     </div>
 

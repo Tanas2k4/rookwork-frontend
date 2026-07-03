@@ -5,8 +5,7 @@ import { issueApi } from "../../api/services/issueApi";
 import { issueToTask } from "../../utils/issueMapper";
 import type { Task } from "../../types/project";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
-import { RiDownload2Line, RiFolder2Fill } from "react-icons/ri";
-import { IoSearchOutline } from "react-icons/io5";
+import { ArrowDownTrayIcon, FolderIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/common/ToastContainer";
 import { DriveFileCard } from "./DriveFileCard";
@@ -316,7 +315,7 @@ export default function ProjectFilesView() {
       {/* Search top bar */}
       <div className="flex items-center gap-3 mb-2 ">
         <div className="relative w-80">
-          <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           <input
             type="text"
             placeholder="Search files..."
@@ -410,7 +409,7 @@ export default function ProjectFilesView() {
               onClick={() => setSelectedFolderUuid(null)}
               className="hover:text-purple-800 hover:underline font-semibold text-gray-650 flex items-center gap-1.5 transition cursor-pointer"
             >
-              <RiFolder2Fill className="text-gray-400" size={15} />
+              <FolderIcon className="text-gray-400 w-[15px] h-[15px]" />
               {project?.projectName ? project.projectName : "Project"}
             </button>
             {selectedFolderUuid && selectedFolder && (
@@ -491,9 +490,8 @@ export default function ProjectFilesView() {
                     >
                       {/* Card Header (Folder Title) */}
                       <div className="h-11  bg-gray-50 border-b border-gray-200 px-3 flex items-center gap-2 select-none">
-                        <RiFolder2Fill
-                          className="text-amber-500 shrink-0"
-                          size={16}
+                        <FolderIcon
+                          className="text-amber-500 shrink-0 w-4 h-4"
                         />
                         <span
                           className="text-[11px] font-bold text-gray-755 truncate flex-1 hover:text-purple-800 block min-w-0"
@@ -511,9 +509,8 @@ export default function ProjectFilesView() {
                           before:content-[''] before:absolute before:-top-1.5 before:left-0 before:w-6 before:h-2 before:bg-amber-500 before:rounded-t-sm"
                         >
                           <div className="absolute inset-x-1 bottom-1 top-2 bg-amber-100 rounded-xs flex items-center justify-center">
-                            <RiFolder2Fill
-                              className="text-amber-400"
-                              size={16}
+                            <FolderIcon
+                              className="text-amber-400 w-4 h-4"
                             />
                           </div>
                         </div>
@@ -601,7 +598,7 @@ export default function ProjectFilesView() {
                           className="text-gray-400 hover:text-gray-800 p-1"
                           title="Download file"
                         >
-                          <RiDownload2Line size={15} />
+                          <ArrowDownTrayIcon className="w-[15px] h-[15px]" />
                         </a>
                       </div>
                     </div>
@@ -665,7 +662,7 @@ export default function ProjectFilesView() {
                       className="text-gray-400 hover:text-gray-800 p-1 shrink-0 ml-2"
                       title="Download file"
                     >
-                      <RiDownload2Line size={14} />
+                      <ArrowDownTrayIcon className="w-3.5 h-3.5" />
                     </a>
                   </div>
                 ))

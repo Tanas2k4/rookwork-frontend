@@ -1,11 +1,5 @@
 import { useState, useMemo } from "react";
-import {
-  MdAdd,
-  MdClose,
-  MdKeyboardArrowDown,
-  MdChevronRight,
-} from "react-icons/md";
-import { TbSubtask } from "react-icons/tb";
+import { PlusIcon, XMarkIcon, ChevronDownIcon, ChevronRightIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import type { Task } from "../../../types/project";
 import {
   statusMap,
@@ -66,9 +60,9 @@ export function ChildrenSection({
           className="flex items-center gap-1 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
         >
           {expanded ? (
-            <MdKeyboardArrowDown size={14} />
+            <ChevronDownIcon className="w-3.5 h-3.5" />
           ) : (
-            <MdChevronRight size={14} />
+            <ChevronRightIcon className="w-3.5 h-3.5" />
           )}
           {label} ({children.length})
         </button>
@@ -78,7 +72,7 @@ export function ChildrenSection({
             onClick={() => setShowLinkDd((p) => !p)}
             className="flex items-center gap-0.5 text-xs text-purple-700 hover:text-purple-900 transition"
           >
-            <MdAdd size={13} />
+            <PlusIcon className="w-3.5 h-3.5" />
             Link Issue
           </button>
           {showLinkDd && (
@@ -156,7 +150,7 @@ export function ChildrenSection({
                     </span>
                     {child.subtasks.length > 0 && (
                       <span className="text-xs text-gray-400 flex items-center gap-0.5">
-                        <TbSubtask size={11} />
+                        <ListBulletIcon className="w-3 h-3" />
                         {doneCount}/{child.subtasks.length}
                       </span>
                     )}
@@ -165,7 +159,7 @@ export function ChildrenSection({
                       className="opacity-0 group-hover/child:opacity-100 text-gray-300 hover:text-red-400 transition"
                       title={`Unlink ${child.type}`}
                     >
-                      <MdClose size={13} />
+                      <XMarkIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

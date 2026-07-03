@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { HiX, HiChevronDown } from "react-icons/hi";
+import { XMarkIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import type { EventForm } from "../types/calendar";
 import { EVENT_COLORS } from "../types/calendar";
 import { eventApi } from "../api/services/eventApi";
@@ -295,7 +295,7 @@ export default function CreateEventModal({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
           >
-            <HiX size={20} />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -336,9 +336,8 @@ export default function CreateEventModal({
                         ?.projectName || "Personal Event"
                     : "Personal Event"}
                 </span>
-                <HiChevronDown
-                  size={16}
-                  className={`text-gray-500 transition-transform duration-200 ${
+                <ChevronDownIcon
+                  className={`text-gray-500 w-4 h-4 transition-transform duration-200 ${
                     showProjectDropdown ? "rotate-180" : ""
                   }`}
                 />
@@ -535,7 +534,7 @@ export default function CreateEventModal({
                       }
                       className="text-gray-300 hover:text-gray-550 cursor-pointer"
                     >
-                      <HiX size={14} />
+                      <XMarkIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}

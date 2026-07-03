@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { MdAdd } from "react-icons/md";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import type { StatusCategory } from "../../api/contracts/projectStatus";
 
 interface Props {
@@ -66,12 +66,11 @@ export function AddColumnButton({ onAdd }: Props) {
         onClick={() => setOpen(true)}
         title="Add column"
         className="group flex items-center gap-2 h-9 px-12 rounded-md border-2 border-dashed border-gray-300
-          text-gray-400 hover:border-gray-700 hover:text-gray-700
+          text-gray-400 hover:border-gray-400 hover:text-gray-500
           transition-all duration-200 whitespace-nowrap shrink-0 text-sm "
       >
-        <MdAdd
-          size={18}
-          className="transition-transform group-hover:rotate-90 duration-200"
+        <PlusIcon
+          className="transition-transform group-hover:rotate-90 duration-200 w-4.5 h-4.5"
         />
         Add column
       </button>

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, startTransition } from "react";
-import { MdAdd } from "react-icons/md";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import type { TaskType, Priority } from "../../types/project";
 import { priorities, priorityLabelMap } from "../../types/project";
 import { Button } from "../../components/common/Button";
@@ -121,7 +121,7 @@ export function AddTaskButton({ onClick }: AddButtonProps) {
       onClick={onClick}
       className="w-full flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg py-2 px-3 transition"
     >
-      <MdAdd size={14} />
+      <PlusIcon className="w-3.5 h-3.5" />
       Add task
     </button>
   );
