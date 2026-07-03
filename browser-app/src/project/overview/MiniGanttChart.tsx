@@ -481,7 +481,7 @@ export default function MiniGanttChart({ data }: { data: OverviewData }) {
             {/* Hover Tooltip absolute positioned */}
             {hoveredIndex !== null && hoveredTask && (
               <div
-                className="absolute z-10 bg-slate-900 border border-slate-800 text-white rounded-xl shadow-xl p-2.5 pointer-events-none text-[10px] w-48 transition-all duration-100 ease-out"
+                className="absolute z-10 bg-gray-50 border border-gray-200 text-gray-800 rounded-md shadow-sm p-2.5 pointer-events-none text-[10px] w-48 transition-all duration-100 ease-out"
                 style={{
                   left: `${Math.min(
                     65,
@@ -496,32 +496,32 @@ export default function MiniGanttChart({ data }: { data: OverviewData }) {
                   )}%`,
                 }}
               >
-                <p className="font-bold text-gray-200 border-b border-slate-800 pb-1 mb-1 truncate">
+                <p className="font-bold text-gray-700 border-b border-gray-300 pb-1 mb-1 truncate">
                   {hoveredTask.issue.issueName}
                 </p>
-                <div className="flex flex-col gap-1 text-[9px]">
+                <div className="flex flex-col gap-1 mt-1 text-[9px]">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Duration:</span>
-                    <span className="font-semibold text-gray-200">
+                    <span className="text-gray-500">Duration:</span>
+                    <span className="font-semibold text-gray-700">
                       {hoveredTask.startDateStr} - {hoveredTask.deadlineStr}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Status:</span>
+                    <span className="text-gray-500">Status:</span>
                     <div className="flex items-center gap-1">
                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: hoveredTask.issue.status?.color }} />
                       <span className="font-semibold">{hoveredTask.issue.status?.statusName}</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Priority:</span>
+                    <span className="text-gray-500">Priority:</span>
                     <span className={`font-semibold capitalize ${priorityTextColorMap[hoveredTask.uiPriority] || "text-rose-400"}`}>
                       {hoveredTask.uiPriority}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center mt-0.5 border-t border-slate-800/60 pt-1">
-                    <span className="text-gray-400">Assignees:</span>
-                    <span className="text-gray-200 truncate max-w-24">
+                  <div className="flex justify-between items-center ">
+                    <span className="text-gray-500">Assignees:</span>
+                  <span className="text-gray-700   truncate max-w-24">
                       {hoveredTask.issue.assignees && hoveredTask.issue.assignees.length > 0
                         ? hoveredTask.issue.assignees.map(a => a.profileName).join(", ")
                         : "Unassigned"}
