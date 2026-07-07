@@ -108,12 +108,13 @@ function App() {
 
           {!loggedIn ? (
             <Routes>
+              <Route path="/" element={<Navigate to="/login" replace />} />
               <Route
                 path="/login"
                 element={<Login onSuccess={handleLoginSuccess} />}
               />
               <Route path="/register" element={<Register onSuccess={handleLoginSuccess} />} />
-              <Route path="*" element={<Navigate to="/login" />} />
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           ) : (
             systemRole === "ADMIN" || systemRole === "SUPERADMIN" ? (
@@ -144,6 +145,7 @@ function App() {
 
                   <main className="flex-1 overflow-auto bg-gray-50">
                     <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route
                         path="/dashboard"
                         element={
