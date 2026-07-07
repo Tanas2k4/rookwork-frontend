@@ -228,7 +228,7 @@ export default function EventsView() {
                 </div>
 
                 {/* Right Column: Event Cards List */}
-                <div className="flex flex-col w-full gap-2">
+                <div className="flex flex-col w-full gap-2 min-w-0">
                   {group.items.map((ev) => {
                     const organizer = ev.guests.find(
                       (g) => g.role === "organizer",
@@ -240,19 +240,19 @@ export default function EventsView() {
                         className="relative flex items-center justify-between 
                         bg-white hover:bg-neutral-100 border border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-300 p-4"
                       >
-                        <div className="flex items-stretch gap-3 flex-1">
+                        <div className="flex items-stretch gap-3 flex-1 min-w-0">
                           {/* Color bar */}
                           <div
                             className={`w-1 rounded-full shrink-0 ${colorStyles.barClass}`}
                             style={colorStyles.barStyle}
                           ></div>
 
-                          <div className="flex flex-col gap-1 flex-1">
-                            <h3 className="text-[15px] font-semibold text-gray-800">
+                          <div className="flex flex-col gap-1 flex-1 min-w-0">
+                            <h3 className="text-[15px] font-semibold text-gray-800 break-words break-all">
                               {ev.title}
                             </h3>
                             {ev.note && (
-                              <div className="text-[13px] text-gray-500 italic">
+                              <div className="text-[13px] text-gray-500 italic break-words break-all">
                                 {ev.note}
                               </div>
                             )}
@@ -280,23 +280,23 @@ export default function EventsView() {
                               <div className="flex items-center gap-1">
                                 <ClockIcon
                                   className="text-gray-400 w-3.5 h-3.5"
-                                />
+                                 animate-pulse />
                                 <span>{formatTime12h(ev.time)}</span>
                               </div>
 
                               {/* Location */}
                               {ev.location && (
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 min-w-0 flex-1">
                                   {ev.location.toLowerCase() === "online" ? (
                                     <VideoCameraIcon
-                                      className="text-gray-400 w-3.5 h-3.5"
+                                      className="text-gray-400 w-3.5 h-3.5 shrink-0"
                                     />
                                   ) : (
                                     <MapPinIcon
-                                      className="text-gray-400 w-3.5 h-3.5"
+                                      className="text-gray-400 w-3.5 h-3.5 shrink-0"
                                     />
                                   )}
-                                  <span>{ev.location}</span>
+                                  <span className="break-words break-all">{ev.location}</span>
                                 </div>
                               )}
 

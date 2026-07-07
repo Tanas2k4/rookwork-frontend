@@ -9,6 +9,7 @@ import {
   issueTypeIcons,
 } from "../../types/project";
 import { isOverdue } from "../../utils/date";
+import { formatDeadline } from "../shared/dropdownConstants";
 
 interface Props {
   task: Task;
@@ -67,9 +68,9 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
       )}
 
       {/* Title */}
-      <div className="flex items-start gap-2.5 mb-2">
+      <div className="flex items-start gap-2.5 mb-2 min-w-0">
         <TypeIcon style={{ color: typeColor }} className="mt-0.5 shrink-0" />
-        <span className="text-[14px] font-medium text-gray-800 flex-1 leading-snug">
+        <span className="text-[14px] font-medium text-gray-800 flex-1 leading-snug line-clamp-2 break-words min-w-0">
           {task.title}
         </span>
       </div>
@@ -123,7 +124,7 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
             className={`text-[12px] font-medium ${overdue ? "text-red-600" : "text-gray-400"}`}
           >
             {overdue && "⚠ "}
-            {task.deadline ?? "No deadline"}
+            {task.deadline ? formatDeadline(task.deadline) : "No deadline"}
           </span>
         </div>
       </div>

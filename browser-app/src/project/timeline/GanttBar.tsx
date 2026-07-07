@@ -44,10 +44,14 @@ export function GanttBar({
 
   const [localX, setLocalX] = useState<number | null>(null);
   const [localWidth, setLocalWidth] = useState<number | null>(null);
+  const localXRef = useRef<number | null>(null);
+  const localWidthRef = useRef<number | null>(null);
   const didDrag = useRef(false);
 
   useEffect(() => {
     if (!dragState) {
+      localXRef.current = null;
+      localWidthRef.current = null;
       startTransition(() => {
         setLocalX(null);
         setLocalWidth(null);
@@ -80,25 +84,30 @@ export function GanttBar({
       }
 
       if (dragState.type === "move") {
-        setLocalX(dragState.initialX + dx);
+        const nx = dragState.initialX + dx;
+        setLocalX(nx);
+        localXRef.current = nx;
       } else if (dragState.type === "resize-left") {
         const newX = dragState.initialX + dx;
         const newWidth = dragState.initialWidth - dx;
         if (newWidth >= colWidth * 0.4) {
           setLocalX(newX);
           setLocalWidth(newWidth);
+          localXRef.current = newX;
+          localWidthRef.current = newWidth;
         }
       } else if (dragState.type === "resize-right") {
         const newWidth = dragState.initialWidth + dx;
         if (newWidth >= colWidth * 0.4) {
           setLocalWidth(newWidth);
+          localWidthRef.current = newWidth;
         }
       }
     };
 
     const handleMouseUp = () => {
-      const finalX = localX !== null ? localX : x;
-      const finalWidth = localWidth !== null ? localWidth : width;
+      const finalX = localXRef.current !== null ? localXRef.current : x;
+      const finalWidth = localWidthRef.current !== null ? localWidthRef.current : width;
 
       if (finalX !== x || finalWidth !== width) {
         const startDays = Math.round(finalX / colWidth);
@@ -122,7 +131,7 @@ export function GanttBar({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragState, localX, localWidth, x, width, colWidth, timelineStart, onUpdateDates, task.id]);
+  }, [dragState, x, width, colWidth, timelineStart, onUpdateDates, task.id]);
 
   const displayX = localX !== null ? localX : x;
   const displayWidth = localWidth !== null ? localWidth : width;
@@ -147,16 +156,20 @@ export function GanttBar({
         boxShadow: isHovered
           ? `0 2px 12px ${color}33`
           : `0 1px 4px ${color}11`,
-        pointerEvents: "all",
+        pointerEvents: "auto",
         cursor: dragState ? (dragState.type === "move" ? "grabbing" : "ew-resize") : "pointer",
         transition: dragState ? "none" : "box-shadow 0.15s, transform 0.15s",
         transform: isHovered && !dragState ? "scaleY(1.08)" : "scaleY(1)",
         display: "flex",
         alignItems: "center",
-        overflow: "hidden",
+        overflow: "visible",
       }}
       onMouseEnter={() => onHover(task.id)}
-      onMouseLeave={() => onHover(null)}
+      onMouseLeave={() => {
+        if (!dragState) {
+          onHover(null);
+        }
+      }}
       onMouseDown={(e) => handleMouseDown(e, "move")}
       onMouseUp={(e) => {
         if (linkingSourceId && linkingSourceId !== task.id) {
@@ -222,35 +235,61 @@ export function GanttBar({
       </div>
 
       {/* Left resize handle */}
-      {isHovered && (
+      {(isHovered || dragState) && (
         <div
           style={{
             position: "absolute",
-            left: 0,
+            left: -4,
             top: 0,
-            width: 6,
+            width: 8,
             height: "100%",
             cursor: "ew-resize",
             zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           onMouseDown={(e) => handleMouseDown(e, "resize-left")}
-        />
+        >
+          <div
+            style={{
+              width: 2,
+              height: 14,
+              backgroundColor: "rgba(255, 255, 255, 0.75)",
+              borderRadius: 1,
+              boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+            }}
+          />
+        </div>
       )}
 
       {/* Right resize handle */}
-      {isHovered && (
+      {(isHovered || dragState) && (
         <div
           style={{
             position: "absolute",
-            right: 0,
+            right: -4,
             top: 0,
-            width: 6,
+            width: 8,
             height: "100%",
             cursor: "ew-resize",
             zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           onMouseDown={(e) => handleMouseDown(e, "resize-right")}
-        />
+        >
+          <div
+            style={{
+              width: 2,
+              height: 14,
+              backgroundColor: "rgba(255, 255, 255, 0.75)",
+              borderRadius: 1,
+              boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+            }}
+          />
+        </div>
       )}
 
       {/* Connector handle for dependency */}

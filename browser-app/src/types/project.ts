@@ -28,6 +28,7 @@ export interface User {
   email: string;
   display_name: string;
   avt: string;
+  uuid?: string;
 }
 
 export interface Subtask {

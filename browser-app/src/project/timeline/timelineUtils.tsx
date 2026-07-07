@@ -1,7 +1,8 @@
-import type { Task, TaskType, TaskStatus } from "../../types/project";
-import type { IssueTypeResponse } from "../../api/contracts/issue";
+import type { TaskType } from "../../types/project";
+import type { IssueResponse } from "../../api/contracts/issue";
 import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
 import { addDays, diffDays } from "../../utils/date";
+import { avatarUrl } from "../../utils/avatar";
 
 // Types
 export type ViewMode = "day" | "week" | "month";
@@ -55,56 +56,66 @@ const USER_COLORS = [
   "#f87171",
 ];
 
-function statusToGantt(s: TaskStatus): GanttTask["status"] {
-  if (s === "to_do") return "todo";
-  if (s === "in_progress") return "in_progress";
+const TYPE_DURATION: Record<string, number> = {
+  task: 7,
+  story: 14,
+  epic: 28,
+};
+
+function statusToGantt(s: ProjectStatusResponse | null | undefined): GanttTask["status"] {
+  if (!s || !s.statusCategory) return "todo";
+  const cat = s.statusCategory;
+  if (cat === "TO_DO") return "todo";
+  if (cat === "IN_PROGRESS") return "in_progress";
   return "done";
 }
 
-function calcProgress(task: Task): number {
-  if (task.status === "done") return 100;
-  if (task.subtasks.length === 0) return task.status === "in_progress" ? 40 : 0;
-  return Math.round(
-    (task.subtasks.filter((s) => s.done).length / task.subtasks.length) * 100,
-  );
+// simple string hash function for consistent avatar colors
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return hash;
 }
 
-function inferStart(task: Task): Date {
-  const deadline = task.deadline
-    ? new Date(task.deadline)
-    : new Date("2026-03-15");
-  const durationMap: Record<string, number> = { task: 7, story: 14, epic: 28 };
-  const duration = durationMap[task.type.toLowerCase()] || 7;
-  const d = new Date(deadline);
-  d.setDate(d.getDate() - duration);
-  return d;
-}
-
-export function taskToGantt(task: Task): GanttTask {
-  const t = task as Task & { _statusId?: string; _statusMeta?: ProjectStatusResponse | null; issueType?: IssueTypeResponse };
-  const rawGroupName = t.issueType?.name || "Task";
+export function issueToGantt(
+  issue: IssueResponse,
+  progress: number
+): GanttTask {
+  const rawGroupName = issue.issueType?.name || "Task";
   const groupName = rawGroupName.charAt(0).toUpperCase() + rawGroupName.slice(1).toLowerCase();
 
+  const start = issue.startDate
+    ? new Date(issue.startDate)
+    : new Date(issue.createdAt);
+
+  const duration = TYPE_DURATION[issue.issueType.name.toLowerCase()] || 7;
+  const end = issue.deadline
+    ? new Date(issue.deadline)
+    : new Date(start.getTime() + duration * 24 * 60 * 60 * 1000);
+
   return {
-    id: String(t.id),
-    name: t.title,
-    start: inferStart(t),
-    end: t.deadline ? new Date(t.deadline) : new Date("2026-03-15"),
-    progress: calcProgress(t),
-    color: t.issueType?.color || "#64748B",
-    status: statusToGantt(t.status),
+    id: issue.id,
+    name: issue.issueName,
+    start,
+    end,
+    progress,
+    color: issue.issueType?.color || "#64748B",
+    status: statusToGantt(issue.status),
     group: groupName,
-    type: t.type,
-    assignees: Array.isArray(t.assigned_to)
-      ? t.assigned_to.map((u) => ({
-          id: String(u.id),
-          name: u.display_name,
-          avatar: u.avt,
-          color: USER_COLORS[Math.abs(u.id - 1) % USER_COLORS.length] || USER_COLORS[0],
+    type: issue.issueType.name.toLowerCase() as any,
+    assignees: Array.isArray(issue.assignees)
+      ? issue.assignees.map((u) => ({
+          id: u.id,
+          name: u.profileName,
+          avatar: avatarUrl(u.profileName, u.picture) || undefined,
+          color: USER_COLORS[Math.abs(hashCode(u.id)) % USER_COLORS.length] || USER_COLORS[0],
         }))
       : [],
-    _statusId: t._statusId,
-    _statusMeta: t._statusMeta,
+    _statusId: issue.status?.id || null,
+    _statusMeta: issue.status || null,
+    dependencyIds: issue.dependencyIds || [],
   };
 }
 

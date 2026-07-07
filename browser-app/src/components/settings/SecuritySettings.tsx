@@ -5,6 +5,7 @@ import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../common/ToastContainer";
 import type { UserSummary } from "../../api/contracts/issue";
 import { OtpInput } from "../common/OtpInput";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 interface SecuritySettingsProps {
   user: UserSummary | null;
@@ -15,6 +16,8 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -163,14 +166,29 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
             <label className="block text-[13px] font-bold text-gray-700 mb-2">
               {hasPassword ? "New Password" : "Password"}
             </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              disabled={!!user?.passwordLimitReached}
-              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100 disabled:bg-gray-100 disabled:border-gray-300"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showNewPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={!!user?.passwordLimitReached}
+                className="w-full pl-3 pr-10 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100 disabled:bg-gray-100 disabled:border-gray-300"
+                required
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title={showNewPassword ? "Hide password" : "Show password"}
+              >
+                {showNewPassword ? (
+                  <EyeSlashIcon className="w-4 h-4" />
+                ) : (
+                  <EyeIcon className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             {/* Strength bar */}
             {newPassword.length > 0 && (
@@ -203,14 +221,29 @@ export default function SecuritySettings({ user }: SecuritySettingsProps) {
           </div>
           <div>
             <label className="block text-[13px] font-bold text-gray-700 mb-2">Confirm New Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={!!user?.passwordLimitReached}
-              className="w-full px-3 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100 disabled:bg-gray-100 disabled:border-gray-300"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={!!user?.passwordLimitReached}
+                className="w-full pl-3 pr-10 py-1.5 border text-sm text-gray-700 border-gray-500 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-100 disabled:bg-gray-100 disabled:border-gray-300"
+                required
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? (
+                  <EyeSlashIcon className="w-4 h-4" />
+                ) : (
+                  <EyeIcon className="w-4 h-4" />
+                )}
+              </button>
+            </div>
             {confirmPassword.length > 0 && !passwordsMatch && (
               <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                 <XMarkIcon className="w-3 h-3 text-red-500" /> Passwords do not match

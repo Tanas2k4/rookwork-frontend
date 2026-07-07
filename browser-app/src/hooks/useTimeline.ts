@@ -6,54 +6,10 @@
 
 import { useState, useEffect, useContext } from "react";
 import { issueApi } from "../api/services/issueApi";
-import { taskToGantt } from "../project/timeline/timelineUtils";
+import { issueToGantt } from "../project/timeline/timelineUtils";
 import type { GanttTask } from "../project/timeline/timelineUtils";
-import type { IssueResponse } from "../api/contracts/issue";
-import { issueToTask } from "../utils/issueMapper";
 import { ProjectContext } from "../context/ProjectContext";
 import { computeAllProgress } from "../utils/progress";
-
-const TYPE_DURATION: Record<string, number> = {
-  task: 7,
-  story: 14,
-  epic: 28,
-};
-
-/**
- * Cộng thêm số ngày vào một đối tượng Date.
- * @param date Đối tượng Date gốc
- * @param days Số ngày cộng thêm
- */
-function addDaysToDate(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-/**
- * Chuyển đổi một đối tượng IssueResponse của API thành đối tượng GanttTask dùng cho thư viện Timeline.
- * @param issue Đối tượng issue từ API BE
- * @param progressMap Bản đồ chứa tiến độ được tính toán
- */
-function issueToGantt(
-  issue: IssueResponse,
-  progressMap: Record<string, number>,
-): GanttTask {
-  const minimalTask = issueToTask(issue);
-  const gantt = taskToGantt(minimalTask);
-  const start = issue.startDate
-    ? new Date(issue.startDate)
-    : new Date(issue.createdAt);
-  const end = issue.deadline
-    ? new Date(issue.deadline)
-    : addDaysToDate(
-        start,
-        TYPE_DURATION[issue.issueType.name.toLowerCase()] || 7,
-      );
-  const progress =
-    progressMap[issue.id] !== undefined ? progressMap[issue.id] : gantt.progress;
-  return { ...gantt, id: issue.id, start, end, progress, dependencyIds: issue.dependencyIds || [] };
-}
 
 //  Hook
 
@@ -83,7 +39,7 @@ export function useTimeline(projectId: string | null): UseTimelineReturn {
       .then((issues) => {
         if (!cancelled) {
           const progressMap = computeAllProgress(issues);
-          setGanttTasks(issues.map((i) => issueToGantt(i, progressMap)));
+          setGanttTasks(issues.map((i) => issueToGantt(i, progressMap[i.id] || 0)));
         }
       })
       .catch((err) => {
