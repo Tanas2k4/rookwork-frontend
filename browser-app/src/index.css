@@ -3,6 +3,7 @@
 @theme {
   --font-body: "IBM Plex Sans", sans-serif;
   --font-heading: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 }
 
 body {
