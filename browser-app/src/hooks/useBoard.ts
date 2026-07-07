@@ -577,10 +577,10 @@ export function useBoard(projectId: string | null) {
     // Optimistic update
     const updated = originalSubtasks.filter((s) => s.id !== subtaskId);
     updateTaskLocal(selectedTask.id, { subtasks: updated });
-    pushToast("Subtask removed", "info");
 
     try {
       await subtaskApi.delete(projectId, issueUuid, subtaskUuid);
+      pushToast("Subtask removed", "info");
     } catch (err) {
       // rollback
       updateTaskLocal(selectedTask.id, { subtasks: originalSubtasks });

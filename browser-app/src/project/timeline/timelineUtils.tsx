@@ -113,7 +113,7 @@ export function issueToGantt(
           color: USER_COLORS[Math.abs(hashCode(u.id)) % USER_COLORS.length] || USER_COLORS[0],
         }))
       : [],
-    _statusId: issue.status?.id || null,
+    _statusId: issue.status?.id || undefined,
     _statusMeta: issue.status || null,
     dependencyIds: issue.dependencyIds || [],
   };

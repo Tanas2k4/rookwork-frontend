@@ -101,7 +101,7 @@ export default function ListView() {
                           <button
                             onClick={() => openIssueModal(task._uuid)}
                             className="text-[13px] text-gray-700 font-medium hover:text-purple-700 hover:underline transition-colors text-left truncate block w-full"
-                            title="Click để xem chi tiết"
+                            title="Click to view details"
                           >
                             {task.title}
                           </button>

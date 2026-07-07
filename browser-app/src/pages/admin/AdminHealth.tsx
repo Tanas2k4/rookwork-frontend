@@ -163,9 +163,9 @@ export function AdminHealth() {
               };
               const englishLogs: Record<string, string> = {
                 "500 Internal Error — /api/tasks/bulk-update": "500 Internal Server Error — /api/tasks/bulk-update",
-                "Độ trễ database vượt 300ms": "Database connection latency exceeded 300ms",
-                "Triển khai phiên bản v4.12.0 thành công": "Successfully deployed release bundle v4.12.0 to cluster",
-                "Sao lưu dữ liệu định kỳ hoàn tất": "Automated system data snapshots completed"
+                "Database connection latency exceeded 300ms": "Database connection latency exceeded 300ms",
+                "Successfully deployed release bundle v4.12.0 to cluster": "Successfully deployed release bundle v4.12.0 to cluster",
+                "Automated system data snapshots completed": "Automated system data snapshots completed"
               };
               return (
                 <div className="flex items-center gap-2.75 py-2.5 border-b border-neutral-100 last:border-b-0" key={idx}>

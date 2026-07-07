@@ -158,7 +158,8 @@ export default function TimelineView() {
       if (!targetTask) return;
 
       const sourceTask = TASKS.find((t) => t.id === linkingSourceId);
-      const isReverseDep = sourceTask?.dependencyIds?.includes(targetId);
+      if (!sourceTask) return;
+      const isReverseDep = sourceTask.dependencyIds?.includes(targetId);
 
       if (isReverseDep) {
         // Remove targetId from sourceTask's dependencyIds (opposite direction)
