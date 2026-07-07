@@ -51,6 +51,14 @@ export function useListView() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+  const assigneeTimeoutRefs = useRef<{ [taskId: string]: any }>({});
+
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(assigneeTimeoutRefs.current).forEach(clearTimeout);
+    };
+  }, []);
 
   //  Fetch issues 
 
@@ -80,7 +88,7 @@ export function useListView() {
       .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+    // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
   }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
@@ -95,9 +103,14 @@ export function useListView() {
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
     const matchesUser =
       selectedUsers.length === 0 ||
-      task.assigned_to.some((u) => {
-        const typedU = u as User & { _uuid?: string; uuid?: string };
-        return selectedUsers.includes(typedU._uuid ?? typedU.uuid ?? typedU.avt);
+      selectedUsers.every((selUuid) => {
+        const hasDirectUuid = task._assigneeUuids && task._assigneeUuids.includes(selUuid);
+        if (hasDirectUuid) return true;
+        return task.assigned_to.some((u) => {
+          const typedU = u as User & { _uuid?: string; uuid?: string };
+          const key = typedU.uuid ?? typedU._uuid ?? typedU.avt;
+          return key === selUuid;
+        });
       });
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
@@ -144,7 +157,9 @@ export function useListView() {
     if (!projectId) return;
     try {
       await issueApi.update(projectId, taskId, data);
-      addToast(successMsg, "success");
+      if (successMsg) {
+        addToast(successMsg, "success");
+      }
       if (notifyIssueUpdated) {
         notifyIssueUpdated();
       }
@@ -192,13 +207,25 @@ export function useListView() {
       ),
     );
 
-    updateIssue(
-      taskId,
-      { assigneeIds: newUuids },
+    addToast(
       newUsers.length > 0
         ? `Assigned to ${newUsers.map((u) => u.display_name).join(", ")}`
         : "Assignee removed",
+      "success"
     );
+
+    if (assigneeTimeoutRefs.current[taskId]) {
+      clearTimeout(assigneeTimeoutRefs.current[taskId]);
+    }
+
+    assigneeTimeoutRefs.current[taskId] = setTimeout(() => {
+      updateIssue(
+        taskId,
+        { assigneeIds: newUuids },
+        ""
+      );
+      delete assigneeTimeoutRefs.current[taskId];
+    }, 5000);
   }
 
   function handleStatusChange(taskId: string, statusId: string) {
@@ -219,11 +246,11 @@ export function useListView() {
       p.map((t) =>
         t._uuid === taskId
           ? {
-              ...t,
-              status: uiStatus,
-              _statusId: statusId,
-              _statusMeta: targetStatus,
-            }
+            ...t,
+            status: uiStatus,
+            _statusId: statusId,
+            _statusMeta: targetStatus,
+          }
           : t,
       ),
     );

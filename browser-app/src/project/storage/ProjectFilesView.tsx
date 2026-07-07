@@ -33,7 +33,6 @@ export default function ProjectFilesView() {
   const [draggedOverFolderUuid, setDraggedOverFolderUuid] = useState<
     string | null
   >(null);
-  const [draggedOverContent, setDraggedOverContent] = useState<boolean>(false);
   const [fileTypeFilter, setFileTypeFilter] = useState<string>("all");
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] =
     useState<boolean>(false);
@@ -370,8 +369,8 @@ export default function ProjectFilesView() {
                       setIsFilterDropdownOpen(false);
                     }}
                     className={`w-full text-left px-3 py-1.5 text-xs transition cursor-pointer ${fileTypeFilter === opt.value
-                        ? "bg-purple-50 text-purple-800 font-bold"
-                        : "text-gray-700 hover:bg-gray-50"
+                      ? "bg-purple-50 text-purple-800 font-bold"
+                      : "text-gray-700 hover:bg-gray-50"
                       }`}
                   >
                     {opt.label}
@@ -427,19 +426,7 @@ export default function ProjectFilesView() {
 
           {selectedFolderUuid && selectedFolder ? (
             /* Folder Content Grid */
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDraggedOverContent(true);
-              }}
-              onDragLeave={() => setDraggedOverContent(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                handleDropOnFolder(e, selectedFolderUuid);
-                setDraggedOverContent(false);
-              }}
-              className={` ${draggedOverContent ? "border-purple-800 bg-purple-50/10 ring-purple-400" : ""} px-6 py-4 rounded-xl transition duration-200`}
-            >
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-3xs min-h-[360px] space-y-4">
               {(() => {
                 const folderAttachmentsFiltered = filterFolderAttachments(
                   selectedFolder.attachments,
@@ -484,8 +471,8 @@ export default function ProjectFilesView() {
                       onDragLeave={() => setDraggedOverFolderUuid(null)}
                       onDrop={(e) => handleDropOnFolder(e, group._uuid)}
                       className={`group bg-white border ${draggedOverFolderUuid === group._uuid
-                          ? "border-purple-800"
-                          : "border-gray-200 hover:border-purple-800"
+                        ? "border-purple-800"
+                        : "border-gray-200 hover:border-purple-800"
                         } rounded-xl overflow-hidden transition-all flex flex-col h-52 relative cursor-pointer`}
                     >
                       {/* Card Header (Folder Title) */}
