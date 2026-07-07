@@ -7,20 +7,20 @@ import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
-import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid, uiStatusToStatusId } from "../utils/issueMapper";
+import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid } from "../utils/issueMapper";
 import { subtaskApi } from "../api/services/subtaskApi";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue as isOverdueUtil } from "../utils/date";
 import {
   type Priority,
   statusMap,
-  statuses,
   priorityColorMap,
   priorityLabelMap,
   priorities,
   issueTypeIcons,
 } from "../types/project";
 import { useProjectStatuses } from "../hooks/useProjectStatuses";
+import { useWorkflow } from "../hooks/useWorkflow";
 
 // helper components
 function PriorityBars({ priority }: { priority: Priority }) {
@@ -73,6 +73,7 @@ export default function IssueDetailPage() {
   const [issue, setIssue] = useState<IssueResponse | null>(null);
   const [notFound, setNotFound] = useState(false);
   const { statuses: projectStatuses } = useProjectStatuses(issue?.projectId ?? null);
+  const { isTransitionAllowed } = useWorkflow(issue?.projectId ?? null);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
 
@@ -232,7 +233,7 @@ export default function IssueDetailPage() {
       <div className="shrink-0 px-8 pt-2 pb-5 border-b border-gray-100">
         <div className="flex items-center justify-between gap-3">
           <TypeIcon size={13} style={{ color: it?.color || "#64748B" }} />
-          <h1 className="text-xl font-semibold text-gray-700 leading-snug flex-1 pt-1 min-w-0">
+          <h1 className="text-xl font-semibold text-gray-700 leading-snug flex-1 pt-1 min-w-0 break-words break-all">
             {issue.issueName}
           </h1>
 
@@ -242,22 +243,27 @@ export default function IssueDetailPage() {
               Status{" "}
               <InlineDropdown trigger={
                 <span className="flex items-center gap-1.5 border border-gray-500 rounded-md px-2 py-1">
-                  <span className={`w-2 h-2 rounded-full ${statusMap[status].dotColor}`} />
-                  {statusMap[status].label}
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: issue.status?.color ?? "#94a3b8" }} />
+                  <span>{issue.status?.statusName ?? statusMap[status].label}</span>
                   <ChevronDownIcon className="text-gray-500 w-3.5 h-3.5" />
                 </span>
               }>
-                {statuses.map((s) => (
-                  <button key={s}
-                    onClick={() => {
-                      const statusId = uiStatusToStatusId(s, projectStatuses);
-                      if (statusId) patchIssue({ statusId });
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${status === s ? "text-purple-700 font-medium" : "text-gray-700"}`}>
-                    <span className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`} />
-                    {statusMap[s].label}
-                  </button>
-                ))}
+                {(() => {
+                  const currentStatusId = issue.status?.id;
+                  const allowedStatuses = projectStatuses.filter((s) =>
+                    s.id === currentStatusId || isTransitionAllowed(currentStatusId, s.id)
+                  );
+                  return allowedStatuses.map((s) => (
+                    <button key={s.id}
+                      onClick={() => {
+                        patchIssue({ statusId: s.id });
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${issue.status?.id === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"}`}>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                      <span className="truncate">{s.statusName}</span>
+                    </button>
+                  ));
+                })()}
               </InlineDropdown>
             </span>
 
@@ -360,8 +366,8 @@ export default function IssueDetailPage() {
 
             <DetailRow label="Status">
               <span className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${statusMap[status].dotColor}`} />
-                <span className="text-gray-700">{statusMap[status].label}</span>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: issue.status?.color ?? "#94a3b8" }} />
+                <span className="text-gray-700">{issue.status?.statusName ?? statusMap[status].label}</span>
               </span>
             </DetailRow>
 

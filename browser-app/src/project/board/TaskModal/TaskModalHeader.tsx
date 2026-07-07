@@ -83,7 +83,7 @@ export function TaskModalHeader({
               setEditing(true);
               setValue(task.title);
             }}
-            className="text-xl font-bold text-gray-800 cursor-default rounded px-1 -mx-1 hover:bg-gray-50 transition leading-snug break-words"
+            className="text-xl font-bold text-gray-800 cursor-default rounded px-1 -mx-1 hover:bg-gray-50 transition leading-snug break-words break-all"
             title="Double-click to edit"
           >
             {task.title}

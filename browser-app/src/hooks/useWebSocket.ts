@@ -13,10 +13,12 @@ import type { ActivityResponse } from "../api/contracts/activity";
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 export interface WsCommentPayload {
-  type: "NEW_COMMENT" | "UPDATED_COMMENT" | "DELETED_COMMENT";
+  type: "NEW_COMMENT" | "UPDATED_COMMENT" | "DELETED_COMMENT" | "COMMENT_REACTION_UPDATED";
   comment?: unknown;
   commentId?: string;
   issueId?: string;
+  /** Danh sách reactions mới nhất, được gửi kèm khi type === "COMMENT_REACTION_UPDATED" */
+  reactions?: unknown;
 }
 
 export interface WsActivityPayload {

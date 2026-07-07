@@ -4,8 +4,8 @@
  * @author Warmdrobe
  */
 
-import { useState, useEffect, useCallback } from "react";
-import type { CommentResponse } from "../../../api/contracts/comment";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { CommentResponse, CommentReactionResponse } from "../../../api/contracts/comment";
 import { commentApi } from "../../../api/services/commentApi";
 import { apiClient } from "../../../api/apiClient";
 import { useProject } from "../../../hooks/useProject";
@@ -17,7 +17,10 @@ import {
 import { tokenStorage } from "../../../api/tokenStorage";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime } from "../../../utils/date";
-import { FaceSmileIcon, HeartIcon, XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { FaceSmileIcon, XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { EmojiChar, QUICK_REACTIONS, EMOJI_META } from "../../../utils/emoji";
+import EmojiPicker, { EmojiStyle } from "emoji-picker-react";
+
 
 //  Types
 
@@ -94,7 +97,252 @@ function actionLabel(a: ActivityResponse): string {
   }
 }
 
-//  Comment Editor Component
+// ──────────── Reaction Badges Component ────────────
+
+/**
+ * Displays existing reaction badges below a comment and opens
+ * a full multi-category emoji picker panel (like Slack/Notion).
+ */
+function ReactionBadges({
+  reactions,
+  currentUserId,
+  onReact,
+}: {
+  reactions: CommentReactionResponse[];
+  currentUserId: string | null;
+  onReact: (reactionType: string) => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [showFullPicker, setShowFullPicker] = useState(false);
+  const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
+  const [quickHovered, setQuickHovered] = useState<string | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) {
+      setShowFullPicker(false);
+      return;
+    }
+    function onClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [pickerOpen]);
+
+  function handlePick(emoji: string) {
+    onReact(emoji);
+    setPickerOpen(false);
+    setQuickHovered(null);
+    setShowFullPicker(false);
+  }
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap mt-1.5">
+
+      {/* ── Existing reaction badges ── */}
+      {reactions.map((r) => {
+        const isOwn = r.users.some((u) => u.id === currentUserId);
+        const meta = EMOJI_META[r.reactionType];
+        const accentColor = meta?.color ?? "#6b7280";
+        const accentBg    = meta?.bg    ?? "#f3f4f6";
+
+        return (
+          <div key={r.reactionType} className="relative">
+            <button
+              onClick={() => onReact(r.reactionType)}
+              onMouseEnter={() => setHoveredBadge(r.reactionType)}
+              onMouseLeave={() => setHoveredBadge(null)}
+              className="
+                flex items-center gap-1 pl-0.5 pr-2 py-0.5 rounded-full
+                border transition-all duration-150 select-none
+                hover:scale-105 active:scale-95
+              "
+              style={{
+                backgroundColor: isOwn ? accentBg : "#f3f4f6",
+                borderColor: isOwn ? accentColor + "66" : "#e5e7eb",
+              }}
+            >
+              <EmojiChar emoji={r.reactionType} size={15} />
+              <span
+                className="text-[11px] font-semibold leading-none"
+                style={{ color: isOwn ? accentColor : "#6b7280" }}
+              >
+                {r.count}
+              </span>
+            </button>
+
+            {/* Tooltip */}
+            {hoveredBadge === r.reactionType && (
+              <div className="
+                absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                bg-gray-900/95 backdrop-blur-sm border border-gray-800/40
+                text-white rounded-xl p-2 z-50
+                shadow-[0_8px_30px_rgba(0,0,0,0.3)]
+                flex flex-col gap-1.5 min-w-[130px] max-w-[200px] pointer-events-none
+              ">
+                {r.users.map((u) => (
+                  <div key={u.id} className="flex items-center gap-2 select-none">
+                    <img
+                      src={avatarUrl(u.profileName, u.picture)}
+                      alt=""
+                      className="w-4.5 h-4.5 rounded-full object-cover flex-shrink-0 border border-white/10"
+                    />
+                    <span className="text-[11px] text-gray-200 truncate font-semibold leading-none">
+                      {u.profileName}
+                    </span>
+                  </div>
+                ))}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-[5px] border-x-transparent border-t-[5px] border-t-gray-900/95" />
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* ── Emoji picker trigger ── */}
+      <div className="relative" ref={pickerRef}>
+        <button
+          type="button"
+          onClick={() => setPickerOpen((v) => !v)}
+          className={`
+            w-6 h-6 rounded-full flex items-center justify-center
+            transition-all duration-150 hover:scale-110 active:scale-95
+            ${
+              pickerOpen
+                ? "bg-purple-100 text-purple-600"
+                : "text-gray-300 hover:text-purple-500 hover:bg-purple-50"
+            }
+          `}
+          title="Add reaction"
+        >
+          <FaceSmileIcon className="w-3.5 h-3.5" />
+        </button>
+
+        {/* ── Emoji picker panel ── */}
+        {pickerOpen && (
+          !showFullPicker ? (
+            /* ── Facebook Messenger Style Quick reactions row + Plus Button ── */
+            <div
+              className="
+                absolute bottom-full left-0 mb-2.5 z-50
+                bg-white/95 backdrop-blur-md
+                border border-gray-100 rounded-full
+                px-2 py-1.5 flex items-center gap-1
+              "
+              style={{
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.05)",
+              }}
+            >
+              {QUICK_REACTIONS.map(({ emoji }) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onMouseEnter={() => setQuickHovered(emoji)}
+                  onMouseLeave={() => setQuickHovered(null)}
+                  onClick={() => handlePick(emoji)}
+                  className="flex items-center justify-center p-1 rounded-full select-none active:scale-90"
+                  style={{
+                    transform: quickHovered === emoji
+                      ? "scale(1.5) translateY(-4px)"
+                      : "scale(1) translateY(0)",
+                    transition: "transform 140ms cubic-bezier(0.34,1.56,0.64,1)",
+                  }}
+                >
+                  <EmojiChar emoji={emoji} size={22} />
+                </button>
+              ))}
+
+              {/* Plus Button to open full categorised list */}
+              <button
+                type="button"
+                onClick={() => setShowFullPicker(true)}
+                className="
+                  w-8 h-8 rounded-full flex items-center justify-center
+                  bg-gray-100 hover:bg-gray-200 text-gray-500 font-semibold text-lg
+                  transition-all duration-100 active:scale-90
+                "
+                title="More emojis"
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            /* ── Full Expanded Emoji Picker ── */
+            <div
+              className="
+                absolute bottom-full left-0 mb-2 z-50
+                bg-white border border-gray-100 rounded-2xl
+                flex flex-col overflow-hidden
+              "
+              style={{
+                width: 312,
+                boxShadow: "0 16px 56px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)",
+              }}
+            >
+              {/* Quick reactions row at top */}
+              <div className="flex items-end justify-center gap-1 px-3 pt-3 pb-0">
+                {QUICK_REACTIONS.map(({ emoji }) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onMouseEnter={() => setQuickHovered(emoji)}
+                    onMouseLeave={() => setQuickHovered(null)}
+                    onClick={() => handlePick(emoji)}
+                    className="flex items-center justify-center p-1 rounded-xl select-none active:scale-90"
+                    style={{
+                      transform: quickHovered === emoji
+                        ? "scale(1.6) translateY(-6px)"
+                        : "scale(1) translateY(0)",
+                      transition: "transform 140ms cubic-bezier(0.34,1.56,0.64,1)",
+                    }}
+                  >
+                    <EmojiChar emoji={emoji} size={24} />
+                  </button>
+                ))}
+              </div>
+
+              {/* Quick label */}
+              <div className="h-5 flex items-center justify-center mb-1.5">
+                {quickHovered ? (
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{
+                      color: EMOJI_META[quickHovered]?.color ?? "#374151",
+                      backgroundColor: EMOJI_META[quickHovered]?.bg ?? "#f3f4f6",
+                    }}
+                  >
+                    {EMOJI_META[quickHovered]?.label ?? quickHovered}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-gray-300">Quick reactions</span>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-100" />
+
+              {/* EmojiPicker library component */}
+              <EmojiPicker
+                onEmojiClick={(emojiData) => handlePick(emojiData.emoji)}
+                autoFocusSearch={false}
+                emojiStyle={EmojiStyle.NATIVE}
+                width="100%"
+                height={320}
+                previewConfig={{ showPreview: false }}
+                skinTonesDisabled={true}
+              />
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ──────────── Comment Editor Component ────────────
 
 interface CommentEditorProps {
   placeholder?: string;
@@ -112,6 +360,31 @@ function CommentEditor({
   autoFocus = false,
 }: CommentEditorProps) {
   const [value, setValue] = useState(initialValue);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [showFullPicker, setShowFullPicker] = useState(false);
+  const [quickHovered, setQuickHovered] = useState<string | null>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!emojiPickerOpen) {
+      setShowFullPicker(false);
+      return;
+    }
+    function onClickOutside(e: MouseEvent) {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setEmojiPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [emojiPickerOpen]);
+
+  const handlePick = (emoji: string) => {
+    setValue((v) => v + emoji);
+    setEmojiPickerOpen(false);
+    setQuickHovered(null);
+    setShowFullPicker(false);
+  };
 
   const handleSubmit = () => {
     if (value.trim()) {
@@ -121,7 +394,7 @@ function CommentEditor({
   };
 
   return (
-    <div className="w-full border border-gray-300 rounded-lg overflow-hidden bg-white focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-700 transition-all duration-150">
+    <div className="w-full border border-gray-300 rounded-lg bg-white focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-700 transition-all duration-150">
       <textarea
         autoFocus={autoFocus}
         placeholder={placeholder}
@@ -137,25 +410,137 @@ function CommentEditor({
           }
         }}
         maxLength={3000}
-        className="w-full text-sm text-gray-700 p-2.5 pb-1 resize-none outline-none bg-transparent h-16"
+        className="w-full text-sm text-gray-700 p-2.5 pb-1 resize-none outline-none bg-transparent h-16 rounded-t-lg"
       />
-      <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50/50 h-10 select-none">
-        {/* Left Toolbar Icons */}
-        <div className="flex items-center gap-3 text-gray-400">
+      <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50/50 h-10 select-none rounded-b-lg">
+        {/* Left Toolbar - Emojis */}
+        <div className="flex items-center relative" ref={emojiRef}>
           <button
             type="button"
-            className="hover:text-purple-800 p-1 rounded-md transition"
-            title="Emojis"
+            onClick={() => setEmojiPickerOpen((v) => !v)}
+            className={`p-1.5 rounded-full transition ${
+              emojiPickerOpen ? "bg-purple-100 text-purple-600" : "text-gray-400 hover:bg-gray-100 hover:text-purple-600"
+            }`}
+            title="Insert Emoji"
           >
             <FaceSmileIcon className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            className="hover:text-purple-800 p-1 rounded-md transition"
-            title="Stickers"
-          >
-            <HeartIcon className="w-3.5 h-3.5" />
-          </button>
+
+          {emojiPickerOpen && (
+            !showFullPicker ? (
+              /* ── Quick reactions row + Plus Button ── */
+              <div
+                className="
+                  absolute bottom-full left-0 mb-2.5 z-50
+                  bg-white/95 backdrop-blur-md
+                  border border-gray-100 rounded-full
+                  px-2 py-1.5 flex items-center gap-1
+                "
+                style={{
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.05)",
+                }}
+              >
+                {QUICK_REACTIONS.map(({ emoji }) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onMouseEnter={() => setQuickHovered(emoji)}
+                    onMouseLeave={() => setQuickHovered(null)}
+                    onClick={() => handlePick(emoji)}
+                    className="flex items-center justify-center p-1 rounded-full select-none active:scale-90"
+                    style={{
+                      transform: quickHovered === emoji
+                        ? "scale(1.5) translateY(-4px)"
+                        : "scale(1) translateY(0)",
+                      transition: "transform 140ms cubic-bezier(0.34,1.56,0.64,1)",
+                    }}
+                  >
+                    <EmojiChar emoji={emoji} size={22} />
+                  </button>
+                ))}
+
+                {/* Plus Button to open full categorised list */}
+                <button
+                  type="button"
+                  onClick={() => setShowFullPicker(true)}
+                  className="
+                    w-8 h-8 rounded-full flex items-center justify-center
+                    bg-gray-100 hover:bg-gray-200 text-gray-500 font-semibold text-lg
+                    transition-all duration-100 active:scale-90
+                  "
+                  title="More emojis"
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              /* ── Full Expanded Emoji Picker ── */
+              <div
+                className="
+                  absolute bottom-full left-0 mb-2 z-50
+                  bg-white border border-gray-100 rounded-2xl
+                  flex flex-col overflow-hidden
+                "
+                style={{
+                  width: 312,
+                  boxShadow: "0 16px 56px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)",
+                }}
+              >
+                {/* Quick reactions row at top */}
+                <div className="flex items-end justify-center gap-1 px-3 pt-3 pb-0">
+                  {QUICK_REACTIONS.map(({ emoji }) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onMouseEnter={() => setQuickHovered(emoji)}
+                      onMouseLeave={() => setQuickHovered(null)}
+                      onClick={() => handlePick(emoji)}
+                      className="flex items-center justify-center p-1 rounded-xl select-none active:scale-90"
+                      style={{
+                        transform: quickHovered === emoji
+                          ? "scale(1.6) translateY(-6px)"
+                          : "scale(1) translateY(0)",
+                        transition: "transform 140ms cubic-bezier(0.34,1.56,0.64,1)",
+                      }}
+                    >
+                      <EmojiChar emoji={emoji} size={24} />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick label */}
+                <div className="h-5 flex items-center justify-center mb-1.5">
+                  {quickHovered ? (
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        color: EMOJI_META[quickHovered]?.color ?? "#374151",
+                        backgroundColor: EMOJI_META[quickHovered]?.bg ?? "#f3f4f6",
+                      }}
+                    >
+                      {EMOJI_META[quickHovered]?.label ?? quickHovered}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-300">Quick reactions</span>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-100" />
+
+                {/* EmojiPicker library component */}
+                <EmojiPicker
+                  onEmojiClick={(emojiData) => handlePick(emojiData.emoji)}
+                  autoFocusSearch={false}
+                  emojiStyle={EmojiStyle.NATIVE}
+                  width="100%"
+                  height={320}
+                  previewConfig={{ showPreview: false }}
+                  skinTonesDisabled={true}
+                />
+              </div>
+            )
+          )}
         </div>
 
         {/* Right Action Buttons */}
@@ -174,7 +559,9 @@ function CommentEditor({
             type="button"
             onClick={handleSubmit}
             disabled={!value.trim()}
-            className={`p-1.5 rounded-full transition ${value.trim() ? "text-purple-800" : "text-gray-300 cursor-not-allowed"}`}
+            className={`p-1.5 rounded-full transition ${
+              value.trim() ? "text-purple-800" : "text-gray-300 cursor-not-allowed"
+            }`}
             title="Send"
           >
              <PaperAirplaneIcon className="w-3.5 h-3.5" />
@@ -185,12 +572,13 @@ function CommentEditor({
   );
 }
 
-//  Comment Item
+
+// ──────────── Comment Item ────────────
 
 /**
  * Component hiển thị một bình luận đơn lẻ trong phần thảo luận.
  * Hỗ trợ hiển thị phân cấp (reply lồng nhau), sửa bình luận, xóa bình luận,
- * và hiển thị hộp thoại trả lời nhanh cho bình luận cấp 0.
+ * hiển thị reaction badges và emoji picker.
  */
 function CommentItem({
   comment,
@@ -199,6 +587,7 @@ function CommentItem({
   onEdit,
   onDelete,
   onReply,
+  onReact,
 }: {
   comment: CommentResponse;
   depth?: number;
@@ -206,6 +595,7 @@ function CommentItem({
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
   onReply: (parentId: string, content: string) => void;
+  onReact: (commentId: string, reactionType: string) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showReplyBox, setShowReplyBox] = useState(false);
@@ -257,6 +647,14 @@ function CommentItem({
               >
                 {comment.content}
               </div>
+
+              {/* Reaction Badges + Emoji Picker */}
+              <ReactionBadges
+                reactions={comment.reactions ?? []}
+                currentUserId={currentUserId}
+                onReact={(reactionType) => onReact(comment.id, reactionType)}
+              />
+
               <div className="flex gap-3 mt-1 items-center">
                 {depth === 0 && (
                   <button
@@ -313,6 +711,7 @@ function CommentItem({
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onReply={onReply}
+                  onReact={onReact}
                 />
               ))}
             </div>
@@ -337,7 +736,7 @@ function ActivityLogItem({ log }: { log: ActivityResponse }) {
         alt=""
       />
       <div className="flex-1 min-w-0 ">
-        <p className="text-xs text-gray-600 leading-relaxed">
+        <p className="text-xs text-gray-600 leading-relaxed break-words break-all whitespace-normal">
           <span className="font-medium text-gray-800">{log.actorName}</span>{" "}
           {actionLabel(log)}
         </p>
@@ -351,11 +750,11 @@ function ActivityLogItem({ log }: { log: ActivityResponse }) {
 
 //  Main Section
 
-type Tab = "all" | "comments" | "history";
+type Tab = "comments" | "history";
 
 /**
  * Component chính hiển thị toàn bộ phần hoạt động của một sự vụ (Issue).
- * Bao gồm form gửi bình luận mới, chuyển đổi các tab (Tất cả / Bình luận / Lịch sử hoạt động),
+ * Bao gồm form gửi bình luận mới, chuyển đổi các tab (Bình luận / Lịch sử hoạt động),
  * tích hợp lắng nghe sự kiện WebSocket để cập nhật danh sách bình luận thời gian thực.
  */
 export function ActivitySection({
@@ -369,7 +768,7 @@ export function ActivitySection({
   const projectId = projectIdProp ?? contextProjectId;
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
-  const [tab, setTab] = useState<Tab>("all");
+  const [tab, setTab] = useState<Tab>("comments");
 
   const currentUserId = tokenStorage.getUserId();
 
@@ -421,7 +820,7 @@ export function ActivitySection({
               : p,
           );
         }
-        return [...prev, { ...c, replies: [] }];
+        return [...prev, { ...c, replies: [], reactions: [] }];
       });
     } else if (payload.type === "UPDATED_COMMENT" && payload.comment) {
       const c = payload.comment as CommentResponse;
@@ -443,6 +842,21 @@ export function ActivitySection({
             ...p,
             replies: (p.replies ?? []).filter((r) => r.id !== id),
           })),
+      );
+    } else if (payload.type === "COMMENT_REACTION_UPDATED" && payload.commentId) {
+      // Cập nhật reactions cho bình luận tương ứng
+      const id = payload.commentId;
+      const reactions = payload.reactions as CommentReactionResponse[];
+      setComments((prev) =>
+        prev.map((p) => {
+          if (p.id === id) return { ...p, reactions };
+          return {
+            ...p,
+            replies: (p.replies ?? []).map((r) =>
+              r.id === id ? { ...r, reactions } : r,
+            ),
+          };
+        }),
       );
     }
   }, []);
@@ -521,6 +935,27 @@ export function ActivitySection({
     }
   }
 
+  async function handleReact(commentId: string, reactionType: string) {
+    if (!projectId) return;
+    try {
+      // Optimistic update: cập nhật reactions ngay lập tức trước khi WS trả về
+      const updatedReactions = await commentApi.react(projectId, issueUuid, commentId, reactionType);
+      setComments((prev) =>
+        prev.map((p) => {
+          if (p.id === commentId) return { ...p, reactions: updatedReactions };
+          return {
+            ...p,
+            replies: (p.replies ?? []).map((r) =>
+              r.id === commentId ? { ...r, reactions: updatedReactions } : r,
+            ),
+          };
+        }),
+      );
+    } catch (err) {
+      console.error("Failed to react to comment", err);
+    }
+  }
+
   const nestedComments = comments.filter((c) => !c.parentCommentId);
   const totalCommentCount = comments.reduce(
     (sum, c) => sum + 1 + (c.replies?.length ?? 0),
@@ -528,7 +963,6 @@ export function ActivitySection({
   );
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "all", label: "All" },
     {
       key: "comments",
       label: `Comments${totalCommentCount ? ` (${totalCommentCount})` : ""}`,
@@ -563,30 +997,6 @@ export function ActivitySection({
       )}
 
       <div className="space-y-4">
-        {tab === "all" && (
-          <>
-            {activities.length === 0 && nestedComments.length === 0 && (
-              <p className="text-xs text-gray-300 italic">No activity yet.</p>
-            )}
-            {activities.map((log) => (
-              <ActivityLogItem key={log.id} log={log} />
-            ))}
-            {activities.length > 0 && nestedComments.length > 0 && (
-              <div className="border-t border-gray-100" />
-            )}
-            {nestedComments.map((c) => (
-              <CommentItem
-                key={c.id}
-                comment={c}
-                depth={0}
-                currentUserId={currentUserId}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onReply={(parentId, content) => handleSubmit(content, parentId)}
-              />
-            ))}
-          </>
-        )}
 
         {tab === "comments" &&
           (nestedComments.length === 0 ? (
@@ -601,6 +1011,7 @@ export function ActivitySection({
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onReply={(parentId, content) => handleSubmit(content, parentId)}
+                onReact={handleReact}
               />
             ))
           ))}
