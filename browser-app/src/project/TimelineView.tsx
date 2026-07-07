@@ -18,7 +18,7 @@ import { issueApi } from "../api/services/issueApi";
 const GROUP_ORDER = ["Epic", "Story", "Task"];
 
 export default function TimelineView() {
-  const { projectId, openIssueModal } = useContext(ProjectContext);
+  const { projectId, openIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
   const { ganttTasks: TASKS, error, reload } = useTimeline(projectId);
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
@@ -85,16 +85,24 @@ export default function TimelineView() {
     [timelineStart, colWidth]
   );
 
+  const formatDateLocal = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T00:00:00Z`;
+  };
+
   const handleUpdateTaskDates = async (taskId: string, newStart: Date, newEnd: Date) => {
     if (!projectId) return;
     try {
-      const startStr = newStart.toISOString().split("T")[0];
-      const endStr = newEnd.toISOString().split("T")[0];
+      const startStr = formatDateLocal(newStart);
+      const endStr = formatDateLocal(newEnd);
       await issueApi.update(projectId, taskId, {
         startDate: startStr,
         deadline: endStr,
       });
       reload();
+      notifyIssueUpdated();
     } catch (err) {
       console.error("Failed to update issue dates on timeline", err);
     }
@@ -103,6 +111,39 @@ export default function TimelineView() {
   const [linkingSourceId, setLinkingSourceId] = useState<string | null>(null);
   const [linkStart, setLinkStart] = useState<{ x: number; y: number } | null>(null);
   const [linkCurrent, setLinkCurrent] = useState<{ x: number; y: number } | null>(null);
+
+  const [selectedDependency, setSelectedDependency] = useState<{ fromId: string; toId: string } | null>(null);
+  const [hoveredDependency, setHoveredDependency] = useState<{ fromId: string; toId: string } | null>(null);
+
+  useEffect(() => {
+    if (!selectedDependency || !projectId) return;
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        const { fromId, toId } = selectedDependency;
+        try {
+          const targetTask = TASKS.find((t) => t.id === toId);
+          if (!targetTask) return;
+
+          const newDeps = (targetTask.dependencyIds || []).filter((id) => id !== fromId);
+          await issueApi.update(projectId, toId, {
+            dependencyIds: newDeps,
+          });
+          setSelectedDependency(null);
+          reload();
+          notifyIssueUpdated();
+        } catch (err) {
+          console.error("Failed to delete dependency link:", err);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedDependency, projectId, TASKS, reload, notifyIssueUpdated]);
 
   const handleStartLink = (taskId: string, startX: number, startY: number) => {
     setLinkingSourceId(taskId);
@@ -116,14 +157,37 @@ export default function TimelineView() {
       const targetTask = TASKS.find((t) => t.id === targetId);
       if (!targetTask) return;
 
-      const currentDeps = targetTask.dependencyIds || [];
-      if (currentDeps.includes(linkingSourceId)) return;
+      const sourceTask = TASKS.find((t) => t.id === linkingSourceId);
+      const isReverseDep = sourceTask?.dependencyIds?.includes(targetId);
 
-      const newDeps = [...currentDeps, linkingSourceId];
-      await issueApi.update(projectId, targetId, {
-        dependencyIds: newDeps,
-      });
+      if (isReverseDep) {
+        // Remove targetId from sourceTask's dependencyIds (opposite direction)
+        const updatedSourceDeps = (sourceTask.dependencyIds || []).filter((id) => id !== targetId);
+        // Add linkingSourceId to targetTask's dependencyIds (new direction)
+        const updatedTargetDeps = [...(targetTask.dependencyIds || []).filter((id) => id !== linkingSourceId), linkingSourceId];
+
+        await Promise.all([
+          issueApi.update(projectId, linkingSourceId, {
+            dependencyIds: updatedSourceDeps,
+          }),
+          issueApi.update(projectId, targetId, {
+            dependencyIds: updatedTargetDeps,
+          }),
+        ]);
+      } else {
+        const currentDeps = targetTask.dependencyIds || [];
+        const alreadyHas = currentDeps.includes(linkingSourceId);
+        
+        const newDeps = alreadyHas
+          ? currentDeps.filter((id) => id !== linkingSourceId)
+          : [...currentDeps, linkingSourceId];
+
+        await issueApi.update(projectId, targetId, {
+          dependencyIds: newDeps,
+        });
+      }
       reload();
+      notifyIssueUpdated();
     } catch (err) {
       console.error("Failed to link issues:", err);
     } finally {
@@ -282,6 +346,9 @@ export default function TimelineView() {
           style={{ scrollBehavior: "smooth" }}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
+            if (selectedDependency) {
+              setSelectedDependency(null);
+            }
             isDraggingScroll.current = true;
             didDragScroll.current = false;
             dragStartX.current = e.clientX;
@@ -388,6 +455,28 @@ export default function TimelineView() {
                   >
                     <path d="M 0 2 L 6 5 L 0 8 z" fill="#6366f1" />
                   </marker>
+                  <marker
+                    id="arrow-hover"
+                    viewBox="0 0 10 10"
+                    refX="6"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 2 L 6 5 L 0 8 z" fill="#818cf8" />
+                  </marker>
+                  <marker
+                    id="arrow-selected"
+                    viewBox="0 0 10 10"
+                    refX="6"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 2 L 6 5 L 0 8 z" fill="#f43f5e" />
+                  </marker>
                 </defs>
                 
                 {Object.values(taskCoords).flatMap((coordsB) => {
@@ -418,16 +507,44 @@ export default function TimelineView() {
                       d = `M ${startX} ${startY} H ${midX1} V ${y_gutter} H ${midX2} V ${endY} H ${endX}`;
                     }
                     
+                    const isSelected = selectedDependency?.fromId === coordsA.id && selectedDependency?.toId === coordsB.id;
+                    const isHovered = hoveredDependency?.fromId === coordsA.id && hoveredDependency?.toId === coordsB.id;
+
+                    const strokeColor = isSelected ? "#f43f5e" : isHovered ? "#818cf8" : "#6366f1";
+                    const strokeWidth = isSelected ? "2.5" : isHovered ? "2.2" : "1.5";
+                    const opacity = isSelected ? 1.0 : isHovered ? 0.9 : 0.6;
+                    const markerId = isSelected ? "arrow-selected" : isHovered ? "arrow-hover" : "arrow";
+
                     return (
-                      <path
-                        key={`${coordsA.id}->${coordsB.id}`}
-                        d={d}
-                        fill="none"
-                        stroke="#6366f1"
-                        strokeWidth="1.5"
-                        markerEnd="url(#arrow)"
-                        style={{ opacity: 0.7 }}
-                      />
+                      <g key={`${coordsA.id}->${coordsB.id}`}>
+                        {/* Fat transparent path for easy interaction */}
+                        <path
+                          d={d}
+                          fill="none"
+                          stroke="transparent"
+                          strokeWidth="8"
+                          style={{ cursor: "pointer", pointerEvents: "stroke" }}
+                          onMouseEnter={() => setHoveredDependency({ fromId: coordsA.id, toId: coordsB.id })}
+                          onMouseLeave={() => setHoveredDependency(null)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDependency({ fromId: coordsA.id, toId: coordsB.id });
+                          }}
+                        />
+                        {/* Visual path */}
+                        <path
+                          d={d}
+                          fill="none"
+                          stroke={strokeColor}
+                          strokeWidth={strokeWidth}
+                          markerEnd={`url(#${markerId})`}
+                          style={{
+                            opacity,
+                            transition: "stroke 0.15s, stroke-width 0.15s, opacity 0.15s",
+                            pointerEvents: "none",
+                          }}
+                        />
+                      </g>
                     );
                   });
                 })}
@@ -447,7 +564,7 @@ export default function TimelineView() {
               </svg>
 
               {/* Task bars */}
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
                 {(() => {
                   let rowOffset = 0;
                   return groups.flatMap((group) => {
