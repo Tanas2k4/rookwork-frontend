@@ -1,4 +1,19 @@
-export const PRIVACY_POLICY = {
+export interface LegalSection {
+  heading: string;
+  content?: string;
+  intro?: string;
+  bullets?: string[];
+  extra?: string;
+}
+
+export interface LegalDoc {
+  title: string;
+  lastUpdated: string;
+  intro: string;
+  sections: LegalSection[];
+}
+
+export const PRIVACY_POLICY: LegalDoc = {
   title: "Privacy Policy",
   lastUpdated: "Last updated: July 3, 2026",
   intro: "Rookwork (\"we\", \"our\", \"Rookwork\") respects the privacy of our users (\"you\"). This policy explains how we collect, use, and protect your information when using our project management and team collaboration platform at rookwork.asia.",

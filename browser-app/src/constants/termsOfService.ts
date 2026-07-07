@@ -1,4 +1,19 @@
-export const TERMS_OF_SERVICE = {
+export interface LegalSection {
+  heading: string;
+  content?: string;
+  intro?: string;
+  bullets?: string[];
+  extra?: string;
+}
+
+export interface LegalDoc {
+  title: string;
+  lastUpdated: string;
+  intro: string;
+  sections: LegalSection[];
+}
+
+export const TERMS_OF_SERVICE: LegalDoc = {
   title: "Terms of Service",
   lastUpdated: "Last updated: July 3, 2026",
   intro: "Welcome to Rookwork. By accessing or using our platform at rookwork.asia, you agree to comply with these Terms of Service.",

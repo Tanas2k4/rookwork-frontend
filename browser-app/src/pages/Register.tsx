@@ -268,28 +268,28 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                     </div>
 
                     {/* TERMS & PRIVACY CHECKBOX */}
-                    <div className="py-2 flex items-start gap-2">
+                    <div className="py-1.5 flex items-center gap-2">
                       <input
                         type="checkbox"
                         id="agreeTerms"
                         checked={agreeTerms}
                         onChange={(e) => setAgreeTerms(e.target.checked)}
-                        className="mt-1.5 accent-purple-900 cursor-pointer w-4 h-4 rounded border-gray-300 text-purple-900 focus:ring-purple-800"
+                        className="accent-purple-900 cursor-pointer w-4 h-4 rounded border-gray-300 text-purple-900 focus:ring-purple-800 shrink-0"
                       />
-                      <label htmlFor="agreeTerms" className="text-xs text-gray-500 leading-normal select-none cursor-pointer">
-                        I agree to the{" "}
+                      <label htmlFor="agreeTerms" className="text-[12px] text-gray-500 select-none cursor-pointer flex items-center flex-wrap gap-x-1">
+                        <span>I agree to the</span>
                         <button
                           type="button"
                           onClick={() => setModalType("terms")}
-                          className="text-purple-900 font-bold underline hover:text-purple-700"
+                          className="text-purple-900 font-bold underline hover:text-purple-750 focus:outline-none"
                         >
                           Terms of Service
-                        </button>{" "}
-                        and{" "}
+                        </button>
+                        <span>and</span>
                         <button
                           type="button"
                           onClick={() => setModalType("privacy")}
-                          className="text-purple-900 font-bold underline hover:text-purple-700"
+                          className="text-purple-900 font-bold underline hover:text-purple-750 focus:outline-none"
                         >
                           Privacy Policy
                         </button>
