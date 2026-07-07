@@ -115,6 +115,7 @@ export interface OverviewData {
     color: string;
     count: number;
   }[];
+  issues: IssueResponse[];
 }
 
 // computeProgress removed as unused
@@ -130,30 +131,30 @@ function actionLabel(a: ActivityResponse): string {
   if (a.entityType === "COMMENT") {
     switch (a.actionType) {
       case "COMMENTED": return `commented on issue "${a.entityName}"`;
-      case "DELETED":   return `deleted a comment on issue "${a.entityName}"`;
-      default:          return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
+      case "DELETED": return `deleted a comment on issue "${a.entityName}"`;
+      default: return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
     }
   }
 
   if (a.entityType === "SUBTASK") {
     switch (a.actionType) {
-      case "CREATED":   return `created subtask "${a.entityName}"`;
+      case "CREATED": return `created subtask "${a.entityName}"`;
       case "COMPLETED": return `completed subtask "${a.entityName}"`;
-      case "UPDATED":   return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
-      case "DELETED":   return `deleted subtask "${a.entityName}"`;
-      default:          return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
+      case "UPDATED": return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
+      case "DELETED": return `deleted subtask "${a.entityName}"`;
+      default: return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
     }
   }
 
   const typeLabel = a.entityType === "ISSUE" ? "issue" : a.entityType.toLowerCase();
   switch (a.actionType) {
-    case "CREATED":   return `created ${typeLabel} "${a.entityName}"`;
+    case "CREATED": return `created ${typeLabel} "${a.entityName}"`;
     case "COMPLETED": return `completed ${typeLabel} "${a.entityName}"`;
-    case "MOVED":     return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
-    case "ASSIGNED":  return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
-    case "UPDATED":   return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
-    case "DELETED":   return `deleted ${typeLabel} "${a.entityName}"`;
-    default:          return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
+    case "MOVED": return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
+    case "ASSIGNED": return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
+    case "UPDATED": return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
+    case "DELETED": return `deleted ${typeLabel} "${a.entityName}"`;
+    default: return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
   }
 }
 
@@ -178,7 +179,7 @@ function deriveOverview(
     };
   });
   const done = issues.filter((i) => i.status?.statusCategory === "DONE").length;
-  const inProgress  = issues.filter((i) => i.status?.statusCategory === "IN_PROGRESS").length; 
+  const inProgress = issues.filter((i) => i.status?.statusCategory === "IN_PROGRESS").length;
 
   const overdue = issues.filter(
     (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE",
@@ -264,7 +265,7 @@ function deriveOverview(
   return {
     totalTasks: total,
     doneTasks: done,
-    inProgressTasks: inProgress, 
+    inProgressTasks: inProgress,
     overdueCount: overdue,
     dueSoonCount: dueSoon,
     overallProgress: progress,
@@ -275,6 +276,7 @@ function deriveOverview(
     workload,
     maxWorkload,
     activities: activityItems,
+    issues,
   };
 }
 

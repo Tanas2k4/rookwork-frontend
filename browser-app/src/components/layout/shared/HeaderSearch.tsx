@@ -239,7 +239,7 @@ export function HeaderSearch() {
                     onClick={() => handleSelect(item)}
                     className={`flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors ${
                       isActive
-                        ? "bg-purple-50 text-purple-950"
+                        ? "bg-gray-100 text-gray-950"
                         : "hover:bg-gray-50 text-gray-700"
                     }`}
                   >
@@ -247,7 +247,7 @@ export function HeaderSearch() {
                     <div
                       className={`p-1.5 rounded-md shrink-0 ${
                         isActive
-                          ? "bg-purple-100 text-purple-800"
+                          ? "bg-gray-200 text-gray-800"
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
@@ -268,19 +268,7 @@ export function HeaderSearch() {
                         <span className="font-medium text-[13px] truncate leading-none">
                           {item.title}
                         </span>
-                        {item.tag && (
-                          <span
-                            className={`text-[8px] font-semibold uppercase tracking-wider px-1 rounded shrink-0 border leading-none py-0.5 ${
-                              item.type === "project"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : item.type === "file"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : "bg-purple-50 text-purple-700 border-purple-200"
-                            }`}
-                          >
-                            {item.tag}
-                          </span>
-                        )}
+                        
                       </div>
                       {item.subtitle && (
                         <div className="text-[10px] text-gray-400 truncate mt-0.5 leading-none">

@@ -160,7 +160,7 @@ function Header({
                 />
               </button>
               {open && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-sm border border-gray-200 text-sm z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-sm border border-gray-200 text-xs z-50 overflow-hidden">
                   {/* User info header */}
                   <div className="flex items-center gap-3 px-4 py-4">
                     <div className="relative shrink-0">

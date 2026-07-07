@@ -88,6 +88,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
                   onKeyDown={handleTitleKeyDown}
                   className="text-5xl font-bold text-gray-800 border-b-2 border-purple-500 focus:outline-none bg-transparent py-1 max-w-xl"
                   autoFocus
+                  maxLength={50}
                   disabled={isSavingTitle}
                 />
                 <button
@@ -169,7 +170,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
               className="flex flex-row items-center gap-1.5 px-3 py-1.5 text-xs
              text-gray-700 border border-gray-500 active:bg-gray-100 active:border-gray-400 rounded-md transition font-medium"
             >
-              Create task
+              Create issues
               <PlusIcon className="w-4.5 h-4.5" />
             </button>
           </div>
@@ -179,6 +180,7 @@ function ProjectHeader({ onProjectsChanged }: ProjectHeaderProps) {
       <CreateIssueModal
         open={showCreateIssue}
         onClose={() => setShowCreateIssue(false)}
+        addToast={addToast}
       />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <InviteModal

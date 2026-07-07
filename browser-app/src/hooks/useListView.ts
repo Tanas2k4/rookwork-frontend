@@ -51,6 +51,14 @@ export function useListView() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+  const assigneeTimeoutRefs = useRef<{ [taskId: string]: any }>({});
+
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(assigneeTimeoutRefs.current).forEach(clearTimeout);
+    };
+  }, []);
 
   //  Fetch issues 
 
@@ -80,7 +88,7 @@ export function useListView() {
       .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+    // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
   }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
@@ -144,7 +152,9 @@ export function useListView() {
     if (!projectId) return;
     try {
       await issueApi.update(projectId, taskId, data);
-      addToast(successMsg, "success");
+      if (successMsg) {
+        addToast(successMsg, "success");
+      }
       if (notifyIssueUpdated) {
         notifyIssueUpdated();
       }
@@ -192,13 +202,25 @@ export function useListView() {
       ),
     );
 
-    updateIssue(
-      taskId,
-      { assigneeIds: newUuids },
+    addToast(
       newUsers.length > 0
         ? `Assigned to ${newUsers.map((u) => u.display_name).join(", ")}`
         : "Assignee removed",
+      "success"
     );
+
+    if (assigneeTimeoutRefs.current[taskId]) {
+      clearTimeout(assigneeTimeoutRefs.current[taskId]);
+    }
+
+    assigneeTimeoutRefs.current[taskId] = setTimeout(() => {
+      updateIssue(
+        taskId,
+        { assigneeIds: newUuids },
+        ""
+      );
+      delete assigneeTimeoutRefs.current[taskId];
+    }, 5000);
   }
 
   function handleStatusChange(taskId: string, statusId: string) {
@@ -219,11 +241,11 @@ export function useListView() {
       p.map((t) =>
         t._uuid === taskId
           ? {
-              ...t,
-              status: uiStatus,
-              _statusId: statusId,
-              _statusMeta: targetStatus,
-            }
+            ...t,
+            status: uiStatus,
+            _statusId: statusId,
+            _statusMeta: targetStatus,
+          }
           : t,
       ),
     );
@@ -252,20 +274,25 @@ export function useListView() {
   function handleDeadlineChange(taskId: string, deadline: string) {
     const task = tasks.find((t) => t._uuid === taskId);
     if (!task) return;
-    const currentDeadline = task.deadline ? task.deadline.split("T")[0] : "";
-    const newDeadline = deadline ? deadline.split("T")[0] : "";
-    if (currentDeadline === newDeadline) {
+    const isoString = deadline ? new Date(deadline).toISOString() : null;
+    if (task.deadline === isoString) {
       closeDropdown();
       return;
     }
 
+    if (isoString && task.startDate) {
+      if (new Date(isoString) < new Date(task.startDate)) {
+        addToast("Deadline cannot be before start date", "error");
+        closeDropdown();
+        return;
+      }
+    }
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: deadline || null } : t));
+    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: isoString } : t));
     closeDropdown();
 
-    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
-    const formatted = deadline ? deadline.split("T")[0] : undefined;
-    updateIssue(taskId, { deadline: formatted },
+    updateIssue(taskId, { deadline: isoString ?? undefined },
       deadline ? "Deadline updated" : "Deadline cleared"
     );
   }

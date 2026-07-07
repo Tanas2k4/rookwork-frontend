@@ -21,7 +21,9 @@ export function AttachmentsSection({
   const [showAll, setShowAll] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   const [prevInitial, setPrevInitial] = useState(initialAttachments);
   if (initialAttachments !== prevInitial) {
@@ -110,12 +112,30 @@ export function AttachmentsSection({
     }
   }
 
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounter.current++;
+    if (dragCounter.current === 1) {
+      setIsDragOver(true);
+    }
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragOver(false);
+    }
+  }
+
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
+    dragCounter.current = 0;
+    setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(e.dataTransfer.files);
     }
@@ -193,111 +213,122 @@ export function AttachmentsSection({
 
       {/* Error alert */}
       {error && (
-        <div className="text-xs text-red-50 bg-red-500/90 rounded-md px-3 py-2">
+        <div className="text-xs text-red-55 bg-red-500/90 rounded-md px-3 py-2">
           {error}
         </div>
       )}
 
-      {/* Drag & Drop Area (Only visible when list is empty) */}
-      {attachments.length === 0 && (
-        <div
-          onClick={triggerBrowse}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          className="border-2 border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50/20 rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1"
-        >
-          {isUploading ? (
-            <ArrowPathIcon
-              className="text-purple-700 animate-spin mb-1 w-5.5 h-5.5"
-            />
-          ) : (
-            <PaperClipIcon
-              className="text-gray-400 rotate-45 mb-1 animate-pulse w-5.5 h-5.5"
-            />
-          )}
-          <p className="text-xs text-gray-500 font-medium">
-            {isUploading ? "Uploading files..." : "Drag & drop files here, or "}
-            {!isUploading && <span className="text-purple-700 underline">browse</span>}
-          </p>
-          <p className="text-[10px] text-gray-400">
-            Support PDF, Excel, Word, Zip and Images up to 10MB
-          </p>
-        </div>
-      )}
-
-      {/* List / Grid of Attachments */}
-      {attachments.length > 0 && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-            {visibleAttachments.map((item) => {
-              const fileType = getFileType(item.originalName);
-              const isImg = fileType === "image";
-              const isDeleting = isDeletingId === item.id;
-
-              return (
-                <div
-                  key={item.id}
-                  className="group relative flex items-center gap-3 bg-gray-50 hover:bg-gray-100/80 rounded-xl p-3 border border-gray-100 transition"
-                >
-                  {/* Preview block */}
-                  <div className="w-12 h-12 rounded-lg bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center border border-gray-200">
-                    {isImg && item.presignedUrl ? (
-                      <img
-                        src={item.presignedUrl}
-                        alt={item.originalName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      getFileIcon(fileType)
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 pr-6">
-                    <p
-                      title={item.originalName}
-                      onClick={() => window.open(item.presignedUrl, "_blank")}
-                      className="text-xs font-medium text-gray-700 truncate hover:text-purple-700 transition cursor-pointer"
-                    >
-                      {item.originalName}
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {formatBytes(item.sizeBytes)} • {item.uploadedBy} ({formatDate(item.createdAt)})
-                    </p>
-                  </div>
-
-                  {/* Action Delete */}
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    disabled={isDeletingId !== null}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition disabled:opacity-50"
-                    title="Delete file"
-                  >
-                    {isDeleting ? (
-                      <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <TrashIcon className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              );
-            })}
+      {/* Drop Zone Area (Only wraps empty dashed box & attachments list) */}
+      <div
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`rounded-xl border-2 transition duration-200 ${
+          isDragOver && attachments.length > 0
+            ? "border-purple-500 bg-purple-50/10 border-dashed ring-2 ring-purple-500/10 p-2"
+            : "border-transparent"
+        }`}
+      >
+        {/* Drag & Drop Area (Only visible when list is empty) */}
+        {attachments.length === 0 && (
+          <div
+            onClick={triggerBrowse}
+            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1 duration-200 ${
+              isDragOver
+                ? "border-purple-500 bg-purple-50/10 ring-2 ring-purple-500/10 scale-[1.01]"
+                : "border-gray-200 hover:border-purple-300 hover:bg-purple-50/20"
+            }`}
+          >
+            {isUploading ? (
+              <ArrowPathIcon className="text-purple-700 animate-spin mb-1 w-5.5 h-5.5" />
+            ) : (
+              <PaperClipIcon className="text-gray-400 rotate-45 mb-1 animate-pulse w-5.5 h-5.5" />
+            )}
+            <p className="text-xs text-gray-500 font-medium">
+              {isUploading ? "Uploading files..." : "Drag & drop files here, or "}
+              {!isUploading && <span className="text-purple-700 underline">browse</span>}
+            </p>
+            <p className="text-[10px] text-gray-400">
+              Support PDF, Excel, Word, Zip and Images up to 10MB
+            </p>
           </div>
+        )}
 
-          {/* See more toggle button */}
-          {attachments.length > 4 && (
-            <button
-              type="button"
-              onClick={() => setShowAll(!showAll)}
-              className="text-xs font-semibold text-purple-700 hover:text-purple-950 transition flex items-center gap-1 mt-1"
-            >
-              {showAll
-                ? "See Less"
-                : `See More (${attachments.length - 4} files remaining)`}
-            </button>
-          )}
-        </div>
-      )}
+        {/* List / Grid of Attachments */}
+        {attachments.length > 0 && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+              {visibleAttachments.map((item) => {
+                const fileType = getFileType(item.originalName);
+                const isImg = fileType === "image";
+                const isDeleting = isDeletingId === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="group relative flex items-center gap-3 bg-gray-50 hover:bg-gray-100/80 rounded-xl p-3 border border-gray-100 transition"
+                  >
+                    {/* Preview block */}
+                    <div className="w-12 h-12 rounded-lg bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center border border-gray-200">
+                      {isImg && item.presignedUrl ? (
+                        <img
+                          src={item.presignedUrl}
+                          alt={item.originalName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        getFileIcon(fileType)
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 pr-6">
+                      <p
+                        title={item.originalName}
+                        onClick={() => window.open(item.presignedUrl, "_blank")}
+                        className="text-xs font-medium text-gray-700 truncate hover:text-purple-700 transition cursor-pointer"
+                      >
+                        {item.originalName}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {formatBytes(item.sizeBytes)} • {item.uploadedBy} ({formatDate(item.createdAt)})
+                      </p>
+                    </div>
+
+                    {/* Action Delete */}
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={isDeletingId !== null}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition disabled:opacity-50"
+                      title="Delete file"
+                    >
+                      {isDeleting ? (
+                        <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <TrashIcon className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* See more toggle button */}
+            {attachments.length > 4 && (
+              <button
+                type="button"
+                onClick={() => setShowAll(!showAll)}
+                className="text-xs font-semibold text-purple-700 hover:text-purple-950 transition flex items-center gap-1 mt-1"
+              >
+                {showAll
+                  ? "See Less"
+                  : `See More (${attachments.length - 4} files remaining)`}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

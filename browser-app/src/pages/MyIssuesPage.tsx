@@ -6,6 +6,8 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { issueApi } from "../api/services/issueApi";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 
 import type { IssueResponse } from "../api/contracts/issue";
 import {
@@ -51,6 +53,51 @@ export default function MyIssuesPage() {
   const navigate = useNavigate();
 
   const [issues, setIssues] = useState<IssueResponse[]>([]);
+  const [draggedOverIssueId, setDraggedOverIssueId] = useState<string | null>(null);
+  const { toasts, addToast, removeToast } = useToast();
+
+  const handleDropOnIssue = async (e: React.DragEvent, issue: IssueResponse) => {
+    e.preventDefault();
+    setDraggedOverIssueId(null);
+
+    // 1. Dragging local files from computer
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      addToast(`Uploading ${filesArray.length} file(s) to "${issue.issueName}"...`, "info");
+      try {
+        const newAttachments = await issueApi.uploadAttachments(issue.projectId, issue.id, filesArray);
+        addToast("Files uploaded successfully!", "success");
+        setIssues((prev) =>
+          prev.map((i) =>
+            i.id === issue.id
+              ? { ...i, attachments: [...(i.attachments || []), ...newAttachments] }
+              : i
+          )
+        );
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to upload files", "error");
+      }
+      return;
+    }
+
+    // 2. Dragging existing files from within the app
+    const fileId = e.dataTransfer.getData("text/plain");
+    const sourceTaskUuid = e.dataTransfer.getData("application/source-task-uuid");
+
+    if (fileId && sourceTaskUuid) {
+      if (sourceTaskUuid === issue.id) return; // same issue
+
+      addToast("Moving file to issue...", "info");
+      try {
+        await issueApi.moveAttachment(issue.projectId, sourceTaskUuid, fileId, issue.id);
+        addToast("File moved successfully!", "success");
+        // Reload list of assigned issues to get updated attachment arrays
+        issueApi.getAssigned().then(setIssues).catch(console.error);
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to move file", "error");
+      }
+    }
+  };
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<Status | "all">("all");
@@ -355,6 +402,7 @@ export default function MyIssuesPage() {
                     ? isOverdueUtil(issue.deadline, issue.status)
                     : false;
 
+                  const isDraggedOver = draggedOverIssueId === issue.id;
                   return (
                     <button
                       key={issue.id}
@@ -365,18 +413,28 @@ export default function MyIssuesPage() {
                           },
                         })
                       }
-                      className="w-full text-left flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 hover:border-gray-300 hover:bg-neutral-100 transition group"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDraggedOverIssueId(issue.id);
+                      }}
+                      onDragLeave={() => setDraggedOverIssueId(null)}
+                      onDrop={(e) => handleDropOnIssue(e, issue)}
+                      className={`w-full text-left flex items-center gap-3 rounded-md border ${
+                        isDraggedOver
+                          ? "border-purple-600 bg-purple-50/40 ring-2 ring-purple-600/20"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-neutral-100"
+                      } px-4 py-3 transition group`}
                     >
                       <TypeIcon
                         size={13}
                         style={{ color: it?.color || "#64748B" }}
-                        className="shrink-0"
+                        className="shrink-0 pointer-events-none"
                       />
-                      <span className="flex-1 text-sm text-gray-700 group-hover:text-purple-800 truncate font-medium transition">
+                      <span className="flex-1 text-sm text-gray-700 group-hover:text-purple-800 truncate font-medium transition pointer-events-none">
                         {issue.issueName}
                       </span>
 
-                      <div className="flex items-center gap-3 shrink-0 ml-2">
+                      <div className="flex items-center gap-3 shrink-0 ml-2 pointer-events-none">
                         <PriorityBars priority={priority} />
                         {issue.assignees && issue.assignees.length > 0 && (
                           <div className="flex -space-x-1.5 overflow-hidden shrink-0">
@@ -413,6 +471,7 @@ export default function MyIssuesPage() {
           ))
         )}
       </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

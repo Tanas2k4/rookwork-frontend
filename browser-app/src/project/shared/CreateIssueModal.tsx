@@ -6,6 +6,7 @@ import { useToast } from "../../hooks/useToast";
 import { avatarUrl } from "../../utils/avatar";
 import { issueApi } from "../../api/services/issueApi";
 import { RichTextEditor } from "../../components/common/RichTextEditor";
+import { toDatetimeLocal } from "../../utils/date";
 import type {
   PriorityType,
   UserSummary,
@@ -59,13 +60,15 @@ const PRIORITIES_ORDER: PriorityType[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 interface CreateIssueModalProps {
   open: boolean;
   onClose: () => void;
+  addToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 // Removed file helper functions
 
-export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
+export function CreateIssueModal({ open, onClose, addToast: parentAddToast }: CreateIssueModalProps) {
   const { members, projectId, reloadIssues, issueTypes, projectStatuses } = useProject();
-  const { addToast } = useToast();
+  const { addToast: localAddToast } = useToast();
+  const addToast = parentAddToast || localAddToast;
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [issueTitle, setIssueTitle] = useState("");
@@ -317,6 +320,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                   placeholder={`Enter ${selectedTypeName} title...`}
                   className="w-full border border-gray-500 px-4 py-1.5 text-sm rounded-md 
                     focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
+                  maxLength={200}
                   required
                 />
               </div>
@@ -549,6 +553,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                 <input
                   type="datetime-local"
                   value={dueDate}
+                  min={toDatetimeLocal(new Date())}
                   onChange={(e) => setDueDate(e.target.value)}
                   className="w-full px-4 py-1.5 text-sm border border-gray-500 rounded-md"
                 />

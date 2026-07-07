@@ -53,6 +53,15 @@ export function useBoard(projectId: string | null) {
   const [loading, setLoading] = useState(false);
 
   const tempIdRef = useRef(-1);
+  const assigneeTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (assigneeTimeoutRef.current) {
+        clearTimeout(assigneeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   //  Load issues 
 
@@ -134,7 +143,6 @@ export function useBoard(projectId: string | null) {
       },
     };
     setTasks((p) => [...p, tempTask]);
-    pushToast("Creating task...", "info");
 
     try {
       const matchedType = issueTypes.find(t => t.name.toLowerCase() === type.toLowerCase());
@@ -151,7 +159,7 @@ export function useBoard(projectId: string | null) {
       const realTask = issueToTask(created, []);
 
       setTasks((p) => p.map((t) => (t.id === tempId ? realTask : t)));
-      pushToast("Task created");
+      pushToast("Task created successfully", "success");
       if (notifyIssueUpdated) {
         notifyIssueUpdated();
       }
@@ -172,10 +180,10 @@ export function useBoard(projectId: string | null) {
     // Optimistic remove
     setTasks((p) => p.filter((t) => t.id !== task.id));
     closePanel();
-    pushToast("Task deleted", "info");
 
     try {
       await issueApi.delete(projectId, uuid);
+      pushToast("Task deleted successfully", "success");
       if (notifyIssueUpdated) {
         notifyIssueUpdated();
       }
@@ -306,27 +314,47 @@ export function useBoard(projectId: string | null) {
     if (JSON.stringify([...currentUuids].sort()) === JSON.stringify([...newUuids].sort())) return;
     updateTaskLocal(selectedTask.id, { assigned_to: users, _assigneeUuids: newUuids } as Partial<Task & { _assigneeUuids?: string[] }>);
     pushToast(users.length > 0 ? `Assigned to ${users.map((u) => u.display_name).join(", ")}` : "Unassigned");
-    patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
+    
+    if (assigneeTimeoutRef.current) {
+      clearTimeout(assigneeTimeoutRef.current);
+    }
+    assigneeTimeoutRef.current = setTimeout(() => {
+      patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
+    }, 5000);
   }
 
   function saveDeadline(val: string) {
     if (!selectedTask) return;
-    const date = val ? val.split("T")[0] : null;
-    if (selectedTask.deadline === date) return;
-    updateTaskLocal(selectedTask.id, { deadline: date });
+    const isoString = val ? new Date(val).toISOString() : null;
+    if (selectedTask.deadline === isoString) return;
+
+    if (isoString && selectedTask.startDate) {
+      if (new Date(isoString) < new Date(selectedTask.startDate)) {
+        pushToast("Deadline cannot be before start date", "error");
+        return;
+      }
+    }
+
+    updateTaskLocal(selectedTask.id, { deadline: isoString });
     pushToast("Deadline updated");
-    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
-    patchIssue(selectedTask.id, { deadline: date ?? undefined });
+    patchIssue(selectedTask.id, { deadline: isoString ?? undefined });
   }
 
   function saveStartDate(val: string) {
     if (!selectedTask) return;
-    const date = val ? val.split("T")[0] : null;
-    if (selectedTask.startDate === date) return;
-    updateTaskLocal(selectedTask.id, { startDate: date });
+    const isoString = val ? new Date(val).toISOString() : null;
+    if (selectedTask.startDate === isoString) return;
+
+    if (isoString && selectedTask.deadline) {
+      if (new Date(isoString) > new Date(selectedTask.deadline)) {
+        pushToast("Start date cannot be after deadline", "error");
+        return;
+      }
+    }
+
+    updateTaskLocal(selectedTask.id, { startDate: isoString });
     pushToast("Start Date updated");
-    // UpdateIssueRequest.startDate is LocalDate → send "YYYY-MM-DD" only
-    patchIssue(selectedTask.id, { startDate: date ?? undefined });
+    patchIssue(selectedTask.id, { startDate: isoString ?? undefined });
   }
 
   // linkchild

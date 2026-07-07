@@ -14,6 +14,7 @@ import type { Task, Priority, User } from "../../types/project";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask, uuidToId } from "../../utils/issueMapper";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
+import { ToastContainer } from "../../components/common/ToastContainer";
 
 export function SharedIssueModal() {
   const { projectId, setOpenIssueModal, notifyIssueUpdated, projectStatuses } = useContext(ProjectContext);
@@ -110,28 +111,31 @@ export function SharedIssueModal() {
   }, [board, notifyIssueUpdated]);
 
   return (
-    <TaskModal
-      task={board.selectedTask}
-      open={board.panelOpen}
-      allTasks={board.tasks}
-      onClose={board.closePanel}
-      onOpenTask={board.openTask}
-      onSaveTitle={saveTitle}
-      onSaveDescription={saveDescription}
-      onChangeStatus={changeStatus}
-      onChangePriority={changePriority}
-      onChangeAssignee={changeAssignee}
-      onSaveDeadline={saveDeadline}
-      onSaveStartDate={saveStartDate}
-      onSaveDependencies={saveDependencies}
-      onDeleteTask={deleteTask}
-      onLink={board.linkChild}
-      onUnlink={board.unlinkChild}
-      onToggleSubtask={board.toggleSubtask}
-      onAddSubtask={board.addSubtask}
-      onDeleteSubtask={board.deleteSubtask}
-      onUpdateAttachments={updateAttachments}
-      projectStatuses={projectStatuses}
-    />
+    <>
+      <TaskModal
+        task={board.selectedTask}
+        open={board.panelOpen}
+        allTasks={board.tasks}
+        onClose={board.closePanel}
+        onOpenTask={board.openTask}
+        onSaveTitle={saveTitle}
+        onSaveDescription={saveDescription}
+        onChangeStatus={changeStatus}
+        onChangePriority={changePriority}
+        onChangeAssignee={changeAssignee}
+        onSaveDeadline={saveDeadline}
+        onSaveStartDate={saveStartDate}
+        onSaveDependencies={saveDependencies}
+        onDeleteTask={deleteTask}
+        onLink={board.linkChild}
+        onUnlink={board.unlinkChild}
+        onToggleSubtask={board.toggleSubtask}
+        onAddSubtask={board.addSubtask}
+        onDeleteSubtask={board.deleteSubtask}
+        onUpdateAttachments={updateAttachments}
+        projectStatuses={projectStatuses}
+      />
+      <ToastContainer toasts={board.toasts} onRemove={board.removeToast} />
+    </>
   );
 }

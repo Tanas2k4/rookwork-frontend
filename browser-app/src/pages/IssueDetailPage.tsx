@@ -7,6 +7,8 @@ import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
+import { AttachmentsSection } from "../project/board/TaskModal/AttachmentsSection";
+import type { AttachmentResponse } from "../api/contracts/attachment";
 import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid, uiStatusToStatusId } from "../utils/issueMapper";
 import { subtaskApi } from "../api/services/subtaskApi";
 import { avatarUrl } from "../utils/avatar";
@@ -21,6 +23,8 @@ import {
   issueTypeIcons,
 } from "../types/project";
 import { useProjectStatuses } from "../hooks/useProjectStatuses";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 
 // helper components
 function PriorityBars({ priority }: { priority: Priority }) {
@@ -75,6 +79,7 @@ export default function IssueDetailPage() {
   const { statuses: projectStatuses } = useProjectStatuses(issue?.projectId ?? null);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
+  const { toasts, addToast, removeToast } = useToast();
 
   useEffect(() => {
     if (!issueId) return;
@@ -99,12 +104,29 @@ export default function IssueDetailPage() {
 
     if (!hasChange) return;
 
+    let successMsg = "";
+    if (updates.statusId) {
+      const targetStatus = projectStatuses.find((ps) => ps.id === updates.statusId);
+      if (targetStatus) {
+        successMsg = `Status → ${targetStatus.statusName}`;
+      }
+    } else if (updates.priority) {
+      const p = updates.priority.toLowerCase() as Priority;
+      successMsg = `Priority → ${priorityLabelMap[p]}`;
+    } else if (updates.description !== undefined) {
+      successMsg = "Description updated";
+    }
+
     setIssue((prev) => prev ? { ...prev, ...updates } : prev);
     try {
       const updated = await issueApi.update(issue.projectId, issue.id, updates);
       setIssue(updated);
+      if (successMsg) {
+        addToast(successMsg, "success");
+      }
     } catch (err) {
       console.error("Failed to update issue", err);
+      addToast(err instanceof Error ? err.message : "Failed to save change", "error");
       issueApi.getById(issue.id).then(setIssue).catch(console.error);
     }
   }
@@ -152,7 +174,7 @@ export default function IssueDetailPage() {
           subtasks: originalSubtasks,
         };
       });
-      console.error(err);
+      addToast(err instanceof Error ? err.message : "Failed to update subtask", "error");
     }
   }
 
@@ -170,8 +192,9 @@ export default function IssueDetailPage() {
           subtasks: [...(prev.subtasks ?? []), created],
         };
       });
+      addToast("Subtask added", "success");
     } catch (err) {
-      console.error(err);
+      addToast(err instanceof Error ? err.message : "Failed to add subtask", "error");
     }
   }
 
@@ -192,6 +215,7 @@ export default function IssueDetailPage() {
 
     try {
       await subtaskApi.delete(issue.projectId, issue.id, subtaskUuid);
+      addToast("Subtask removed", "success");
     } catch (err) {
       // rollback
       setIssue((prev) => {
@@ -201,8 +225,18 @@ export default function IssueDetailPage() {
           subtasks: originalSubtasks,
         };
       });
-      console.error(err);
+      addToast(err instanceof Error ? err.message : "Failed to delete subtask", "error");
     }
+  }
+
+  async function handleUpdateAttachments(newAttachments: AttachmentResponse[]) {
+    setIssue((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        attachments: newAttachments,
+      };
+    });
   }
 
   if (!issue) return null;
@@ -326,6 +360,14 @@ export default function IssueDetailPage() {
             )}
           </div>
 
+          {/* Attachments */}
+          <AttachmentsSection
+            projectId={issue.projectId}
+            issueId={issue.id}
+            initialAttachments={issue.attachments || []}
+            onUpdateAttachments={handleUpdateAttachments}
+          />
+
           {/* Subtasks */}
           <SubtasksSection
             subtasks={(issue.subtasks ?? []).map((sub) => {
@@ -415,6 +457,7 @@ export default function IssueDetailPage() {
           </div>
         </div>
       </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
