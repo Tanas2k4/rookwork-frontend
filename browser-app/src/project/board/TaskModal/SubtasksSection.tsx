@@ -78,7 +78,7 @@ export function SubtasksSection({
               className="accent-purple-800 w-3.5 h-3.5 cursor-pointer shrink-0"
             />
             <span
-              className={`text-sm flex-1 ${sub.done ? "line-through text-gray-400" : "text-gray-700"}`}
+              className={`text-sm flex-1 break-words break-all ${sub.done ? "line-through text-gray-400" : "text-gray-700"}`}
             >
               {sub.title}
             </span>

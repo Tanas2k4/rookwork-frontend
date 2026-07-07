@@ -60,13 +60,15 @@ const PRIORITIES_ORDER: PriorityType[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 interface CreateIssueModalProps {
   open: boolean;
   onClose: () => void;
+  addToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 // Removed file helper functions
 
-export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
+export function CreateIssueModal({ open, onClose, addToast: parentAddToast }: CreateIssueModalProps) {
   const { members, projectId, reloadIssues, issueTypes, projectStatuses } = useProject();
-  const { addToast } = useToast();
+  const { addToast: localAddToast } = useToast();
+  const addToast = parentAddToast || localAddToast;
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [issueTitle, setIssueTitle] = useState("");

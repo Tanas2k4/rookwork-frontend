@@ -5,9 +5,13 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { authApi } from "../api/services/authApi";
 import { tokenStorage } from "../api/tokenStorage";
 import { OtpInput } from "../components/common/OtpInput";
+import { TERMS_OF_SERVICE } from "../constants/termsOfService";
+import { PRIVACY_POLICY } from "../constants/privacyPolicy";
 
 function Register({ onSuccess }: { onSuccess?: () => void }) {
   const [profileName, setProfileName] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -80,6 +84,10 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
     }
     if (password !== confirm) {
       setError("Passwords do not match");
+      return;
+    }
+    if (!agreeTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy");
       return;
     }
 
@@ -258,6 +266,35 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
                         />
                       </div>
                     </div>
+
+                    {/* TERMS & PRIVACY CHECKBOX */}
+                    <div className="py-1.5 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="agreeTerms"
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                        className="accent-purple-900 cursor-pointer w-4 h-4 rounded border-gray-300 text-purple-900 focus:ring-purple-800 shrink-0"
+                      />
+                      <label htmlFor="agreeTerms" className="text-[12px] text-gray-500 select-none cursor-pointer flex items-center flex-wrap gap-x-1">
+                        <span>I agree to the</span>
+                        <button
+                          type="button"
+                          onClick={() => setModalType("terms")}
+                          className="text-purple-900 font-bold underline hover:text-purple-750 focus:outline-none"
+                        >
+                          Terms of Service
+                        </button>
+                        <span>and</span>
+                        <button
+                          type="button"
+                          onClick={() => setModalType("privacy")}
+                          className="text-purple-900 font-bold underline hover:text-purple-750 focus:outline-none"
+                        >
+                          Privacy Policy
+                        </button>
+                      </label>
+                    </div>
                   </>
                 );
               })()
@@ -359,6 +396,77 @@ function Register({ onSuccess }: { onSuccess?: () => void }) {
           </>
         )}
       </div>
+
+      {/* LEGAL MODAL */}
+      {modalType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-150 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-800">
+                {modalType === "terms" ? TERMS_OF_SERVICE.title : PRIVACY_POLICY.title}
+              </h2>
+              <button
+                onClick={() => setModalType(null)}
+                className="text-gray-400 hover:text-gray-600 transition text-sm font-semibold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-4 text-sm text-gray-600 leading-relaxed font-sans">
+              <p className="font-semibold text-gray-700 text-xs italic">
+                {modalType === "terms" ? TERMS_OF_SERVICE.lastUpdated : PRIVACY_POLICY.lastUpdated}
+              </p>
+              <p className="text-gray-700 font-medium">
+                {modalType === "terms" ? TERMS_OF_SERVICE.intro : PRIVACY_POLICY.intro}
+              </p>
+
+              {(modalType === "terms" ? TERMS_OF_SERVICE.sections : PRIVACY_POLICY.sections).map((sec, idx) => (
+                <div key={idx} className="space-y-2 mt-4">
+                  <h3 className="font-bold text-gray-800 text-base border-b border-gray-100 pb-1">
+                    {sec.heading}
+                  </h3>
+                  {sec.content && <p className="whitespace-pre-line">{sec.content}</p>}
+                  {sec.intro && <p>{sec.intro}</p>}
+                  {sec.bullets && (
+                    <ul className="list-disc pl-5 space-y-1.5 mt-1">
+                      {sec.bullets.map((bullet, bIdx) => (
+                        <li key={bIdx}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {sec.extra && (
+                    <p className="whitespace-pre-line text-xs text-gray-500 mt-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      {sec.extra}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-150 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
+              <button
+                onClick={() => {
+                  setAgreeTerms(true);
+                  setModalType(null);
+                }}
+                className="bg-purple-900 text-white font-semibold text-xs tracking-wider px-5 py-2 rounded-lg hover:bg-purple-800 transition uppercase"
+              >
+                Agree & Close
+              </button>
+              <button
+                onClick={() => setModalType(null)}
+                className="bg-white border border-gray-350 text-gray-600 font-semibold text-xs tracking-wider px-5 py-2 rounded-lg hover:bg-gray-100 transition uppercase"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
