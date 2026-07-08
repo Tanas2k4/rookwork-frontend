@@ -362,9 +362,9 @@ export function AdminOverview() {
                 const colors = ["bg-indigo-600", "bg-emerald-500", "bg-amber-500", "bg-slate-400"];
                 const labelMap: Record<string, string> = {
                   "To do": "To Do",
-                  "Đang làm": "In Progress",
+                  "In Progress": "In Progress",
                   "Review": "Review",
-                  "Hoàn thành": "Completed"
+                  "Completed": "Completed"
                 };
                 return (
                   <div className="flex items-center justify-between text-[12.5px] border-b border-neutral-50 pb-1" key={key}>

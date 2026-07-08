@@ -127,7 +127,7 @@ export default function ProfileSettings({
       window.dispatchEvent(new CustomEvent("profileUpdated"));
       addToast("Avatar uploaded successfully!", "success");
     } catch (err) {
-      console.error("Lỗi tải lên ảnh đại diện:", err);
+      console.error("Failed to upload avatar:", err);
       addToast("Failed to upload avatar. Please try again.", "error");
     } finally {
       setIsUploading(false);
