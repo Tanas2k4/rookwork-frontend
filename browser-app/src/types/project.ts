@@ -1,9 +1,22 @@
 import { type IconType } from "react-icons";
-import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import { FaTasks, FaBook, FaRocket, FaCheckSquare } from "react-icons/fa";
+import {
+  LuBug,
+  LuSparkles,
+  LuBookOpen,
+  LuFlag,
+  LuSearch,
+  LuWrench,
+  LuFileText,
+  LuTestTube,
+  LuLifeBuoy,
+} from "react-icons/lu";
 import type { AttachmentResponse } from "../api/contracts/attachment";
+import type { IssueTypeResponse } from "../api/contracts/issue";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 
 // Enums / literal types
-export type TaskType = "task" | "story" | "epic";
+export type TaskType = string;
 export type Priority = "low" | "medium" | "high" | "urgent";
 export type Status = "to_do" | "in_progress" | "done";
 export type TaskPriority = Priority;
@@ -15,6 +28,7 @@ export interface User {
   email: string;
   display_name: string;
   avt: string;
+  uuid?: string;
 }
 
 export interface Subtask {
@@ -31,12 +45,28 @@ export interface Task {
   priority: Priority;
   assigned_to: User[]; // multi-assignee
   deadline: string | null;
+  startDate: string | null;
   status: Status;
   subtasks: Subtask[];
   parentId?: number | null;
   childIds?: number[];
   attachments?: AttachmentResponse[];
+  issueType: IssueTypeResponse;
+  dependencyIds?: string[];
 }
+
+/**
+ * Extended Task with server-side metadata fields injected by issueToTask().
+ * Use this type instead of `(task as any)` when accessing _uuid, _statusId, etc.
+ */
+export type TaskWithMeta = Task & {
+  _uuid?: string;
+  _statusId?: string | null;
+  _statusMeta?: ProjectStatusResponse | null;
+  _projectId?: string;
+  _assigneeUuids?: string[];
+};
+
 
 export interface Comment {
   id: number;
@@ -54,20 +84,37 @@ export interface Toast {
   type: "success" | "error" | "info";
 }
 
-// Constants
-export const typeIconMap: Record<TaskType, IconType> = {
+// Icons Registry
+export const issueTypeIcons: Record<string, IconType> = {
+  task: FaTasks,
+  story: FaBook,
+  epic: FaRocket,
+  bug: LuBug,
+  sparkles: LuSparkles,
+  "check-square": FaCheckSquare,
+  "book-open": LuBookOpen,
+  flag: LuFlag,
+  search: LuSearch,
+  wrench: LuWrench,
+  "file-text": LuFileText,
+  "test-tube": LuTestTube,
+  "life-buoy": LuLifeBuoy,
+};
+
+// Constants (For backward compatibility and default system types)
+export const typeIconMap: Record<string, IconType> = {
   task: FaTasks,
   story: FaBook,
   epic: FaRocket,
 };
 
-export const typeColorMap: Record<TaskType, string> = {
+export const typeColorMap: Record<string, string> = {
   task: "text-blue-700",
   story: "text-green-700",
   epic: "text-purple-700",
 };
 
-export const typeLabelMap: Record<TaskType, string> = {
+export const typeLabelMap: Record<string, string> = {
   task: "Task",
   story: "Story",
   epic: "Epic",

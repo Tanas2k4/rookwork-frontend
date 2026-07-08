@@ -17,7 +17,7 @@ export default function RecentActivity({ data }: { data: OverviewData }) {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 ">
       <h2 className="text-sm font-semibold text-gray-800 mb-4">
         Recent Activity
       </h2>
@@ -37,7 +37,7 @@ export default function RecentActivity({ data }: { data: OverviewData }) {
                   className="w-7 h-7 rounded-full object-cover shrink-0 ring-2 ring-white"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12.5px] text-gray-600 leading-snug">
+                  <p className="text-[12.5px] text-gray-600 leading-snug break-all break-words">
                     <span className="font-semibold text-gray-800">
                       {a.actorName}
                     </span>{" "}

@@ -1,21 +1,25 @@
 import { NavLink, useParams } from "react-router-dom";
-import { IoBarChartOutline } from "react-icons/io5"; //Overview icon
-import { BsCollection } from "react-icons/bs"; //Board icon
-import { TfiTimer } from "react-icons/tfi"; //Timeline icon
-import { TfiViewListAlt } from "react-icons/tfi"; //List icon
-import { RiAttachment2 } from "react-icons/ri"; //Files icon
-import { BsCalendar2Event } from "react-icons/bs"; //Events icon
+import {
+  ChartBarIcon,
+  ViewColumnsIcon,
+  ClockIcon,
+  ListBulletIcon,
+  PaperClipIcon,
+  CalendarDaysIcon,
+  Cog6ToothIcon,
+} from "@heroicons/react/24/outline";
 
 function ProjectTabs() {
   const { projectKey } = useParams();
 
   const tabs = [
-    { key: "overview", label: "Overview", icon: IoBarChartOutline },
-    { key: "board", label: "Board", icon: BsCollection },
-    { key: "timeline", label: "Timeline", icon: TfiTimer },
-    { key: "list", label: "List", icon: TfiViewListAlt },
-    { key: "files", label: "Storage", icon: RiAttachment2 },
-    { key: "events", label: "Events", icon: BsCalendar2Event },
+    { key: "overview", label: "Overview", icon: ChartBarIcon },
+    { key: "board", label: "Board", icon: ViewColumnsIcon },
+    { key: "timeline", label: "Timeline", icon: ClockIcon },
+    { key: "list", label: "List", icon: ListBulletIcon },
+    { key: "files", label: "Storage", icon: PaperClipIcon },
+    { key: "events", label: "Events", icon: CalendarDaysIcon },
+    { key: "settings", label: "Settings", icon: Cog6ToothIcon },
   ];
 
   return (
@@ -39,7 +43,7 @@ function ProjectTabs() {
               `
               }
             >
-              <tab.icon size={16} className="shrink-0" />
+              <tab.icon className="w-4 h-4 shrink-0" />
               {tab.label}
             </NavLink>
           </li>

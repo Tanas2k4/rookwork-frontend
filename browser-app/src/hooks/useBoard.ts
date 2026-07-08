@@ -7,23 +7,24 @@
 import { useState, useRef, useEffect, useCallback, useContext } from "react";
 import type {
   Task,
+  TaskWithMeta,
   Status,
   Priority,
   TaskType,
   User,
   Subtask,
 } from "../types/project";
-import { statusMap, priorityLabelMap } from "../types/project";
+import { priorityLabelMap } from "../types/project";
 import { issueApi } from "../api/services/issueApi";
 import { subtaskApi } from "../api/services/subtaskApi";
 import type { AttachmentResponse } from "../api/contracts/attachment";
 import {
-  uiTypeToApi,
-  uiStatusToApi,
+  uiStatusToStatusId,
   uiPriorityToApi,
   uuidToId,
   idToUuid,
   issueToTask,
+  categoryToUIStatus,
 } from "../utils/issueMapper";
 import { useToast } from "../hooks/useToast";
 import { ProjectContext } from "../context/ProjectContext";
@@ -38,7 +39,13 @@ import { ProjectContext } from "../context/ProjectContext";
  * @param projectId ID định danh của dự án hiện tại
  */
 export function useBoard(projectId: string | null) {
-  const { issueUpdateTick } = useContext(ProjectContext);
+  const {
+    issueUpdateTick,
+    notifyIssueUpdated,
+    issueTypes,
+    projectStatuses,
+    isTransitionAllowed,
+  } = useContext(ProjectContext);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -46,6 +53,15 @@ export function useBoard(projectId: string | null) {
   const [loading, setLoading] = useState(false);
 
   const tempIdRef = useRef(-1);
+  const assigneeTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (assigneeTimeoutRef.current) {
+        clearTimeout(assigneeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   //  Load issues 
 
@@ -104,6 +120,7 @@ export function useBoard(projectId: string | null) {
 
     // Optimistic add with temp id
     const tempId = tempIdRef.current--;
+    const matchedType = issueTypes.find(t => t.name.toLowerCase() === type.toLowerCase());
     const tempTask: Task = {
       id: tempId,
       title,
@@ -112,26 +129,40 @@ export function useBoard(projectId: string | null) {
       status,
       assigned_to: [],
       deadline: null,
+      startDate: null,
       subtasks: [],
       parentId: null,
       childIds: [],
+      issueType: matchedType || {
+        id: "",
+        name: type,
+        description: null,
+        iconKey: type,
+        color: "#64748B",
+        isSystem: true,
+      },
     };
     setTasks((p) => [...p, tempTask]);
-    pushToast("Creating task...", "info");
 
     try {
+      const matchedType = issueTypes.find(t => t.name.toLowerCase() === type.toLowerCase());
+      const issueTypeId = matchedType ? matchedType.id : "";
+
       const created = await issueApi.create(projectId, {
         issueName: title,
-        issueType: uiTypeToApi(type),
+        issueTypeId,
         priority: uiPriorityToApi(priority),
-        status: uiStatusToApi(status),
+        statusId: uiStatusToStatusId(status, projectStatuses),
       });
 
       uuidToId(created.id); // register uuid
       const realTask = issueToTask(created, []);
 
       setTasks((p) => p.map((t) => (t.id === tempId ? realTask : t)));
-      pushToast("Task created");
+      pushToast("Task created successfully", "success");
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
       return realTask;
     } catch (err) {
       setTasks((p) => p.filter((t) => t.id !== tempId));
@@ -149,10 +180,13 @@ export function useBoard(projectId: string | null) {
     // Optimistic remove
     setTasks((p) => p.filter((t) => t.id !== task.id));
     closePanel();
-    pushToast("Task deleted", "info");
 
     try {
       await issueApi.delete(projectId, uuid);
+      pushToast("Task deleted successfully", "success");
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
     } catch (err) {
       // Rollback
       setTasks((p) => [...p, task]);
@@ -170,9 +204,13 @@ export function useBoard(projectId: string | null) {
     if (!uuid) return;
     try {
       await issueApi.update(projectId, uuid, patch);
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
     } catch (err) {
       console.error("Failed to update issue", err);
       pushToast(err instanceof Error ? err.message : "Failed to save change", "error");
+      throw err;
     }
   }
 
@@ -182,7 +220,10 @@ export function useBoard(projectId: string | null) {
     if (selectedTask.title === cleanTitle) return;
     updateTaskLocal(selectedTask.id, { title: cleanTitle });
     pushToast("Title updated");
-    patchIssue(selectedTask.id, { issueName: cleanTitle });
+    patchIssue(selectedTask.id, { issueName: cleanTitle }).catch((err) => {
+      console.error("Failed to update title, reloading issues", err);
+      loadIssues();
+    });
   }
 
   function saveDescription(description: string) {
@@ -190,22 +231,68 @@ export function useBoard(projectId: string | null) {
     if ((selectedTask.description ?? "") === (description ?? "")) return;
     updateTaskLocal(selectedTask.id, { description });
     pushToast("Description updated");
-    patchIssue(selectedTask.id, { description });
+    patchIssue(selectedTask.id, { description }).catch((err) => {
+      console.error("Failed to update description, reloading issues", err);
+      loadIssues();
+    });
   }
 
-  function changeStatus(s: Status) {
+  async function changeTaskStatusId(taskId: number, statusId: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const targetStatus = projectStatuses.find((ps) => ps.id === statusId);
+    if (!targetStatus) return;
+    const oldStatusId = (task as TaskWithMeta)._statusId;
+    if (oldStatusId === statusId) return;
+    if (!isTransitionAllowed(oldStatusId, statusId)) {
+      pushToast("This status transition is not allowed by the project's workflow rules", "error");
+      return;
+    }
+
+    const oldUiStatus = task.status;
+    const oldStatusMeta = (task as TaskWithMeta)._statusMeta;
+
+    const uiStatus = categoryToUIStatus(targetStatus.statusCategory);
+    updateTaskLocal(taskId, {
+      status: uiStatus,
+      _statusId: statusId,
+      _statusMeta: targetStatus,
+    } as TaskWithMeta);
+    pushToast(`${task.title} → ${targetStatus.statusName}`);
+
+    try {
+      await patchIssue(taskId, { statusId });
+    } catch (err) {
+      // rollback
+      updateTaskLocal(taskId, {
+        status: oldUiStatus,
+        _statusId: oldStatusId,
+        _statusMeta: oldStatusMeta,
+      } as TaskWithMeta);
+      loadIssues();
+    }
+  }
+
+  async function saveDependencies(dependencyIds: string[]) {
     if (!selectedTask) return;
-    if (selectedTask.status === s) return;
-    updateTaskLocal(selectedTask.id, { status: s });
-    pushToast(`Status → ${statusMap[s].label}`);
-    patchIssue(selectedTask.id, { status: uiStatusToApi(s) });
+    const oldDependencyIds = selectedTask.dependencyIds || [];
+    updateTaskLocal(selectedTask.id, { dependencyIds });
+    try {
+      await patchIssue(selectedTask.id, { dependencyIds });
+      pushToast("Dependencies updated");
+    } catch (err) {
+      updateTaskLocal(selectedTask.id, { dependencyIds: oldDependencyIds });
+      loadIssues();
+    }
   }
 
-  function changeTaskStatus(task: Task, newStatus: Status) {
-    if (task.status === newStatus) return;
-    updateTaskLocal(task.id, { status: newStatus });
-    pushToast(`${task.title} moved to ${statusMap[newStatus].label}`);
-    patchIssue(task.id, { status: uiStatusToApi(newStatus) });
+  function changeStatus(statusId: string) {
+    if (!selectedTask) return;
+    changeTaskStatusId(selectedTask.id, statusId);
+  }
+
+  function changeTaskStatus(task: Task, newStatusId: string) {
+    changeTaskStatusId(task.id, newStatusId);
   }
 
   function changePriority(p: Priority) {
@@ -227,17 +314,47 @@ export function useBoard(projectId: string | null) {
     if (JSON.stringify([...currentUuids].sort()) === JSON.stringify([...newUuids].sort())) return;
     updateTaskLocal(selectedTask.id, { assigned_to: users, _assigneeUuids: newUuids } as Partial<Task & { _assigneeUuids?: string[] }>);
     pushToast(users.length > 0 ? `Assigned to ${users.map((u) => u.display_name).join(", ")}` : "Unassigned");
-    patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
+    
+    if (assigneeTimeoutRef.current) {
+      clearTimeout(assigneeTimeoutRef.current);
+    }
+    assigneeTimeoutRef.current = setTimeout(() => {
+      patchIssue(selectedTask.id, { assigneeIds: newUuids.length > 0 ? newUuids : [] });
+    }, 5000);
   }
 
   function saveDeadline(val: string) {
     if (!selectedTask) return;
-    const date = val ? val.split("T")[0] : null;
-    if (selectedTask.deadline === date) return;
-    updateTaskLocal(selectedTask.id, { deadline: date });
+    const isoString = val ? new Date(val).toISOString() : null;
+    if (selectedTask.deadline === isoString) return;
+
+    if (isoString && selectedTask.startDate) {
+      if (new Date(isoString) < new Date(selectedTask.startDate)) {
+        pushToast("Deadline cannot be before start date", "error");
+        return;
+      }
+    }
+
+    updateTaskLocal(selectedTask.id, { deadline: isoString });
     pushToast("Deadline updated");
-    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
-    patchIssue(selectedTask.id, { deadline: date ?? undefined });
+    patchIssue(selectedTask.id, { deadline: isoString ?? undefined });
+  }
+
+  function saveStartDate(val: string) {
+    if (!selectedTask) return;
+    const isoString = val ? new Date(val).toISOString() : null;
+    if (selectedTask.startDate === isoString) return;
+
+    if (isoString && selectedTask.deadline) {
+      if (new Date(isoString) > new Date(selectedTask.deadline)) {
+        pushToast("Start date cannot be after deadline", "error");
+        return;
+      }
+    }
+
+    updateTaskLocal(selectedTask.id, { startDate: isoString });
+    pushToast("Start Date updated");
+    patchIssue(selectedTask.id, { startDate: isoString ?? undefined });
   }
 
   // linkchild
@@ -460,10 +577,10 @@ export function useBoard(projectId: string | null) {
     // Optimistic update
     const updated = originalSubtasks.filter((s) => s.id !== subtaskId);
     updateTaskLocal(selectedTask.id, { subtasks: updated });
-    pushToast("Subtask removed", "info");
 
     try {
       await subtaskApi.delete(projectId, issueUuid, subtaskUuid);
+      pushToast("Subtask removed", "info");
     } catch (err) {
       // rollback
       updateTaskLocal(selectedTask.id, { subtasks: originalSubtasks });
@@ -494,12 +611,16 @@ export function useBoard(projectId: string | null) {
     changePriority,
     changeAssignee,
     saveDeadline,
+    saveStartDate,
     reorderTasks,
     toggleSubtask,
     addSubtask,
     deleteSubtask,
     removeToast,
+    pushToast,
     updateAttachments,
+    isTransitionAllowed,
     reload: loadIssues,
+    saveDependencies,
   };
 }

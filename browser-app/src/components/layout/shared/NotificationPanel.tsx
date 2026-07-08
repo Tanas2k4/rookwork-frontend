@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BsBell } from "react-icons/bs";
-import { IoClose } from "react-icons/io5";
-import { RiDeleteBin6Line } from "react-icons/ri";
+import { BellIcon, XMarkIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { avatarUrl as getAvatarHelper } from "../../../utils/avatar";
 import type { NotificationResponse } from "../../../api/contracts/notification";
 
@@ -90,7 +88,7 @@ export function NotificationPanel({
               onClick={onClose}
               className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition"
             >
-              <IoClose size={18} />
+              <XMarkIcon className="w-4.5 h-4.5" />
             </button>
           </div>
         </div>
@@ -99,7 +97,7 @@ export function NotificationPanel({
         <div className="flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm gap-2">
-              <BsBell size={40} className="opacity-30" />
+              <BellIcon className="w-10 h-10 opacity-30" />
               <span>No notifications</span>
             </div>
           ) : (
@@ -210,7 +208,7 @@ export function NotificationPanel({
                         opacity-0 group-hover:opacity-100 transition-all"
                       title="Delete notification"
                     >
-                      <RiDeleteBin6Line size={14} />
+                      <TrashIcon className="w-3.5 h-3.5" />
                     </button>
                   </li>
                 );

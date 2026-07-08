@@ -1,11 +1,11 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, startTransition } from "react";
+import { useLocation } from "react-router-dom";
 import { ProjectContext } from "../../context/ProjectContext";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask } from "../../utils/issueMapper";
 import type { Task } from "../../types/project";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
-import { RiDownload2Line, RiFolder2Fill } from "react-icons/ri";
-import { IoSearchOutline } from "react-icons/io5";
+import { ArrowDownTrayIcon, FolderIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/common/ToastContainer";
 import { DriveFileCard } from "./DriveFileCard";
@@ -21,6 +21,7 @@ export default function ProjectFilesView() {
     openIssueModal,
     notifyIssueUpdated,
   } = useContext(ProjectContext);
+  const location = useLocation();
   const [tasks, setTasks] = useState<(Task & { _uuid: string })[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFolderUuid, setSelectedFolderUuid] = useState<string | null>(
@@ -32,11 +33,19 @@ export default function ProjectFilesView() {
   const [draggedOverFolderUuid, setDraggedOverFolderUuid] = useState<
     string | null
   >(null);
-  const [draggedOverContent, setDraggedOverContent] = useState<boolean>(false);
   const [fileTypeFilter, setFileTypeFilter] = useState<string>("all");
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] =
     useState<boolean>(false);
   const { toasts, addToast, removeToast } = useToast();
+
+  useEffect(() => {
+    const state = location.state as { folderUuid?: string } | null;
+    if (state?.folderUuid) {
+      startTransition(() => {
+        setSelectedFolderUuid(state.folderUuid!);
+      });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -305,13 +314,13 @@ export default function ProjectFilesView() {
       {/* Search top bar */}
       <div className="flex items-center gap-3 mb-2 ">
         <div className="relative w-80">
-          <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           <input
             type="text"
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-500 rounded-lg pl-9 pr-3 py-1.5 text-xs
+            className="w-full bg-white border border-gray-500 rounded-lg pl-9 pr-3 py-1.5 text-sm
               focus:outline-none focus:border-none focus:ring-1 focus:ring-purple-800 focus:border-purple-800 transition"
           />
         </div>
@@ -320,7 +329,7 @@ export default function ProjectFilesView() {
         <div className="relative shrink-0 select-none">
           <button
             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-            className="flex items-center justify-between bg-white border border-gray-500 text-gray-700 text-xs rounded-lg pl-3 pr-2.5 py-1.5 font-semibold focus:outline-none hover:border-purple-800 focus:border-purple-800 transition cursor-pointer gap-2 w-36"
+            className="flex items-center justify-between bg-white border border-gray-500 text-gray-700 text-sm rounded-lg pl-3 pr-2.5 py-1.5 focus:outline-none hover:border-purple-800 focus:border-purple-800 transition cursor-pointer gap-2 w-36"
           >
             <span>
               {fileTypeFilter === "all" && "All File Types"}
@@ -330,9 +339,8 @@ export default function ProjectFilesView() {
               {fileTypeFilter === "others" && "Others"}
             </span>
             <svg
-              className={`fill-current h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${
-                isFilterDropdownOpen ? "rotate-180" : ""
-              }`}
+              className={`fill-current h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${isFilterDropdownOpen ? "rotate-180" : ""
+                }`}
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
             >
@@ -360,11 +368,10 @@ export default function ProjectFilesView() {
                       setFileTypeFilter(opt.value);
                       setIsFilterDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs transition cursor-pointer ${
-                      fileTypeFilter === opt.value
-                        ? "bg-purple-50 text-purple-800 font-bold"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition cursor-pointer ${fileTypeFilter === opt.value
+                      ? "bg-purple-50 text-purple-800 font-bold"
+                      : "text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -379,7 +386,7 @@ export default function ProjectFilesView() {
           <div className="flex justify-between text-[11px] text-gray-500">
             <span>Storage Used</span>
             <span className="font-bold text-gray-800">
-              {formatBytes(totalUsedBytes)} of 3.6 GB
+              {formatBytes(totalUsedBytes)} of 2 GB
             </span>
           </div>
           <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden border border-gray-200">
@@ -401,7 +408,7 @@ export default function ProjectFilesView() {
               onClick={() => setSelectedFolderUuid(null)}
               className="hover:text-purple-800 hover:underline font-semibold text-gray-650 flex items-center gap-1.5 transition cursor-pointer"
             >
-              <RiFolder2Fill className="text-gray-400" size={15} />
+              <FolderIcon className="text-gray-400 w-[15px] h-[15px]" />
               {project?.projectName ? project.projectName : "Project"}
             </button>
             {selectedFolderUuid && selectedFolder && (
@@ -419,19 +426,7 @@ export default function ProjectFilesView() {
 
           {selectedFolderUuid && selectedFolder ? (
             /* Folder Content Grid */
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDraggedOverContent(true);
-              }}
-              onDragLeave={() => setDraggedOverContent(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                handleDropOnFolder(e, selectedFolderUuid);
-                setDraggedOverContent(false);
-              }}
-              className={` ${draggedOverContent ? "border-purple-800 bg-purple-50/10 ring-purple-400" : ""} px-6 py-4 rounded-xl transition duration-200`}
-            >
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-3xs min-h-[360px] space-y-4">
               {(() => {
                 const folderAttachmentsFiltered = filterFolderAttachments(
                   selectedFolder.attachments,
@@ -475,17 +470,15 @@ export default function ProjectFilesView() {
                       }}
                       onDragLeave={() => setDraggedOverFolderUuid(null)}
                       onDrop={(e) => handleDropOnFolder(e, group._uuid)}
-                      className={`group bg-white border ${
-                        draggedOverFolderUuid === group._uuid
-                          ? "border-purple-800"
-                          : "border-gray-200 hover:border-purple-800"
-                      } rounded-xl overflow-hidden transition-all flex flex-col h-52 relative cursor-pointer`}
+                      className={`group bg-white border ${draggedOverFolderUuid === group._uuid
+                        ? "border-purple-800"
+                        : "border-gray-200 hover:border-purple-800"
+                        } rounded-xl overflow-hidden transition-all flex flex-col h-52 relative cursor-pointer`}
                     >
                       {/* Card Header (Folder Title) */}
                       <div className="h-11  bg-gray-50 border-b border-gray-200 px-3 flex items-center gap-2 select-none">
-                        <RiFolder2Fill
-                          className="text-amber-500 shrink-0"
-                          size={16}
+                        <FolderIcon
+                          className="text-amber-500 shrink-0 w-4 h-4"
                         />
                         <span
                           className="text-[11px] font-bold text-gray-755 truncate flex-1 hover:text-purple-800 block min-w-0"
@@ -503,9 +496,8 @@ export default function ProjectFilesView() {
                           before:content-[''] before:absolute before:-top-1.5 before:left-0 before:w-6 before:h-2 before:bg-amber-500 before:rounded-t-sm"
                         >
                           <div className="absolute inset-x-1 bottom-1 top-2 bg-amber-100 rounded-xs flex items-center justify-center">
-                            <RiFolder2Fill
-                              className="text-amber-400"
-                              size={16}
+                            <FolderIcon
+                              className="text-amber-400 w-4 h-4"
                             />
                           </div>
                         </div>
@@ -593,7 +585,7 @@ export default function ProjectFilesView() {
                           className="text-gray-400 hover:text-gray-800 p-1"
                           title="Download file"
                         >
-                          <RiDownload2Line size={15} />
+                          <ArrowDownTrayIcon className="w-[15px] h-[15px]" />
                         </a>
                       </div>
                     </div>
@@ -657,7 +649,7 @@ export default function ProjectFilesView() {
                       className="text-gray-400 hover:text-gray-800 p-1 shrink-0 ml-2"
                       title="Download file"
                     >
-                      <RiDownload2Line size={14} />
+                      <ArrowDownTrayIcon className="w-3.5 h-3.5" />
                     </a>
                   </div>
                 ))

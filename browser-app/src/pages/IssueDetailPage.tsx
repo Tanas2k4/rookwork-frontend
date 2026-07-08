@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "../components/common/RichTextEditor";
-import { MdOutlineExpandMore } from "react-icons/md";
-import { IoIosArrowBack } from "react-icons/io";
+import { ChevronDownIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse, UpdateIssueRequest } from "../api/contracts/issue";
 import { SubtasksSection } from "../project/board/TaskModal/SubtasksSection";
 import { ActivitySection } from "../project/board/TaskModal/ActivitySection";
+import { AttachmentsSection } from "../project/board/TaskModal/AttachmentsSection";
+import type { AttachmentResponse } from "../api/contracts/attachment";
 import { apiStatusToUI, apiPriorityToUI, uuidToId, idToUuid } from "../utils/issueMapper";
 import { subtaskApi } from "../api/services/subtaskApi";
 import { avatarUrl } from "../utils/avatar";
@@ -15,13 +16,15 @@ import { isOverdue as isOverdueUtil } from "../utils/date";
 import {
   type Priority,
   statusMap,
-  statuses,
   priorityColorMap,
   priorityLabelMap,
   priorities,
-  typeIconMap,
-  typeColorMap,
+  issueTypeIcons,
 } from "../types/project";
+import { useProjectStatuses } from "../hooks/useProjectStatuses";
+import { useWorkflow } from "../hooks/useWorkflow";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 
 // helper components
 function PriorityBars({ priority }: { priority: Priority }) {
@@ -73,8 +76,11 @@ export default function IssueDetailPage() {
 
   const [issue, setIssue] = useState<IssueResponse | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const { statuses: projectStatuses } = useProjectStatuses(issue?.projectId ?? null);
+  const { isTransitionAllowed } = useWorkflow(issue?.projectId ?? null);
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
+  const { toasts, addToast, removeToast } = useToast();
 
   useEffect(() => {
     if (!issueId) return;
@@ -99,12 +105,29 @@ export default function IssueDetailPage() {
 
     if (!hasChange) return;
 
+    let successMsg = "";
+    if (updates.statusId) {
+      const targetStatus = projectStatuses.find((ps) => ps.id === updates.statusId);
+      if (targetStatus) {
+        successMsg = `Status → ${targetStatus.statusName}`;
+      }
+    } else if (updates.priority) {
+      const p = updates.priority.toLowerCase() as Priority;
+      successMsg = `Priority → ${priorityLabelMap[p]}`;
+    } else if (updates.description !== undefined) {
+      successMsg = "Description updated";
+    }
+
     setIssue((prev) => prev ? { ...prev, ...updates } : prev);
     try {
       const updated = await issueApi.update(issue.projectId, issue.id, updates);
       setIssue(updated);
+      if (successMsg) {
+        addToast(successMsg, "success");
+      }
     } catch (err) {
       console.error("Failed to update issue", err);
+      addToast(err instanceof Error ? err.message : "Failed to save change", "error");
       issueApi.getById(issue.id).then(setIssue).catch(console.error);
     }
   }
@@ -152,7 +175,7 @@ export default function IssueDetailPage() {
           subtasks: originalSubtasks,
         };
       });
-      console.error(err);
+      addToast(err instanceof Error ? err.message : "Failed to update subtask", "error");
     }
   }
 
@@ -170,8 +193,9 @@ export default function IssueDetailPage() {
           subtasks: [...(prev.subtasks ?? []), created],
         };
       });
+      addToast("Subtask added", "success");
     } catch (err) {
-      console.error(err);
+      addToast(err instanceof Error ? err.message : "Failed to add subtask", "error");
     }
   }
 
@@ -192,6 +216,7 @@ export default function IssueDetailPage() {
 
     try {
       await subtaskApi.delete(issue.projectId, issue.id, subtaskUuid);
+      addToast("Subtask removed", "success");
     } catch (err) {
       // rollback
       setIssue((prev) => {
@@ -201,8 +226,18 @@ export default function IssueDetailPage() {
           subtasks: originalSubtasks,
         };
       });
-      console.error(err);
+      addToast(err instanceof Error ? err.message : "Failed to delete subtask", "error");
     }
+  }
+
+  async function handleUpdateAttachments(newAttachments: AttachmentResponse[]) {
+    setIssue((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        attachments: newAttachments,
+      };
+    });
   }
 
   if (!issue) return null;
@@ -212,10 +247,10 @@ export default function IssueDetailPage() {
   const backLabel = routeState?.from?.label ?? "My Issues";
   const backPath = routeState?.from?.path ?? "/my-issues";
 
-  const type = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
+  const it = issue.issueType;
   const status = apiStatusToUI(issue.status);
   const priority = apiPriorityToUI(issue.priority);
-  const TypeIcon = typeIconMap[type];
+  const TypeIcon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
   const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
   const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
 
@@ -224,15 +259,15 @@ export default function IssueDetailPage() {
       {/* Breadcrumb */}
       <div onClick={() => navigate(backPath)}
         className="flex items-center gap-2 px-8 pt-5 text-gray-700 hover:text-purple-700 transition cursor-pointer w-fit">
-        <IoIosArrowBack />
+        <ChevronLeftIcon className="w-4 h-4 text-gray-700" />
         <button className="text-sm">{backLabel}</button>
       </div>
 
       {/* Title area */}
       <div className="shrink-0 px-8 pt-2 pb-5 border-b border-gray-100">
         <div className="flex items-center justify-between gap-3">
-          <TypeIcon size={13} className={typeColorMap[type]} />
-          <h1 className="text-xl font-semibold text-gray-700 leading-snug flex-1 pt-1 min-w-0">
+          <TypeIcon size={13} style={{ color: it?.color || "#64748B" }} />
+          <h1 className="text-xl font-semibold text-gray-700 leading-snug flex-1 pt-1 min-w-0 break-words break-all">
             {issue.issueName}
           </h1>
 
@@ -242,19 +277,27 @@ export default function IssueDetailPage() {
               Status{" "}
               <InlineDropdown trigger={
                 <span className="flex items-center gap-1.5 border border-gray-500 rounded-md px-2 py-1">
-                  <span className={`w-2 h-2 rounded-full ${statusMap[status].dotColor}`} />
-                  {statusMap[status].label}
-                  <MdOutlineExpandMore className="text-gray-500" />
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: issue.status?.color ?? "#94a3b8" }} />
+                  <span>{issue.status?.statusName ?? statusMap[status].label}</span>
+                  <ChevronDownIcon className="text-gray-500 w-3.5 h-3.5" />
                 </span>
               }>
-                {statuses.map((s) => (
-                  <button key={s}
-                    onClick={() => patchIssue({ status: s === "to_do" ? "TO_DO" : s === "in_progress" ? "IN_PROGRESS" : "DONE" })}
-                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${status === s ? "text-purple-700 font-medium" : "text-gray-700"}`}>
-                    <span className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`} />
-                    {statusMap[s].label}
-                  </button>
-                ))}
+                {(() => {
+                  const currentStatusId = issue.status?.id;
+                  const allowedStatuses = projectStatuses.filter((s) =>
+                    s.id === currentStatusId || isTransitionAllowed(currentStatusId, s.id)
+                  );
+                  return allowedStatuses.map((s) => (
+                    <button key={s.id}
+                      onClick={() => {
+                        patchIssue({ statusId: s.id });
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${issue.status?.id === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"}`}>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                      <span className="truncate">{s.statusName}</span>
+                    </button>
+                  ));
+                })()}
               </InlineDropdown>
             </span>
 
@@ -265,7 +308,7 @@ export default function IssueDetailPage() {
                 <span className="flex items-center gap-1.5 border border-gray-500 rounded-md px-2 py-1">
                   <PriorityBars priority={priority} />
                   {priorityLabelMap[priority]}
-                  <MdOutlineExpandMore className="text-gray-500" />
+                  <ChevronDownIcon className="text-gray-500 w-3.5 h-3.5" />
                 </span>
               }>
                 {priorities.map((p) => (
@@ -323,6 +366,14 @@ export default function IssueDetailPage() {
             )}
           </div>
 
+          {/* Attachments */}
+          <AttachmentsSection
+            projectId={issue.projectId}
+            issueId={issue.id}
+            initialAttachments={issue.attachments || []}
+            onUpdateAttachments={handleUpdateAttachments}
+          />
+
           {/* Subtasks */}
           <SubtasksSection
             subtasks={(issue.subtasks ?? []).map((sub) => {
@@ -349,16 +400,16 @@ export default function IssueDetailPage() {
         <div className="w-96 shrink-0 border-l border-gray-100 overflow-y-auto">
           <div className="px-5 py-6">
             <DetailRow label="Issue type">
-              <span className={`inline-flex items-center gap-1.5 ${typeColorMap[type]}`}>
+              <span className="inline-flex items-center gap-1.5 border px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: `${it?.color || "#64748B"}15`, color: it?.color || "#64748B", borderColor: `${it?.color || "#64748B"}30` }}>
                 <TypeIcon size={12} />
-                <span className="text-gray-700 capitalize">{type}</span>
+                <span className="capitalize">{it?.name || "Task"}</span>
               </span>
             </DetailRow>
 
             <DetailRow label="Status">
               <span className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${statusMap[status].dotColor}`} />
-                <span className="text-gray-700">{statusMap[status].label}</span>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: issue.status?.color ?? "#94a3b8" }} />
+                <span className="text-gray-700">{issue.status?.statusName ?? statusMap[status].label}</span>
               </span>
             </DetailRow>
 
@@ -412,6 +463,7 @@ export default function IssueDetailPage() {
           </div>
         </div>
       </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

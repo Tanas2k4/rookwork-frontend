@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiUser, FiSettings, FiBell, FiShield } from "react-icons/fi";
+import { UserIcon, Cog6ToothIcon, BellIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { userApi } from "../api/services/userApi";
 import type { UserSummary } from "../api/contracts/issue";
 import ProfileSettings from "../components/settings/ProfileSettings";
@@ -8,10 +8,10 @@ import NotificationSettings from "../components/settings/NotificationSettings";
 import SecuritySettings from "../components/settings/SecuritySettings";
 
 const TABS = [
-  { id: "profile", label: "Profile", icon: FiUser },
-  { id: "preferences", label: "Preferences", icon: FiSettings },
-  { id: "notifications", label: "Notifications", icon: FiBell },
-  { id: "security", label: "Account & Security", icon: FiShield },
+  { id: "profile", label: "Profile", icon: UserIcon },
+  { id: "preferences", label: "Preferences", icon: Cog6ToothIcon },
+  { id: "notifications", label: "Notifications", icon: BellIcon },
+  { id: "security", label: "Account & Security", icon: ShieldCheckIcon },
 ];
 
 export default function SettingsPage() {
@@ -66,11 +66,11 @@ export default function SettingsPage() {
                   setActiveTab(tab.id);
                 }}
                 className={`w-full flex items-center px-3 py-2.5 text-sm rounded-lg transition-colors ${isActive
-                    ? "bg-purple-50 text-purple-700"
+                    ? "bg-gray-100 text-gray-700 font-medium"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   }`}
               >
-                <Icon className={`mr-3 h-4 w-4 ${isActive ? "text-purple-700" : "text-gray-500"}`} />
+                <Icon className={`mr-3 h-4 w-4 ${isActive ? "text-gray-700" : "text-gray-500"}`} />
                 {tab.label}
               </button>
             );
@@ -84,7 +84,7 @@ export default function SettingsPage() {
           {activeTab === "profile" && <ProfileSettings user={user} />}
           {activeTab === "preferences" && <PreferencesSettings user={user} />}
           {activeTab === "notifications" && <NotificationSettings user={user} />}
-          {activeTab === "security" && <SecuritySettings />}
+          {activeTab === "security" && <SecuritySettings user={user} />}
         </div>
       </div>
     </div>

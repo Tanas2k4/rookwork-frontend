@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { MdClose, MdAdd } from "react-icons/md";
-import { FaLock, FaGlobe } from "react-icons/fa";
-import { BiCheck } from "react-icons/bi";
+import { XMarkIcon, PlusIcon, CheckIcon, LockClosedIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import ProjectImage from "../../../assets/project-background.jpg";
 import { projectApi } from "../../../api/services/projectApi";
 import type { ProjectResponse } from "../../../api/contracts/project";
@@ -88,7 +86,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
             onClick={onClose}
             className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
           >
-            <MdClose size={20} />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -106,6 +104,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                 onChange={(e) => { setProjectName(e.target.value); setError(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
                 placeholder="e.g. Mobile App Dev"
+                maxLength={50}
                 className={`w-full text-sm border-2 rounded-lg px-3 py-2 outline-none transition ${
                   error ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-purple-500"
                 }`}
@@ -123,6 +122,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What is this project about?"
                 rows={3}
+                maxLength={500}
                 className="w-full text-sm border-2 border-gray-300 rounded-lg px-3 py-2 outline-none transition focus:border-purple-500 resize-none"
               />
             </div>
@@ -144,8 +144,8 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                     }`}
                   >
                     {opt === "private"
-                      ? <FaLock size={14} className={accessModifier === opt ? "text-purple-800" : "text-gray-400"} />
-                      : <FaGlobe size={14} className={accessModifier === opt ? "text-purple-800" : "text-gray-400"} />
+                      ? <LockClosedIcon className={`w-3.5 h-3.5 ${accessModifier === opt ? "text-purple-800" : "text-gray-400"}`} />
+                      : <GlobeAltIcon className={`w-3.5 h-3.5 ${accessModifier === opt ? "text-purple-800" : "text-gray-400"}`} />
                     }
                     <div>
                       <p className={`text-sm font-medium capitalize ${accessModifier === opt ? "text-purple-700" : "text-gray-700"}`}>
@@ -156,7 +156,7 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
                       </p>
                     </div>
                     {accessModifier === opt && (
-                      <BiCheck className="ml-auto text-purple-800 shrink-0" size={18} />
+                      <CheckIcon className="ml-auto text-purple-800 shrink-0 w-4.5 h-4.5" />
                     )}
                   </button>
                 ))}
@@ -166,9 +166,9 @@ export function CreateProjectPanel({ open, onClose, onProjectCreated }: Props) {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg transition"
+              className="w-full flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-60 text-gray-200 text-sm py-2.5 rounded-lg transition"
             >
-              <MdAdd size={18} />
+              <PlusIcon className="w-4.5 h-4.5" />
               {loading ? "Creating..." : "Create Project"}
             </button>
           </div>

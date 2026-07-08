@@ -1,6 +1,5 @@
 import type { RefObject } from "react";
-import { CiFilter } from "react-icons/ci";
-import { MdKeyboardArrowDown } from "react-icons/md";
+import { FunnelIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
 import type { User } from "../../types/project";
 
@@ -44,12 +43,12 @@ export function ListFilterPanel({
       <button onClick={onToggle}
         className={`flex items-center gap-2 px-3 py-1.5 border rounded-md border-gray-500 text-sm transition
           ${hasActiveFilters ? "border-purple-500 bg-purple-50 text-purple-700" : "border-gray-300 hover:bg-gray-50 text-gray-700"}`}>
-        <CiFilter size={16} />
+        <FunnelIcon className="w-4 h-4" />
         Filter
         {hasActiveFilters && (
           <span className="bg-purple-500 text-white text-xs px-1.5 rounded-full">{count}</span>
         )}
-        <MdKeyboardArrowDown className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDownIcon className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -100,16 +99,20 @@ export function ListFilterPanel({
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Assigned to</label>
               <div className="space-y-1.5">
-                {users.map((u) => (
-                  <label key={u.avt} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded">
-                    <input type="checkbox"
-                      checked={selectedUsers.includes(u.avt /* used as stable key */)}
-                      onChange={() => onToggleUser(u.avt)}
-                      className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700" />
-                    <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
-                    <span className="text-sm text-gray-700">{u.display_name}</span>
-                  </label>
-                ))}
+                {users.map((u) => {
+                  const typedU = u as User & { _uuid?: string; uuid?: string };
+                  const userKey = typedU.uuid ?? typedU._uuid ?? typedU.avt;
+                  return (
+                    <label key={userKey} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded">
+                      <input type="checkbox"
+                        checked={selectedUsers.includes(userKey)}
+                        onChange={() => onToggleUser(userKey)}
+                        className="w-4 h-4 text-purple-800 rounded focus:ring-purple-700" />
+                      <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                      <span className="text-sm text-gray-700">{u.display_name}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </div>

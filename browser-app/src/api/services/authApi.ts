@@ -3,6 +3,7 @@ import type {
   AuthRegister,
   AuthResponse,
   GoogleLoginRequest,
+  RegisterResponse,
 } from "../contracts/auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -44,7 +45,13 @@ export const authApi = {
   login: (data: LoginRequest) => post<AuthResponse>("/api/auth/login", data),
 
   register: (data: AuthRegister) =>
-    post<AuthResponse>("/api/auth/register", data),
+    post<RegisterResponse>("/api/auth/register", data),
+
+  verifyOtp: (email: string, otp: string, invitationId?: string) =>
+    post<AuthResponse>("/api/auth/verify-otp", { email, otp, invitationId }),
+
+  resendOtp: (email: string) =>
+    post<{ message: string }>(`/api/auth/resend-otp?email=${encodeURIComponent(email)}`, {}),
 
   refresh: (refreshToken: string) =>
     post<AuthResponse>("/api/auth/refresh", { refreshToken }),

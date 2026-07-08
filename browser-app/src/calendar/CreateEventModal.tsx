@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { HiX, HiChevronDown } from "react-icons/hi";
+import { XMarkIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import type { EventForm } from "../types/calendar";
 import { EVENT_COLORS } from "../types/calendar";
 import { eventApi } from "../api/services/eventApi";
@@ -295,7 +295,7 @@ export default function CreateEventModal({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
           >
-            <HiX size={20} />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -311,6 +311,7 @@ export default function CreateEventModal({
               focus:border-purple-400 focus:ring-1 focus:ring-purple-700 transition bg-white"
               placeholder="e.g. Kickoff sprint"
               value={form.title}
+              maxLength={200}
               onChange={(e) =>
                 setForm((f) => ({ ...f, title: e.target.value }))
               }
@@ -336,9 +337,8 @@ export default function CreateEventModal({
                         ?.projectName || "Personal Event"
                     : "Personal Event"}
                 </span>
-                <HiChevronDown
-                  size={16}
-                  className={`text-gray-500 transition-transform duration-200 ${
+                <ChevronDownIcon
+                  className={`text-gray-500 w-4 h-4 transition-transform duration-200 ${
                     showProjectDropdown ? "rotate-180" : ""
                   }`}
                 />
@@ -451,6 +451,7 @@ export default function CreateEventModal({
               className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm font-heading outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-700 transition bg-white"
               placeholder="e.g. Online or Conference Room A"
               value={form.location}
+              maxLength={200}
               onChange={(e) =>
                 setForm((f) => ({ ...f, location: e.target.value }))
               }
@@ -535,7 +536,7 @@ export default function CreateEventModal({
                       }
                       className="text-gray-300 hover:text-gray-550 cursor-pointer"
                     >
-                      <HiX size={14} />
+                      <XMarkIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
@@ -609,6 +610,7 @@ export default function CreateEventModal({
               rows={2}
               placeholder="Additional notes..."
               value={form.note}
+              maxLength={1000}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
           </div>
@@ -618,7 +620,7 @@ export default function CreateEventModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-md text-sm font-heading border border-gray-550 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+            className="px-4 py-1.5 rounded-md text-sm font-heading border border-gray-550 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
           >
             Cancel
           </button>
@@ -626,7 +628,7 @@ export default function CreateEventModal({
             type="button"
             onClick={handleCreateEvent}
             disabled={!form.title || !form.date}
-            className="px-5 py-2 rounded-md text-sm font-heading text-gray-200 bg-purple-800 hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="px-5 py-1.5 rounded-md text-sm font-heading text-gray-200 bg-purple-800 hover:bg-purple-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             Create
           </button>

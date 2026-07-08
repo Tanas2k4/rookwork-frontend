@@ -1,26 +1,33 @@
-// components/list/ListDropdowns.tsx
 import type { RefObject } from "react";
-import { IoClose } from "react-icons/io5";
-import { MdCheck } from "react-icons/md";
-import type { Task, User, Status, TaskType } from "../../types/project";
+import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import type { Task, TaskWithMeta, User } from "../../types/project";
+import { issueTypeIcons } from "../../types/project";
 import type { DropdownState } from "../../hooks/useListView";
-import { typeOptions, statusOptions } from "../shared/dropdownConstants";
+import type { ProjectStatusResponse } from "../../api/contracts/projectStatus";
+import type { IssueTypeResponse } from "../../api/contracts/issue";
+import { useProject } from "../../hooks/useProject";
+import { toDatetimeLocal } from "../../utils/date";
 
 interface Props {
   openDropdown: DropdownState;
   dropdownRef: RefObject<HTMLDivElement | null>;
   tasks: (Task & { _uuid: string })[];
   users: User[];
+  issueTypes: IssueTypeResponse[];
   onAssignUser: (taskId: string, user: User | null) => void;
-  onStatusChange: (taskId: string, status: Status) => void;
-  onTypeChange: (taskId: string, type: TaskType) => void;
+  onStatusChange: (taskId: string, statusId: string) => void;
+  onTypeChange: (taskId: string, issueTypeId: string) => void;
   onDeadlineChange: (taskId: string, deadline: string) => void;
+  projectStatuses: ProjectStatusResponse[];
 }
 
 export function ListDropdowns({
-  openDropdown, dropdownRef, tasks, users,
+  openDropdown, dropdownRef, tasks, users, issueTypes,
   onAssignUser, onStatusChange, onTypeChange, onDeadlineChange,
+  projectStatuses,
 }: Props) {
+  const { isTransitionAllowed } = useProject();
+
   if (!openDropdown.type || !openDropdown.position) return null;
 
   const { top, left, maxHeight } = openDropdown.position;
@@ -40,16 +47,28 @@ export function ListDropdowns({
         <div ref={dropdownRef} style={{ ...baseStyle, maxHeight: `${maxHeight}px` }}
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-44 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
-            {typeOptions.map((t) => (
-              <button key={t.value} onClick={() => onTypeChange(taskId, t.value)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                  currentTask?.type === t.value ? "bg-purple-50" : ""
-                }`}>
-                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 ${t.color}`}>
-                  {t.icon}{t.label}
-                </span>
-              </button>
-            ))}
+            {issueTypes.map((t) => {
+              const Icon = issueTypeIcons[t.iconKey] || issueTypeIcons.task;
+              const isSelected = currentTask?.issueType?.id === t.id;
+              return (
+                <button key={t.id} onClick={() => onTypeChange(taskId, t.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
+                    isSelected ? "bg-purple-50" : ""
+                  }`}>
+                  <span
+                    className="px-2.5 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 border"
+                    style={{
+                      backgroundColor: `${t.color}15`,
+                      color: t.color,
+                      borderColor: `${t.color}30`
+                    }}
+                  >
+                    <Icon size={12} />
+                    {t.name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -62,7 +81,7 @@ export function ListDropdowns({
             <button onClick={() => onAssignUser(taskId, null)}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition">
               <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                <IoClose size={14} className="text-gray-500" />
+                <XMarkIcon className="w-3.5 h-3.5 text-gray-500" />
               </div>
               <span className="italic text-gray-500">Unassigned (clear all)</span>
             </button>
@@ -82,7 +101,7 @@ export function ListDropdowns({
                   <span className={`w-4 h-4 rounded flex items-center justify-center border transition shrink-0 ${
                     isSelected ? "bg-purple-900 border-purple-900" : "border-gray-300"
                   }`}>
-                    {isSelected && <MdCheck size={11} className="text-white" />}
+                    {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
                   </span>
                   <img src={u.avt} className="w-6 h-6 rounded-full object-cover shrink-0" />
                   <span className="truncate">{u.display_name}</span>
@@ -101,7 +120,16 @@ export function ListDropdowns({
           </p>
           <input
             type="datetime-local"
-            value={currentTask?.deadline ? currentTask.deadline.slice(0, 16) : ""}
+            value={(() => {
+              if (!currentTask?.deadline) return "";
+              const d = new Date(currentTask.deadline);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            min={(() => {
+              if (!currentTask?.startDate) return "";
+              const d = new Date(currentTask.startDate);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
             onChange={(e) => onDeadlineChange(taskId, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             autoFocus
@@ -121,16 +149,27 @@ export function ListDropdowns({
         <div ref={dropdownRef} style={{ ...baseStyle, maxHeight: `${maxHeight}px` }}
           className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2 w-44 overflow-y-auto" style={{ maxHeight: `${maxHeight - 16}px` }}>
-            {statusOptions.map((s) => (
-              <button key={s.value} onClick={() => onStatusChange(taskId, s.value)}
-                className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
-                  currentTask?.status === s.value ? "bg-purple-50" : ""
-                }`}>
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${s.color}`}>
-                  {s.label}
-                </span>
-              </button>
-            ))}
+            {(() => {
+              const currentStatusId = (currentTask as TaskWithMeta)?._statusId || projectStatuses.find((ps) =>
+                ps.statusCategory === (currentTask?.status === "to_do" ? "TO_DO" : currentTask?.status === "in_progress" ? "IN_PROGRESS" : "DONE")
+              )?.id;
+
+              const allowedStatuses = projectStatuses.filter((s) =>
+                s.id === currentStatusId || isTransitionAllowed(currentStatusId, s.id)
+              );
+
+              return allowedStatuses.map((s) => (
+                <button key={s.id} onClick={() => onStatusChange(taskId, s.id)}
+                  className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 rounded transition ${
+                    (currentTask as TaskWithMeta)?._statusId === s.id ? "bg-purple-50" : ""
+                  }`}>
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full"
+                    style={{ backgroundColor: s.color + "20", color: s.color }}>
+                    {s.statusName}
+                  </span>
+                </button>
+              ));
+            })()}
           </div>
         </div>
       )}

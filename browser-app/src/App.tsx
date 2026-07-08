@@ -21,6 +21,8 @@ import Loading from "./components/common/Loading";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
 import SettingsPage from "./pages/SettingsPage";
+import { AdminLayout } from "./components/layout/AdminLayout";
+import ProjectSettingsPage from "./pages/ProjectSettingsPage";
 import { projectApi } from "./api/services/projectApi";
 import { userApi } from "./api/services/userApi";
 import { tokenStorage } from "./api/tokenStorage";
@@ -37,7 +39,9 @@ function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [projects, setProjects] = useState<ProjectUI[]>([]);
   const [profileName, setProfileName] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [systemRole, setSystemRole] = useState<string>("USER");
   const reloadProjects = () => {
     projectApi
       .getAll()
@@ -54,7 +58,9 @@ function App() {
       Promise.all([userApi.getMe(), projectApi.getAll()])
         .then(([user, projectsRes]) => {
           setProfileName(user.profileName);
+          setEmail(user.email ?? "");
           setAvatarUrl(user.picture ?? undefined);
+          setSystemRole(user.systemRole ?? "USER");
           setProjects(
             projectsRes.map((p: ProjectResponse, i: number) => toProjectUI(p, i)),
           );
@@ -83,7 +89,9 @@ function App() {
     setLoggedIn(false);
     setProjects([]);
     setProfileName("");
+    setEmail("");
     setAvatarUrl(undefined);
+    setSystemRole("USER");
   };
 
   const handleProjectCreated = (newProject: ProjectResponse) => {
@@ -100,72 +108,85 @@ function App() {
 
           {!loggedIn ? (
             <Routes>
+              <Route path="/" element={<Navigate to="/login" replace />} />
               <Route
                 path="/login"
                 element={<Login onSuccess={handleLoginSuccess} />}
               />
-              <Route path="/register" element={<Register />} />
-              <Route path="*" element={<Navigate to="/login" />} />
+              <Route path="/register" element={<Register onSuccess={handleLoginSuccess} />} />
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           ) : (
-            <>
-              <Header
-                setSidebar={setSidebar}
-                displayName={profileName}
+            systemRole === "ADMIN" || systemRole === "SUPERADMIN" ? (
+              <AdminLayout
+                profileName={profileName}
                 avatarUrl={avatarUrl}
+                systemRole={systemRole}
                 onLogout={handleLogout}
-                onProjectCreated={handleProjectCreated}
-                onProjectsChanged={reloadProjects}
               />
-
-              <div className="flex flex-1 overflow-hidden">
-                <Sidebar
-                  sidebar={sidebar}
+            ) : (
+              <>
+                <Header
                   setSidebar={setSidebar}
-                  projects={projects}
+                  displayName={profileName}
+                  email={email}
+                  avatarUrl={avatarUrl}
+                  onLogout={handleLogout}
+                  onProjectCreated={handleProjectCreated}
+                  onProjectsChanged={reloadProjects}
                 />
 
-                <main className="flex-1 overflow-auto bg-gray-50">
-                  <Routes>
-                    <Route
-                      path="/dashboard"
-                      element={
-                        <DashboardPage
-                          projects={projects}
-                          profileName={profileName} // ← thêm
-                        />
-                      }
-                    />
+                <div className="flex flex-1 overflow-hidden">
+                  <Sidebar
+                    sidebar={sidebar}
+                    setSidebar={setSidebar}
+                    projects={projects}
+                  />
 
-                    <Route
-                      path="/projects/:projectKey"
-                      element={<ProjectPage onProjectsChanged={reloadProjects} />}
-                    >
+                  <main className="flex-1 overflow-auto bg-gray-50">
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route
-                        index
-                        element={<Navigate to="overview" replace />}
+                        path="/dashboard"
+                        element={
+                          <DashboardPage
+                            projects={projects}
+                            profileName={profileName}
+                          />
+                        }
                       />
-                      <Route path="overview" element={<OverView />} />
-                      <Route path="board" element={<BoardView />} />
-                      <Route path="timeline" element={<TimelineView />} />
-                      <Route path="list" element={<ListView />} />
-                      <Route path="files" element={<ProjectFilesView />} />
-                      <Route path="events" element={<EventsView />} />
-                    </Route>
 
-                    <Route path="/events" element={<EventsView />} />
-                    <Route path="/calendars" element={<CalendarView />} />
-                    <Route path="/my-issues" element={<MyIssuesPage />} />
-                    <Route
-                      path="/issues/:issueId"
-                      element={<IssueDetailPage />}
-                    />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="*" element={<Navigate to="/dashboard" />} />
-                  </Routes>
-                </main>
-              </div>
-            </>
+                      <Route
+                        path="/projects/:projectKey"
+                        element={<ProjectPage onProjectsChanged={reloadProjects} />}
+                      >
+                        <Route
+                          index
+                          element={<Navigate to="overview" replace />}
+                        />
+                        <Route path="overview" element={<OverView />} />
+                        <Route path="board" element={<BoardView />} />
+                        <Route path="timeline" element={<TimelineView />} />
+                        <Route path="list" element={<ListView />} />
+                        <Route path="files" element={<ProjectFilesView />} />
+                        <Route path="events" element={<EventsView />} />
+                        <Route path="settings" element={<ProjectSettingsPage />} />
+                      </Route>
+
+                      <Route path="/events" element={<EventsView />} />
+                      <Route path="/calendars" element={<CalendarView />} />
+                      <Route path="/my-issues" element={<MyIssuesPage />} />
+                      <Route
+                        path="/issues/:issueId"
+                        element={<IssueDetailPage />}
+                      />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="*" element={<Navigate to="/dashboard" />} />
+                    </Routes>
+                  </main>
+                </div>
+              </>
+            )
           )}
         </div>
       </BrowserRouter>

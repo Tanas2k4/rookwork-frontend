@@ -17,9 +17,11 @@ export interface UpdateNotificationsRequest {
   notifyMentioned?: boolean;
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
+  notifyComment?: boolean;
+  notifyEventInvited?: boolean;
 }
 
 export interface UpdatePasswordRequest {
-  currentPassword?: string;
+  otp?: string;
   newPassword?: string;
 }

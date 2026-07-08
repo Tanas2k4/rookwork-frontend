@@ -5,11 +5,10 @@
  */
 
 import { useState } from "react";
-import { MdClose } from "react-icons/md";
+import { XMarkIcon, PlusIcon } from "@heroicons/react/24/outline";
 import type { Subtask } from "../../../types/project";
 import { Button } from "../../../components/common/Button";
 import { Input } from "../../../components/common/Input";
-import { IoMdAdd } from "react-icons/io";
 
 interface Props {
   subtasks: Subtask[];
@@ -52,7 +51,7 @@ export function SubtasksSection({
           }}
           className="flex items-center gap-0.5 text-xs text-purple-700 hover:text-purple-900 transition"
         >
-          <IoMdAdd size={14} />
+          <PlusIcon className="w-3.5 h-3.5" />
           {showForm ? "Cancel" : "Add"}
         </button>
       </div>
@@ -79,7 +78,7 @@ export function SubtasksSection({
               className="accent-purple-800 w-3.5 h-3.5 cursor-pointer shrink-0"
             />
             <span
-              className={`text-sm flex-1 ${sub.done ? "line-through text-gray-400" : "text-gray-700"}`}
+              className={`text-sm flex-1 break-words break-all ${sub.done ? "line-through text-gray-400" : "text-gray-700"}`}
             >
               {sub.title}
             </span>
@@ -87,7 +86,7 @@ export function SubtasksSection({
               onClick={() => onDelete(sub.id)}
               className="opacity-0 group-hover/sub:opacity-100 text-gray-300 hover:text-red-400 transition"
             >
-              <MdClose size={13} />
+              <XMarkIcon className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}
@@ -109,6 +108,7 @@ export function SubtasksSection({
               if (e.key === "Escape") setShowForm(false);
             }}
             placeholder="Subtask title..."
+            maxLength={200}
             className="flex text-sm text-gray-800 bg-transparent border border-gray-500 rounded-sm focus:border-purple-800"
           />
           <div className="flex justify-end gap-2">

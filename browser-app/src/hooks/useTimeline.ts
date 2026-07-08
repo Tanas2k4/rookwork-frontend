@@ -6,42 +6,10 @@
 
 import { useState, useEffect, useContext } from "react";
 import { issueApi } from "../api/services/issueApi";
-import { taskToGantt } from "../project/timeline/timelineUtils";
+import { issueToGantt } from "../project/timeline/timelineUtils";
 import type { GanttTask } from "../project/timeline/timelineUtils";
-import type { IssueResponse } from "../api/contracts/issue";
-import { issueToTask } from "../utils/issueMapper";
 import { ProjectContext } from "../context/ProjectContext";
-
-const TYPE_DURATION: Record<IssueResponse["issueType"], number> = {
-  TASK: 7,
-  STORY: 14,
-  EPIC: 28,
-};
-
-/**
- * Cộng thêm số ngày vào một đối tượng Date.
- * @param date Đối tượng Date gốc
- * @param days Số ngày cộng thêm
- */
-function addDaysToDate(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-/**
- * Chuyển đổi một đối tượng IssueResponse của API thành đối tượng GanttTask dùng cho thư viện Timeline.
- * @param issue Đối tượng issue từ API BE
- */
-function issueToGantt(issue: IssueResponse): GanttTask {
-  const minimalTask = issueToTask(issue);
-  const gantt = taskToGantt(minimalTask);
-  const start = new Date(issue.createdAt);
-  const end = issue.deadline
-    ? new Date(issue.deadline)
-    : addDaysToDate(start, TYPE_DURATION[issue.issueType]);
-  return { ...gantt, id: issue.id, start, end };
-}
+import { computeAllProgress } from "../utils/progress";
 
 //  Hook
 
@@ -69,7 +37,10 @@ export function useTimeline(projectId: string | null): UseTimelineReturn {
     issueApi
       .getAll(projectId)
       .then((issues) => {
-        if (!cancelled) setGanttTasks(issues.map(issueToGantt));
+        if (!cancelled) {
+          const progressMap = computeAllProgress(issues);
+          setGanttTasks(issues.map((i) => issueToGantt(i, progressMap[i.id] || 0)));
+        }
       })
       .catch((err) => {
         console.error("useTimeline: failed to load issues", err);

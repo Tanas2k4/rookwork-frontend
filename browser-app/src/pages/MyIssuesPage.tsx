@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdSearch, MdOutlineSort, MdKeyboardArrowDown } from "react-icons/md";
+import {
+  MagnifyingGlassIcon,
+  BarsArrowDownIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 import { issueApi } from "../api/services/issueApi";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/common/ToastContainer";
 
 import type { IssueResponse } from "../api/contracts/issue";
 import {
@@ -12,8 +18,7 @@ import {
   priorityColorMap,
   priorityLabelMap,
   priorities,
-  typeIconMap,
-  typeColorMap,
+  issueTypeIcons,
 } from "../types/project";
 import { avatarUrl } from "../utils/avatar";
 import { apiStatusToUI, apiPriorityToUI } from "../utils/issueMapper";
@@ -21,14 +26,15 @@ import { isOverdue as isOverdueUtil } from "../utils/date";
 
 // Helpers
 
-
-
 function PriorityBars({ priority }: { priority: Priority }) {
   const idx = priorities.indexOf(priority);
   return (
     <div className="flex gap-0.5 h-1.5 w-10 items-end">
       {priorities.map((p, i) => (
-        <div key={p} className={`flex-1 rounded-sm ${i <= idx ? priorityColorMap[p] : "bg-gray-200"}`} />
+        <div
+          key={p}
+          className={`flex-1 rounded-sm ${i <= idx ? priorityColorMap[p] : "bg-gray-200"}`}
+        />
       ))}
     </div>
   );
@@ -36,7 +42,7 @@ function PriorityBars({ priority }: { priority: Priority }) {
 
 type SortKey = "updated" | "priority" | "deadline";
 const sortOptions: { val: SortKey; label: string }[] = [
-  { val: "updated",  label: "Last updated" },
+  { val: "updated", label: "Last updated" },
   { val: "priority", label: "Priority" },
   { val: "deadline", label: "Deadline" },
 ];
@@ -46,14 +52,58 @@ const sortOptions: { val: SortKey; label: string }[] = [
 export default function MyIssuesPage() {
   const navigate = useNavigate();
 
-  const [issues, setIssues]     = useState<IssueResponse[]>([]);
+  const [issues, setIssues] = useState<IssueResponse[]>([]);
+  const [draggedOverIssueId, setDraggedOverIssueId] = useState<string | null>(null);
+  const { toasts, addToast, removeToast } = useToast();
 
+  const handleDropOnIssue = async (e: React.DragEvent, issue: IssueResponse) => {
+    e.preventDefault();
+    setDraggedOverIssueId(null);
 
-  const [search, setSearch]               = useState("");
-  const [filterStatus, setFilterStatus]   = useState<Status | "all">("all");
+    // 1. Dragging local files from computer
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      addToast(`Uploading ${filesArray.length} file(s) to "${issue.issueName}"...`, "info");
+      try {
+        const newAttachments = await issueApi.uploadAttachments(issue.projectId, issue.id, filesArray);
+        addToast("Files uploaded successfully!", "success");
+        setIssues((prev) =>
+          prev.map((i) =>
+            i.id === issue.id
+              ? { ...i, attachments: [...(i.attachments || []), ...newAttachments] }
+              : i
+          )
+        );
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to upload files", "error");
+      }
+      return;
+    }
+
+    // 2. Dragging existing files from within the app
+    const fileId = e.dataTransfer.getData("text/plain");
+    const sourceTaskUuid = e.dataTransfer.getData("application/source-task-uuid");
+
+    if (fileId && sourceTaskUuid) {
+      if (sourceTaskUuid === issue.id) return; // same issue
+
+      addToast("Moving file to issue...", "info");
+      try {
+        await issueApi.moveAttachment(issue.projectId, sourceTaskUuid, fileId, issue.id);
+        addToast("File moved successfully!", "success");
+        // Reload list of assigned issues to get updated attachment arrays
+        issueApi.getAssigned().then(setIssues).catch(console.error);
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to move file", "error");
+      }
+    }
+  };
+
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<Status | "all">("all");
   const [filterPriority, setFilterPriority] = useState<Priority | "all">("all");
-  const [sortBy, setSortBy]               = useState<SortKey>("updated");
-  const [showSortDd, setShowSortDd]       = useState(false);
+  const [sortBy, setSortBy] = useState<SortKey>("updated");
+  const [showSortDd, setShowSortDd] = useState(false);
 
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
@@ -67,13 +117,22 @@ export default function MyIssuesPage() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(target)) {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(target)
+      ) {
         setShowStatusDropdown(false);
       }
-      if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(target)) {
+      if (
+        priorityDropdownRef.current &&
+        !priorityDropdownRef.current.contains(target)
+      ) {
         setShowPriorityDropdown(false);
       }
-      if (sortDropdownRef.current && !sortDropdownRef.current.contains(target)) {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(target)
+      ) {
         setShowSortDd(false);
       }
     };
@@ -85,31 +144,37 @@ export default function MyIssuesPage() {
   useEffect(() => {
     let cancelled = false;
 
-    issueApi.getAssigned()
-      .then((data) => { if (!cancelled) setIssues(data); })
+    issueApi
+      .getAssigned()
+      .then((data) => {
+        if (!cancelled) setIssues(data);
+      })
       .catch(console.error);
 
-
-
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-
 
   // Filter + sort
   const filtered = issues
     .filter((issue) => {
-      const matchSearch   = issue.issueName.toLowerCase().includes(search.toLowerCase());
-      const uiStatus      = apiStatusToUI(issue.status);
-      const uiPriority    = apiPriorityToUI(issue.priority);
-      const matchStatus   = filterStatus   === "all" || uiStatus   === filterStatus;
-      const matchPriority = filterPriority === "all" || uiPriority === filterPriority;
+      const matchSearch = issue.issueName
+        .toLowerCase()
+        .includes(search.toLowerCase());
+      const uiStatus = apiStatusToUI(issue.status);
+      const uiPriority = apiPriorityToUI(issue.priority);
+      const matchStatus = filterStatus === "all" || uiStatus === filterStatus;
+      const matchPriority =
+        filterPriority === "all" || uiPriority === filterPriority;
       return matchSearch && matchStatus && matchPriority;
     })
     .sort((a, b) => {
       if (sortBy === "priority")
-        return priorities.indexOf(apiPriorityToUI(b.priority)) -
-               priorities.indexOf(apiPriorityToUI(a.priority));
+        return (
+          priorities.indexOf(apiPriorityToUI(b.priority)) -
+          priorities.indexOf(apiPriorityToUI(a.priority))
+        );
       if (sortBy === "deadline")
         return (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999");
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -128,9 +193,9 @@ export default function MyIssuesPage() {
       <div className="shrink-0 px-6 pt-3 pb-4 border-b border-gray-100 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-3 text-[55px] text-gray-800 font-semibold tracking-wide">
-            My Issues
-          </div>
+            <div className="flex items-center gap-3 text-5xl text-gray-800 font-semibold tracking-wide">
+              My Issues
+            </div>
             <p className="text-xs text-gray-400 mt-0.5">
               {issues.length} issues assigned to you
             </p>
@@ -140,10 +205,13 @@ export default function MyIssuesPage() {
         {/* Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-1 min-w-45 border border-gray-500 rounded-md px-3 py-1.5 bg-white">
-            <MdSearch size={15} className="text-gray-500 shrink-0" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)}
+            <MagnifyingGlassIcon className="text-gray-500 shrink-0 w-3.5 h-3.5" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search issues..."
-              className="flex-1 text-xs text-gray-700 outline-none bg-transparent" />
+              className="flex-1 text-xs text-gray-700 outline-none bg-transparent"
+            />
           </div>
 
           {/* Status Dropdown */}
@@ -154,13 +222,18 @@ export default function MyIssuesPage() {
             >
               <div className="flex items-center gap-1.5">
                 {filterStatus !== "all" && (
-                  <span className={`w-2 h-2 rounded-full ${statusMap[filterStatus].dotColor}`} />
+                  <span
+                    className={`w-2 h-2 rounded-full ${statusMap[filterStatus].dotColor}`}
+                  />
                 )}
-                <span>{filterStatus === "all" ? "All Status" : statusMap[filterStatus].label}</span>
+                <span>
+                  {filterStatus === "all"
+                    ? "All Status"
+                    : statusMap[filterStatus].label}
+                </span>
               </div>
-              <MdKeyboardArrowDown
-                size={14}
-                className={`text-gray-505 transition-transform duration-200 ${
+              <ChevronDownIcon
+                className={`text-gray-505 w-3.5 h-3.5 transition-transform duration-200 ${
                   showStatusDropdown ? "rotate-180" : ""
                 }`}
               />
@@ -193,7 +266,9 @@ export default function MyIssuesPage() {
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`} />
+                    <span
+                      className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`}
+                    />
                     {statusMap[s].label}
                   </button>
                 ))}
@@ -209,13 +284,18 @@ export default function MyIssuesPage() {
             >
               <div className="flex items-center gap-1.5">
                 {filterPriority !== "all" && (
-                  <span className={`w-2 h-2 rounded-full ${priorityColorMap[filterPriority]}`} />
+                  <span
+                    className={`w-2 h-2 rounded-full ${priorityColorMap[filterPriority]}`}
+                  />
                 )}
-                <span>{filterPriority === "all" ? "All Priority" : priorityLabelMap[filterPriority]}</span>
+                <span>
+                  {filterPriority === "all"
+                    ? "All Priority"
+                    : priorityLabelMap[filterPriority]}
+                </span>
               </div>
-              <MdKeyboardArrowDown
-                size={14}
-                className={`text-gray-555 transition-transform duration-200 ${
+              <ChevronDownIcon
+                className={`text-gray-555 w-3.5 h-3.5 transition-transform duration-200 ${
                   showPriorityDropdown ? "rotate-180" : ""
                 }`}
               />
@@ -248,7 +328,9 @@ export default function MyIssuesPage() {
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${priorityColorMap[p]}`} />
+                    <span
+                      className={`w-2 h-2 rounded-full ${priorityColorMap[p]}`}
+                    />
                     {priorityLabelMap[p]}
                   </button>
                 ))}
@@ -258,16 +340,24 @@ export default function MyIssuesPage() {
 
           {/* Sort Dropdown */}
           <div className="relative" ref={sortDropdownRef}>
-            <button onClick={() => setShowSortDd((p) => !p)}
-              className="flex items-center gap-1.5 text-xs border border-gray-500 rounded-md px-3 py-1.5 text-gray-700 bg-white  transition cursor-pointer">
-              <MdOutlineSort size={14} />
+            <button
+              onClick={() => setShowSortDd((p) => !p)}
+              className="flex items-center gap-1.5 text-xs border border-gray-500 rounded-md px-3 py-1.5 text-gray-700 bg-white  transition cursor-pointer"
+            >
+              <BarsArrowDownIcon className="w-3.5 h-3.5" />
               {sortOptions.find((o) => o.val === sortBy)?.label}
             </button>
             {showSortDd && (
               <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-md py-1 z-30 w-40">
                 {sortOptions.map((opt) => (
-                  <button key={opt.val} onClick={() => { setSortBy(opt.val); setShowSortDd(false); }}
-                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-gray-50 ${sortBy === opt.val ? "text-purple-700 font-medium" : "text-gray-700"}`}>
+                  <button
+                    key={opt.val}
+                    onClick={() => {
+                      setSortBy(opt.val);
+                      setShowSortDd(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-gray-50 ${sortBy === opt.val ? "text-purple-700 font-medium" : "text-gray-700"}`}
+                  >
                     {opt.label}
                   </button>
                 ))}
@@ -287,42 +377,65 @@ export default function MyIssuesPage() {
           Object.entries(grouped).map(([status, groupIssues]) => (
             <div key={status}>
               <div className="flex items-center gap-2 mb-2">
-                <span className={`w-2 h-2 rounded-full ${statusMap[status as Status].dotColor}`} />
+                <span
+                  className={`w-2 h-2 rounded-full ${statusMap[status as Status].dotColor}`}
+                />
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   {statusMap[status as Status].label}
                 </span>
-                <span className="text-xs text-gray-400">({groupIssues.length})</span>
+                <span className="text-xs text-gray-400">
+                  ({groupIssues.length})
+                </span>
               </div>
 
               <div className="space-y-1.5">
                 {groupIssues.map((issue) => {
-                  const type     = issue.issueType.toLowerCase() as keyof typeof typeIconMap;
+                  const it = issue.issueType;
                   const priority = apiPriorityToUI(issue.priority);
-                  const TypeIcon = typeIconMap[type];
-                  const deadline = issue.deadline ? issue.deadline.split("T")[0] : null;
-                  const isOverdue = issue.deadline ? isOverdueUtil(issue.deadline, issue.status) : false;
+                  const TypeIcon =
+                    issueTypeIcons[it?.iconKey || "task"] ||
+                    issueTypeIcons.task;
+                  const deadline = issue.deadline
+                    ? issue.deadline.split("T")[0]
+                    : null;
+                  const isOverdue = issue.deadline
+                    ? isOverdueUtil(issue.deadline, issue.status)
+                    : false;
 
+                  const isDraggedOver = draggedOverIssueId === issue.id;
                   return (
-                    <button key={issue.id}
-                      onClick={() => navigate(`/issues/${issue.id}`, {
-                        state: { from: { path: "/my-issues", label: "My Issues" } },
-                      })}
-                      className="w-full text-left flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 hover:border-gray-300 hover:bg-neutral-100 transition group"
+                    <button
+                      key={issue.id}
+                      onClick={() =>
+                        navigate(`/issues/${issue.id}`, {
+                          state: {
+                            from: { path: "/my-issues", label: "My Issues" },
+                          },
+                        })
+                      }
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDraggedOverIssueId(issue.id);
+                      }}
+                      onDragLeave={() => setDraggedOverIssueId(null)}
+                      onDrop={(e) => handleDropOnIssue(e, issue)}
+                      className={`w-full text-left flex items-center gap-3 rounded-md border ${
+                        isDraggedOver
+                          ? "border-purple-600 bg-purple-50/40 ring-2 ring-purple-600/20"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-neutral-100"
+                      } px-4 py-3 transition group`}
                     >
-                      <TypeIcon size={13} className={`${typeColorMap[type]} shrink-0`} />
-                      <span className="flex-1 text-sm text-gray-700 group-hover:text-purple-800 truncate font-medium transition">
+                      <TypeIcon
+                        size={13}
+                        style={{ color: it?.color || "#64748B" }}
+                        className="shrink-0 pointer-events-none"
+                      />
+                      <span className="flex-1 text-sm text-gray-700 group-hover:text-purple-800 truncate font-medium transition pointer-events-none">
                         {issue.issueName}
                       </span>
 
-                      <div className="flex items-center gap-3 shrink-0 ml-2">
+                      <div className="flex items-center gap-3 shrink-0 ml-2 pointer-events-none">
                         <PriorityBars priority={priority} />
-
-                        {deadline && (
-                          <span className={`text-[11px] ${isOverdue ? "text-red-500 font-medium" : "text-gray-400"}`}>
-                            {isOverdue && "⚠ "}{deadline}
-                          </span>
-                        )}
-
                         {issue.assignees && issue.assignees.length > 0 && (
                           <div className="flex -space-x-1.5 overflow-hidden shrink-0">
                             {issue.assignees.slice(0, 2).map((a, idx) => (
@@ -341,6 +454,14 @@ export default function MyIssuesPage() {
                             )}
                           </div>
                         )}
+                        {deadline && (
+                          <span
+                            className={`text-[11px] ${isOverdue ? "text-red-500 font-medium" : "text-gray-400"}`}
+                          >
+                            {isOverdue && "⚠ "}
+                            {deadline}
+                          </span>
+                        )}
                       </div>
                     </button>
                   );
@@ -350,6 +471,7 @@ export default function MyIssuesPage() {
           ))
         )}
       </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

@@ -47,9 +47,20 @@ export function getDaysLeft(deadline: string | null | undefined): number | null 
  * @param status Trạng thái hiện tại của sự vụ
  * @returns true nếu quá hạn, ngược lại false
  */
-export function isOverdue(deadline: string | null | undefined, status: string | null | undefined): boolean {
+export function isOverdue(
+  deadline: string | null | undefined,
+  status: string | { statusCategory?: string; statusName?: string } | null | undefined
+): boolean {
   if (!deadline) return false;
-  const statusLower = status ? status.toLowerCase() : "";
+  let statusStr = "";
+  if (status) {
+    if (typeof status === "string") {
+      statusStr = status;
+    } else if (typeof status === "object") {
+      statusStr = status.statusCategory || status.statusName || "";
+    }
+  }
+  const statusLower = statusStr.toLowerCase();
   if (statusLower === "done") return false;
   const daysLeft = getDaysLeft(deadline);
   return daysLeft !== null && daysLeft < 0;

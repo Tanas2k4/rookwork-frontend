@@ -1,48 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import { IoClose } from "react-icons/io5";
-import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
-import { FaTasks, FaBook, FaRocket } from "react-icons/fa";
+import { XMarkIcon, ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
+// react-icons/fa removed as unused
 import { useProject } from "../../hooks/useProject";
 import { useToast } from "../../hooks/useToast";
 import { avatarUrl } from "../../utils/avatar";
 import { issueApi } from "../../api/services/issueApi";
 import { RichTextEditor } from "../../components/common/RichTextEditor";
+import { toDatetimeLocal } from "../../utils/date";
 import type {
-  IssueType,
   PriorityType,
-  Status as ApiStatus,
   UserSummary,
 } from "../../api/contracts/issue";
-import type { Priority } from "../../types/project";
+import type { StatusCategory as ApiStatus } from "../../api/contracts/projectStatus";
 
-type IssueTypeUI = "task" | "story" | "epic";
+import { type Priority, issueTypeIcons } from "../../types/project";
 
-const TYPE_OPTIONS = [
-  {
-    value: "task" as const,
-    label: "Task",
-    icon: <FaTasks size={16} />,
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    activeColor: "bg-blue-100 border-blue-500",
-    description: "A single piece of work",
-  },
-  {
-    value: "story" as const,
-    label: "Story",
-    icon: <FaBook size={16} />,
-    color: "bg-green-50 text-green-700 border-green-200",
-    activeColor: "bg-green-100 border-green-500",
-    description: "A user-facing feature",
-  },
-  {
-    value: "epic" as const,
-    label: "Epic",
-    icon: <FaRocket size={16} />,
-    color: "bg-purple-50 text-purple-700 border-purple-200",
-    activeColor: "bg-purple-100 border-purple-500",
-    description: "A large body of work",
-  },
-] as const;
+// Dynamic Issue types config loaded from ProjectContext
 
 const STATUS_OPTIONS: { value: ApiStatus; label: string; dotColor: string }[] =
   [
@@ -87,16 +60,35 @@ const PRIORITIES_ORDER: PriorityType[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 interface CreateIssueModalProps {
   open: boolean;
   onClose: () => void;
+  addToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 // Removed file helper functions
 
-export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
-  const { members, projectId, reloadIssues } = useProject();
-  const { addToast } = useToast();
+export function CreateIssueModal({ open, onClose, addToast: parentAddToast }: CreateIssueModalProps) {
+  const { members, projectId, reloadIssues, issueTypes, projectStatuses } = useProject();
+  const { addToast: localAddToast } = useToast();
+  const addToast = parentAddToast || localAddToast;
 
-  const [selectedType, setSelectedType] = useState<IssueTypeUI>("task");
+  const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [issueTitle, setIssueTitle] = useState("");
+
+  const selectedTypeObj = issueTypes.find((t) => t.id === selectedTypeId);
+  const selectedTypeName = selectedTypeObj
+    ? selectedTypeObj.name.toLowerCase()
+    : "issue";
+
+  useEffect(() => {
+    if (open && issueTypes.length > 0) {
+      const taskType = issueTypes.find((t) => t.name.toUpperCase() === "TASK");
+      if (taskType) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedTypeId(taskType.id);
+      } else {
+        setSelectedTypeId(issueTypes[0].id);
+      }
+    }
+  }, [open, issueTypes]);
   const [issueDescription, setIssueDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState<PriorityType>("MEDIUM");
@@ -109,11 +101,13 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
   const [showStatusDd, setShowStatusDd] = useState(false);
   const [showPriorityDd, setShowPriorityDd] = useState(false);
   const [showAssigneeDd, setShowAssigneeDd] = useState(false);
+  const [showTypeDd, setShowTypeDd] = useState(false);
 
   // Refs for closing dropdowns on outside click
   const statusDdRef = useRef<HTMLDivElement>(null);
   const priorityDdRef = useRef<HTMLDivElement>(null);
   const assigneeDdRef = useRef<HTMLDivElement>(null);
+  const typeDdRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -135,6 +129,9 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
       if (assigneeDdRef.current && !assigneeDdRef.current.contains(target)) {
         setShowAssigneeDd(false);
       }
+      if (typeDdRef.current && !typeDdRef.current.contains(target)) {
+        setShowTypeDd(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -143,7 +140,10 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
   const resetForm = () => {
     setIssueTitle("");
     setIssueDescription("");
-    setSelectedType("task");
+    if (issueTypes.length > 0) {
+      const taskType = issueTypes.find((t) => t.name.toUpperCase() === "TASK");
+      setSelectedTypeId(taskType ? taskType.id : issueTypes[0].id);
+    }
     setDueDate("");
     setPriority("MEDIUM");
     setStatus("TO_DO");
@@ -151,6 +151,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
     setShowStatusDd(false);
     setShowPriorityDd(false);
     setShowAssigneeDd(false);
+    setShowTypeDd(false);
     setCreateError("");
     onClose();
   };
@@ -162,13 +163,15 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
     setCreateError("");
     try {
       const deadlineISO = dueDate ? new Date(dueDate).toISOString() : undefined;
+      const matchedStatus = projectStatuses.find((s) => s.statusCategory === status);
+      const statusId = matchedStatus?.id || projectStatuses[0]?.id;
       const created = await issueApi.create(projectId, {
         issueName: issueTitle.trim(),
-        issueType: selectedType.toUpperCase() as IssueType,
+        issueTypeId: selectedTypeId,
         priority,
         description: issueDescription.trim() || undefined,
         deadline: deadlineISO,
-        status,
+        statusId,
       });
 
       // Assign members if any selected
@@ -216,53 +219,111 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
             onClick={resetForm}
             className="p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 rounded-full transition"
           >
-            <IoClose size={20} />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleCreateIssue} className="flex-1 overflow-y-auto">
-          <div className="px-6 py-5 space-y-5">
-            {/* Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Type
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSelectedType(option.value)}
-                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-md transition ${
-                      selectedType === option.value
-                        ? option.activeColor
-                        : `${option.color} border-transparent hover:border-gray-300`
-                    }`}
-                  >
-                    <div className="text-2xl">{option.icon}</div>
-                    <div className="text-sm font-semibold">{option.label}</div>
-                    <div className="text-xs text-gray-600 text-center">
-                      {option.description}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+        <form
+          onSubmit={handleCreateIssue}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            {/* Type & Title Row */}
+            <div className="flex items-start gap-3">
+              {/* Type Dropdown */}
+              <div className="w-44 shrink-0 relative" ref={typeDdRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type
+                </label>
+                {(() => {
+                  const currentType = issueTypes.find(
+                    (t) => t.id === selectedTypeId,
+                  );
+                  const Icon = currentType
+                    ? issueTypeIcons[currentType.iconKey] || issueTypeIcons.task
+                    : issueTypeIcons.task;
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowTypeDd((prev) => !prev);
+                          setShowStatusDd(false);
+                          setShowPriorityDd(false);
+                          setShowAssigneeDd(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.75 border border-gray-500 rounded-md bg-white hover:bg-gray-50 text-sm  justify-between"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {currentType && (
+                            <Icon
+                              size={16}
+                              style={{ color: currentType.color }}
+                              className="shrink-0"
+                            />
+                          )}
+                          <span className="truncate font-semibold text-xs tracking-wider text-gray-700">
+                            {currentType ? currentType.name : "Select Type"}
+                          </span>
+                        </div>
+                        <ChevronDownIcon className="w-[18px] h-[18px] text-gray-400 shrink-0" />
+                      </button>
 
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={issueTitle}
-                onChange={(e) => setIssueTitle(e.target.value)}
-                placeholder={`Enter ${selectedType} title...`}
-                className="w-full border border-gray-500 px-4 py-1.5 text-sm rounded-md
-                  focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
-                required
-              />
+                      {showTypeDd && (
+                        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1.5 z-40 max-h-60 overflow-y-auto">
+                          {issueTypes.map((option) => {
+                            const OptIcon =
+                              issueTypeIcons[option.iconKey] ||
+                              issueTypeIcons.task;
+                            const isSelected = selectedTypeId === option.id;
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTypeId(option.id);
+                                  setShowTypeDd(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 transition ${
+                                  isSelected
+                                    ? "bg-purple-50 font-bold"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                <OptIcon
+                                  size={14}
+                                  style={{ color: option.color }}
+                                  className="shrink-0"
+                                />
+                                <span className="tracking-wider truncate flex-1">
+                                  {option.name}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Title Input */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={issueTitle}
+                  onChange={(e) => setIssueTitle(e.target.value)}
+                  placeholder={`Enter ${selectedTypeName} title...`}
+                  className="w-full border border-gray-500 px-4 py-1.5 text-sm rounded-md 
+                    focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
+                  maxLength={200}
+                  required
+                />
+              </div>
             </div>
 
             {/* Description */}
@@ -333,10 +394,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                   ) : (
                     <span className="italic text-gray-400">Unassigned</span>
                   )}
-                  <MdOutlineExpandMore
-                    size={16}
-                    className="text-gray-400 shrink-0 ml-auto"
-                  />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
                 </button>
 
                 {showAssigneeDd && (
@@ -347,7 +405,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                       className="w-full text-left px-3 py-1.5 text-sm text-gray-500 italic hover:bg-gray-50 flex items-center gap-2"
                     >
                       <div className="p-1 bg-gray-200 rounded-full flex items-center justify-center">
-                        <IoClose size={12} className="text-gray-500" />
+                        <XMarkIcon className="w-3.5 h-3.5 text-gray-500" />
                       </div>
                       Unassigned (clear all)
                     </button>
@@ -386,7 +444,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                               }`}
                             >
                               {isSelected && (
-                                <MdCheck size={11} className="text-white" />
+                                <CheckIcon className="w-3 h-3 text-white" />
                               )}
                             </span>
                             <img
@@ -441,10 +499,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                       })}
                     </div>
                   </div>
-                  <MdOutlineExpandMore
-                    size={16}
-                    className="text-gray-400 shrink-0 ml-auto"
-                  />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
                 </button>
 
                 {showPriorityDd && (
@@ -498,6 +553,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                 <input
                   type="datetime-local"
                   value={dueDate}
+                  min={toDatetimeLocal(new Date())}
                   onChange={(e) => setDueDate(e.target.value)}
                   className="w-full px-4 py-1.5 text-sm border border-gray-500 rounded-md"
                 />
@@ -523,10 +579,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                     />
                     <span>{selectedStatusOpt.label}</span>
                   </div>
-                  <MdOutlineExpandMore
-                    size={16}
-                    className="text-gray-400 shrink-0 ml-auto"
-                  />
+                  <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
                 </button>
 
                 {showStatusDd && (
@@ -550,10 +603,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
                         />
                         <span className="flex-1 text-left">{opt.label}</span>
                         {status === opt.value && (
-                          <MdCheck
-                            size={16}
-                            className="text-purple-700 shrink-0 ml-auto"
-                          />
+                          <CheckIcon className="w-4 h-4 text-purple-700 shrink-0 ml-auto" />
                         )}
                       </button>
                     ))}
@@ -570,7 +620,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
             <button
               type="button"
               onClick={resetForm}
@@ -583,7 +633,7 @@ export function CreateIssueModal({ open, onClose }: CreateIssueModalProps) {
               disabled={creating}
               className="px-4 py-1.75 text-sm text-white bg-purple-900 hover:bg-purple-800 disabled:opacity-60 rounded-md transition"
             >
-              {creating ? "Creating..." : `Create ${selectedType}`}
+              {creating ? "Creating..." : `Create ${selectedTypeName}`}
             </button>
           </div>
         </form>

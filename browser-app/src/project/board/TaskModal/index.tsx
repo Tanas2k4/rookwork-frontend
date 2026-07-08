@@ -6,11 +6,11 @@
  */
 
 import { useState, useEffect } from "react";
-import type { Task, Status, Priority, User } from "../../../types/project";
-import { childTypeMap } from "../../../types/project";
+import type { Task, Priority, User } from "../../../types/project";
 import { TaskModalHeader } from "./TaskModalHeader";
 import { TaskModalDetails } from "./TaskModalDetails";
 import { ChildrenSection } from "./ChildrenSection";
+import { DependenciesSection } from "./DependenciesSection";
 import { SubtasksSection } from "./SubtasksSection";
 import { ActivitySection } from "./ActivitySection";
 import { AttachmentsSection } from "./AttachmentsSection";
@@ -18,11 +18,12 @@ import { workLogApi } from "../../../api/services/workLogApi";
 import { tokenStorage } from "../../../api/tokenStorage";
 import type { WorkLogResponse } from "../../../api/contracts/worklog";
 import type { AttachmentResponse } from "../../../api/contracts/attachment";
-import { RiTimeLine } from "react-icons/ri";
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime, toDatetimeLocal } from "../../../utils/date";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "../../../components/common/RichTextEditor";
+import type { ProjectStatusResponse } from "../../../api/contracts/projectStatus";
 
 interface Props {
   task: Task | null;
@@ -32,10 +33,12 @@ interface Props {
   onOpenTask: (task: Task) => void;
   onSaveTitle: (title: string) => void;
   onSaveDescription: (desc: string) => void;
-  onChangeStatus: (s: Status) => void;
+  onChangeStatus: (statusId: string) => void;
   onChangePriority: (p: Priority) => void;
   onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
+  onSaveStartDate: (val: string) => void;
+  onSaveDependencies: (dependencyIds: string[]) => void;
   onDeleteTask: (task: Task) => void;
   onLink: (parentId: number, childId: number) => void;
   onUnlink: (parentId: number, childId: number) => void;
@@ -43,6 +46,7 @@ interface Props {
   onAddSubtask: (title: string) => void;
   onDeleteSubtask: (id: number) => void;
   onUpdateAttachments?: (attachments: AttachmentResponse[]) => void;
+  projectStatuses: ProjectStatusResponse[];
 }
 
 //  Log Work Section
@@ -224,9 +228,8 @@ function LogWorkSection({ task }: { task: Task }) {
                 {/* Computed hours preview */}
                 {computedHours !== null && computedHours > 0 && (
                   <div className="flex items-center gap-2 bg-purple-50 rounded-lg px-2.5 py-1.5 border border-purple-100">
-                    <RiTimeLine
-                      size={13}
-                      className="text-purple-500 shrink-0"
+                    <ClockIcon
+                      className="text-purple-500 shrink-0 w-3.5 h-3.5"
                     />
                     <span className="text-xs text-purple-700 font-medium">
                       {computedHours.toFixed(2)} hours
@@ -247,6 +250,7 @@ function LogWorkSection({ task }: { task: Task }) {
                       if (e.key === "Enter") handleSubmit();
                     }}
                     placeholder="What did you work on?"
+                    maxLength={500}
                     className="w-full text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 outline-none transition bg-white focus:border-purple-500"
                   />
                 </div>
@@ -256,7 +260,7 @@ function LogWorkSection({ task }: { task: Task }) {
                   disabled={loading || !computedHours || computedHours <= 0}
                   className="w-full flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 disabled:opacity-60 text-white text-xs font-medium py-2 rounded-lg transition"
                 >
-                  <RiTimeLine size={13} />
+                  <ClockIcon className="w-3.5 h-3.5" />
                   {loading ? "Logging..." : success ? "✓ Logged!" : "Log Work"}
                 </button>
               </>
@@ -351,6 +355,8 @@ export function TaskModal({
   onChangePriority,
   onChangeAssignee,
   onSaveDeadline,
+  onSaveStartDate,
+  onSaveDependencies,
   onDeleteTask,
   onLink,
   onUnlink,
@@ -358,6 +364,7 @@ export function TaskModal({
   onAddSubtask,
   onDeleteSubtask,
   onUpdateAttachments,
+  projectStatuses,
 }: Props) {
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDescValue, setEditDescValue] = useState("");
@@ -472,7 +479,7 @@ export function TaskModal({
                     onUpdateAttachments={onUpdateAttachments}
                   />
 
-                  {childTypeMap[task.type] && (
+                  {(task.type === "epic" || task.type === "story") && (
                     <ChildrenSection
                       key={`children-section-${task.id}-${(task.childIds ?? []).sort().join("-")}`}
                       task={task}
@@ -482,6 +489,13 @@ export function TaskModal({
                       onUnlink={onUnlink}
                     />
                   )}
+
+                  <DependenciesSection
+                    task={task}
+                    allTasks={allTasks}
+                    onOpenTask={onOpenTask}
+                    onSaveDependencies={onSaveDependencies}
+                  />
 
                   <SubtasksSection
                     subtasks={task.subtasks}
@@ -501,6 +515,8 @@ export function TaskModal({
                     onChangePriority={onChangePriority}
                     onChangeAssignee={onChangeAssignee}
                     onSaveDeadline={onSaveDeadline}
+                    onSaveStartDate={onSaveStartDate}
+                    projectStatuses={projectStatuses}
                   />
 
                   {/* Log Work */}

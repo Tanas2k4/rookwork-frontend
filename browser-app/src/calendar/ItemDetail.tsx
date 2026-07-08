@@ -1,4 +1,4 @@
-import { TfiTrash } from "react-icons/tfi";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { getEventColorStyles } from "../types/calendar";
 import type { CalendarEvent } from "../types/calendar";
 import { avatarUrl } from "../utils/avatar";
@@ -22,8 +22,8 @@ function EventCard({
       className={`rounded-xl p-3 flex flex-col gap-2 group cursor-pointer hover:shadow-sm transition-shadow ${colorStyles.className}`}
       style={colorStyles.style}
     >
-      <div className="flex items-start gap-2">
-        <p className="px-3 text-base font-heading font-medium tracking-wide leading-snug flex-1">
+      <div className="flex items-start gap-2 min-w-0">
+        <p className="px-3 text-base font-heading font-medium tracking-wide leading-snug flex-1 line-clamp-2 break-words break-all min-w-0" title={ev.title}>
           {ev.title}
         </p>
         <button
@@ -34,7 +34,7 @@ function EventCard({
           title="Delete event"
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-gray-300 hover:text-red-500 shrink-0"
         >
-          <TfiTrash size={16} />
+          <TrashIcon className="w-4 h-4" />
         </button>
       </div>
       <div className="flex items-center gap-1 pl-3.5 text-gray-600">

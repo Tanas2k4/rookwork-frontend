@@ -4,13 +4,12 @@ import { useRef, useEffect } from "react";
 import { useDrag } from "react-dnd";
 import type { Task } from "../../types/project";
 import {
-  typeIconMap,
-  typeColorMap,
   priorities,
   priorityColorMap,
-  childTypeMap,
+  issueTypeIcons,
 } from "../../types/project";
 import { isOverdue } from "../../utils/date";
+import { formatDeadline } from "../shared/dropdownConstants";
 
 interface Props {
   task: Task;
@@ -21,7 +20,11 @@ interface Props {
 
 export function BoardCard({ task, allTasks, onClick, index }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const TypeIcon = typeIconMap[task.type];
+  
+  const it = task.issueType;
+  const TypeIcon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
+  const typeColor = it?.color || "#64748B";
+
   const overdue = task.deadline ? isOverdue(task.deadline, task.status) : false;
   const doneCount = task.subtasks.filter((s) => s.done).length;
   const parent = task.parentId
@@ -55,25 +58,27 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
       {parent && (
         <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-1.5">
           {(() => {
-            const PI = typeIconMap[parent.type];
-            return <PI className={typeColorMap[parent.type]} size={9} />;
+            const pit = parent.issueType;
+            const PI = issueTypeIcons[pit?.iconKey || "task"] || issueTypeIcons.task;
+            const parentColor = pit?.color || "#64748B";
+            return <PI style={{ color: parentColor }} size={9} />;
           })()}
           <span className="truncate max-w-30">{parent.title}</span>
         </div>
       )}
 
       {/* Title */}
-      <div className="flex items-start gap-2.5 mb-3">
-        <TypeIcon className={`${typeColorMap[task.type]} mt-0.5 shrink-0`} />
-        <span className="text-[14px] font-medium text-gray-800 flex-1 leading-snug">
+      <div className="flex items-start gap-2.5 mb-2 min-w-0">
+        <TypeIcon style={{ color: typeColor }} className="mt-0.5 shrink-0" />
+        <span className="text-[14px] font-medium text-gray-800 flex-1 leading-snug line-clamp-2 break-words min-w-0">
           {task.title}
         </span>
       </div>
 
       {/* Meta */}
-      <div className="space-y-2 ml-5">
+      <div className="space-y-2">
         {task.assigned_to.length > 0 ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
               {task.assigned_to.slice(0, 2).map((u, i) => (
                 <img key={i} src={u.avt} title={u.display_name} className="w-5 h-5 rounded-full object-cover border-2 border-white shrink-0" />
@@ -94,24 +99,24 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
           <span className="text-[12px] text-gray-300 italic">Unassigned</span>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-2">
             {/* Subtask counter */}
             <div className="flex items-center gap-1 text-gray-400">
-              <TbSubtask size={13} />
+              <TbSubtask  className="w-3.5 h-3.5" />
               <span className="text-[12px] bg-gray-100 px-1.5 rounded-full">
                 {doneCount}/{task.subtasks.length}
               </span>
             </div>
             {/* Children badge (epic→story, story→task) */}
-            {childTypeMap[task.type] && (task.childIds?.length ?? 0) > 0 && (
-              <span className="flex items-center gap-0.5 text-[11px] text-gray-400 bg-gray-100 px-1.5 rounded-full">
+            {(task.type === "epic" || task.type === "story") && (task.childIds?.length ?? 0) > 0 && (
+              <span className="flex items-center gap-1 text-[11px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
                 {task.type === "epic" ? (
-                  <FaBook size={9} />
+                  <FaBook size={9} className="text-emerald-700 shrink-0" />
                 ) : (
-                  <FaTasks size={9} />
+                  <FaTasks size={9} className="text-gray-500 shrink-0" />
                 )}
-                {task.childIds!.length}
+                <span className="text-[10px] font-semibold">{task.childIds!.length}</span>
               </span>
             )}
           </div>
@@ -119,13 +124,13 @@ export function BoardCard({ task, allTasks, onClick, index }: Props) {
             className={`text-[12px] font-medium ${overdue ? "text-red-600" : "text-gray-400"}`}
           >
             {overdue && "⚠ "}
-            {task.deadline ?? "No deadline"}
+            {task.deadline ? formatDeadline(task.deadline) : "No deadline"}
           </span>
         </div>
       </div>
 
       {/* Priority bar */}
-      <div className="flex gap-0.5 h-1 mt-3 ml-5">
+      <div className="flex gap-0.5 h-1 mt-3 ">
         {priorities.map((p, i) => (
           <div
             key={p}

@@ -4,12 +4,13 @@
  * @author Warmdrobe
  */
 
-import { useState } from "react";
-import { MdAdd } from "react-icons/md";
+import { useState, useEffect, startTransition } from "react";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import type { TaskType, Priority } from "../../types/project";
-import { typeLabelMap, priorities, priorityLabelMap } from "../../types/project";
+import { priorities, priorityLabelMap } from "../../types/project";
 import { Button } from "../../components/common/Button";
 import { Input } from "../../components/common/Input";
+import { useProject } from "../../hooks/useProject";
 
 interface Props {
   onSubmit: (title: string, type: TaskType, priority: Priority) => void;
@@ -22,9 +23,24 @@ interface Props {
  * để thêm một công việc mới, có hỗ trợ lựa chọn loại công việc (Type) và độ ưu tiên (Priority).
  */
 export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
+  const { issueTypes } = useProject();
   const [title, setTitle] = useState("");
   const [type, setType] = useState<TaskType>("task");
   const [priority, setPriority] = useState<Priority>("medium");
+
+  // Keep selected type in sync with loaded project issue types
+  useEffect(() => {
+    if (issueTypes && issueTypes.length > 0) {
+      const hasTask = issueTypes.some((t) => t.name.toLowerCase() === "task");
+      startTransition(() => {
+        if (hasTask) {
+          setType("task");
+        } else {
+          setType(issueTypes[0].name.toLowerCase());
+        }
+      });
+    }
+  }, [issueTypes]);
 
   function handleSubmit() {
     if (!title.trim() || submitting) return;
@@ -52,8 +68,10 @@ export function AddTaskForm({ onSubmit, onCancel, submitting = false }: Props) {
           disabled={submitting}
           className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white disabled:opacity-50"
         >
-          {(["task", "story", "epic"] as TaskType[]).map((t) => (
-            <option key={t} value={t}>{typeLabelMap[t]}</option>
+          {issueTypes.map((t) => (
+            <option key={t.id} value={t.name.toLowerCase()}>
+              {t.name}
+            </option>
           ))}
         </select>
         <select
@@ -103,7 +121,7 @@ export function AddTaskButton({ onClick }: AddButtonProps) {
       onClick={onClick}
       className="w-full flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg py-2 px-3 transition"
     >
-      <MdAdd size={14} />
+      <PlusIcon className="w-3.5 h-3.5" />
       Add task
     </button>
   );

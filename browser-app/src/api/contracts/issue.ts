@@ -1,9 +1,20 @@
 import type { AttachmentResponse } from "./attachment";
 import type { SubtaskResponse } from "./subtask";
+import type { ProjectStatusResponse } from "./projectStatus";
 
-export type IssueType = "EPIC" | "STORY" | "TASK";
+export interface IssueTypeResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  iconKey: string;
+  color: string;
+  isSystem: boolean;
+}
+
 export type PriorityType = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type Status = "TO_DO" | "IN_PROGRESS" | "DONE";
+// Status is no longer a plain string — it is a full ProjectStatusResponse object from the server.
+// Keep this re-export for any legacy code that may import it directly.
+export type { ProjectStatusResponse as IssueStatus };
 
 export interface UserSummary {
   id: string;
@@ -22,43 +33,55 @@ export interface UserSummary {
   notifyMentioned?: boolean;
   notifyProjectUpdates?: boolean;
   notifyDailyDigest?: boolean;
+  notifyComment?: boolean;
+  notifyEventInvited?: boolean;
   role?: string;
-
+  systemRole?: string;
+  hasPassword?: boolean;
+  passwordLimitReached?: boolean;
+  passwordChangesThisMonth?: number;
 }
 
 export interface CreateIssueRequest {
   issueName: string;
-  issueType: IssueType;
+  issueTypeId: string;
   priority: PriorityType;
   description?: string;
-  deadline?: string; // "2024-08-15T00:00:00" 
-  status: Status;
+  deadline?: string;
+  /** UUID of the target ProjectStatus column. */
+  statusId?: string;
 }
 
 export interface UpdateIssueRequest {
   issueName?: string;
   description?: string;
-  issueType?: IssueType;
+  issueTypeId?: string;
   priority?: PriorityType;
-  deadline?: string;       // "2024-08-15" — maps to LocalDate
-  assigneeIds?: string[];  // null=no change, []=remove all, [id1,id2]=set new
-  status?: Status;
+  startDate?: string;
+  deadline?: string;
+  assigneeIds?: string[];
+  /** UUID of the target ProjectStatus column. */
+  statusId?: string;
   parentId?: string | null;
+  dependencyIds?: string[];
 }
 
 export interface IssueResponse {
   id: string;
   issueName: string;
   description: string | null;
-  issueType: IssueType;
+  issueType: IssueTypeResponse;
   priority: PriorityType | null;
-  status: Status | null;
+  /** Full status column object from the project's workflow. */
+  status: ProjectStatusResponse | null;
   parentId: string | null;
   projectId: string;
   assignees: UserSummary[];   // multi-assignee list
+  startDate: string;
   deadline: string | null;
   createdAt: string;
   updatedAt: string;
   attachments?: AttachmentResponse[];
   subtasks?: SubtaskResponse[];
+  dependencyIds: string[];
 }

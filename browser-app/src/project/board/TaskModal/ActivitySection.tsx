@@ -4,8 +4,8 @@
  * @author Warmdrobe
  */
 
-import { useState, useEffect, useCallback } from "react";
-import type { CommentResponse } from "../../../api/contracts/comment";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { CommentResponse, CommentReactionResponse } from "../../../api/contracts/comment";
 import { commentApi } from "../../../api/services/commentApi";
 import { apiClient } from "../../../api/apiClient";
 import { useProject } from "../../../hooks/useProject";
@@ -17,8 +17,10 @@ import {
 import { tokenStorage } from "../../../api/tokenStorage";
 import { avatarUrl } from "../../../utils/avatar";
 import { formatDateTime } from "../../../utils/date";
-import { FiSmile, FiHeart, FiX } from "react-icons/fi";
-import { IoSend } from "react-icons/io5";
+import { FaceSmileIcon, XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { EmojiChar, QUICK_REACTIONS, EMOJI_META } from "../../../utils/emoji";
+import EmojiPicker, { EmojiStyle } from "emoji-picker-react";
+
 
 //  Types
 
@@ -95,7 +97,262 @@ function actionLabel(a: ActivityResponse): string {
   }
 }
 
-//  Comment Editor Component
+// ──────────── Facebook Style Like & Reactions Popover Component ────────────
+
+const REACTION_STYLE_MAP: Record<string, { label: string; textColor: string }> = {
+  "👍": { label: "Like", textColor: "text-blue-600 font-bold" },
+  "❤️": { label: "Love", textColor: "text-red-600 font-bold" },
+  "🤗": { label: "Care", textColor: "text-yellow-600 font-bold" },
+  "😂": { label: "Haha", textColor: "text-yellow-600 font-bold" },
+  "😮": { label: "Wow", textColor: "text-yellow-600 font-bold" },
+  "😢": { label: "Sad", textColor: "text-blue-500 font-bold" },
+  "😡": { label: "Angry", textColor: "text-orange-600 font-bold" },
+};
+
+function LikeButtonWithReactions({
+  reactions,
+  currentUserId,
+  onReact,
+}: {
+  reactions: CommentReactionResponse[];
+  currentUserId: string | null;
+  onReact: (reactionType: string) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [showFullPicker, setShowFullPicker] = useState(false);
+  const hoverTimeoutRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const ownReaction = reactions.find((r) => r.users.some((u) => u.id === currentUserId));
+  const activeReaction = ownReaction ? ownReaction.reactionType : null;
+  const activeStyle = activeReaction
+    ? (REACTION_STYLE_MAP[activeReaction] ?? { label: "Like", textColor: "text-purple-800 font-bold" })
+    : null;
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setHovered(false);
+        setShowFullPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHovered(true);
+    }, 200);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!showFullPicker) {
+        setHovered(false);
+      }
+    }, 300);
+  };
+
+  const handleLikeClick = () => {
+    if (activeReaction) {
+      onReact(activeReaction);
+    } else {
+      onReact("👍");
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative inline-flex items-center"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Popover reactions bar */}
+      {hovered && (
+        <div 
+          className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] px-2 py-1 flex gap-2.5 z-50 animate-[fadeIn_0.15s_ease-out] items-center"
+          style={{ transform: "translateX(-20%)" }}
+        >
+          {QUICK_REACTIONS.map((qr) => (
+            <button
+              key={qr.emoji}
+              onClick={() => {
+                onReact(qr.emoji);
+                setHovered(false);
+              }}
+              className="text-lg hover:scale-130 transition-transform duration-100 ease-out p-0.5 cursor-pointer"
+              title={qr.label}
+            >
+              <EmojiChar emoji={qr.emoji} size={20} />
+            </button>
+          ))}
+          {/* Plus Button to open full categorised list */}
+          <button
+            type="button"
+            onClick={() => setShowFullPicker((v) => !v)}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-150 hover:bg-gray-200 text-gray-500 font-bold text-sm transition-all duration-100 active:scale-90 cursor-pointer shrink-0 border border-gray-200"
+            title="More emojis"
+          >
+            +
+          </button>
+        </div>
+      )}
+
+      {/* Full Expanded Emoji Picker */}
+      {showFullPicker && (
+        <div
+          className="absolute bottom-full left-0 mb-2.5 z-[60] bg-white border border-gray-100 rounded-2xl flex flex-col overflow-hidden shadow-[0_16px_56px_rgba(0,0,0,0.18)]"
+          style={{ width: 312 }}
+        >
+          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+            <span className="text-xs font-semibold text-gray-500">Pick a reaction</span>
+            <button
+              onClick={() => setShowFullPicker(false)}
+              className="text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200 cursor-pointer"
+            >
+              <XMarkIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <EmojiPicker
+            onEmojiClick={(emojiData) => {
+              onReact(emojiData.emoji);
+              setShowFullPicker(false);
+              setHovered(false);
+            }}
+            autoFocusSearch={false}
+            emojiStyle={EmojiStyle.NATIVE}
+            width="100%"
+            height={300}
+            previewConfig={{ showPreview: false }}
+            skinTonesDisabled={true}
+          />
+        </div>
+      )}
+
+      {/* Like button */}
+      <button
+        onClick={handleLikeClick}
+        className={`text-[11px] transition cursor-pointer select-none ${
+          activeStyle ? activeStyle.textColor : "text-gray-400 hover:text-purple-800"
+        }`}
+      >
+        {activeReaction ? activeReaction : "Like"}
+      </button>
+    </div>
+  );
+}
+
+// ──────────── Who Reacted Modal Component ────────────
+
+function WhoReactedModal({
+  comment,
+  onClose,
+}: {
+  comment: CommentResponse;
+  onClose: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [onClose]);
+
+  const reactions = comment.reactions ?? [];
+  const validReactions = reactions.filter((r) => r.count > 0);
+  const totalCount = validReactions.reduce((sum, r) => sum + r.count, 0);
+
+  const allUsers = validReactions.flatMap((r) =>
+    r.users.map((u) => ({ ...u, reactionType: r.reactionType }))
+  );
+
+  const displayedUsers =
+    activeTab === "all"
+      ? allUsers
+      : allUsers.filter((u) => u.reactionType === activeTab);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div
+        ref={modalRef}
+        className="bg-white rounded-md w-full max-w-sm flex flex-col shadow-2xl overflow-hidden border border-gray-100 max-h-[450px]"
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <h3 className="text-sm font-bold text-gray-800">Reactions</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition p-1 hover:bg-gray-100 rounded-full cursor-pointer"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1 px-3 border-b border-gray-100 overflow-x-auto scrollbar-none py-1.5 bg-gray-50/50">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-3 py-1 text-xs font-semibold rounded-full transition whitespace-nowrap cursor-pointer ${
+              activeTab === "all"
+                ? "bg-purple-900 text-white"
+                : "text-gray-500 hover:bg-gray-200/60"
+            }`}
+          >
+            All {totalCount}
+          </button>
+          {validReactions.map((r) => (
+            <button
+              key={r.reactionType}
+              onClick={() => setActiveTab(r.reactionType)}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full transition whitespace-nowrap cursor-pointer ${
+                activeTab === r.reactionType
+                  ? "bg-purple-900 text-white"
+                  : "text-gray-500 hover:bg-gray-200/60"
+              }`}
+            >
+              <EmojiChar emoji={r.reactionType} size={13} />
+              <span>{r.count}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {displayedUsers.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-6">No reactions found</p>
+          ) : (
+            displayedUsers.map((u, idx) => (
+              <div key={idx} className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <img
+                      src={avatarUrl(u.profileName, u.picture)}
+                      alt={u.profileName}
+                      className="w-8 h-8 rounded-full object-cover border border-gray-100"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-gray-200 rounded-full p-0.5  flex items-center justify-center">
+                      <EmojiChar emoji={u.reactionType} size={11} />
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-gray-700">{u.profileName}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ──────────── Comment Editor Component ────────────
 
 interface CommentEditorProps {
   placeholder?: string;
@@ -113,6 +370,31 @@ function CommentEditor({
   autoFocus = false,
 }: CommentEditorProps) {
   const [value, setValue] = useState(initialValue);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [showFullPicker, setShowFullPicker] = useState(false);
+  const [quickHovered, setQuickHovered] = useState<string | null>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!emojiPickerOpen) {
+      setShowFullPicker(false);
+      return;
+    }
+    function onClickOutside(e: MouseEvent) {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setEmojiPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [emojiPickerOpen]);
+
+  const handlePick = (emoji: string) => {
+    setValue((v) => v + emoji);
+    setEmojiPickerOpen(false);
+    setQuickHovered(null);
+    setShowFullPicker(false);
+  };
 
   const handleSubmit = () => {
     if (value.trim()) {
@@ -122,7 +404,7 @@ function CommentEditor({
   };
 
   return (
-    <div className="w-full border border-gray-300 rounded-lg overflow-hidden bg-white focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-700 transition-all duration-150">
+    <div className="w-full border border-gray-300 rounded-lg bg-white focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-700 transition-all duration-150">
       <textarea
         autoFocus={autoFocus}
         placeholder={placeholder}
@@ -137,25 +419,138 @@ function CommentEditor({
             onCancel();
           }
         }}
-        className="w-full text-sm text-gray-700 p-2.5 pb-1 resize-none outline-none bg-transparent h-16"
+        maxLength={3000}
+        className="w-full text-sm text-gray-700 p-2.5 pb-1 resize-none outline-none bg-transparent h-16 rounded-t-lg"
       />
-      <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50/50 h-10 select-none">
-        {/* Left Toolbar Icons */}
-        <div className="flex items-center gap-3 text-gray-400">
+      <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50/50 h-10 select-none rounded-b-lg">
+        {/* Left Toolbar - Emojis */}
+        <div className="flex items-center relative" ref={emojiRef}>
           <button
             type="button"
-            className="hover:text-purple-800 p-1 rounded-md transition"
-            title="Emojis"
+            onClick={() => setEmojiPickerOpen((v) => !v)}
+            className={`p-1.5 rounded-full transition ${
+              emojiPickerOpen ? "bg-purple-100 text-purple-600" : "text-gray-400 hover:bg-gray-100 hover:text-purple-600"
+            }`}
+            title="Insert Emoji"
           >
-            <FiSmile size={16} />
+            <FaceSmileIcon className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            className="hover:text-purple-800 p-1 rounded-md transition"
-            title="Stickers"
-          >
-            <FiHeart size={15} />
-          </button>
+
+          {emojiPickerOpen && (
+            !showFullPicker ? (
+              /* ── Quick reactions row + Plus Button ── */
+              <div
+                className="
+                  absolute bottom-full left-0 mb-2.5 z-50
+                  bg-white/95 backdrop-blur-md
+                  border border-gray-100 rounded-full
+                  px-2 py-1.5 flex items-center gap-1
+                "
+                style={{
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.05)",
+                }}
+              >
+                {QUICK_REACTIONS.map(({ emoji }) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onMouseEnter={() => setQuickHovered(emoji)}
+                    onMouseLeave={() => setQuickHovered(null)}
+                    onClick={() => handlePick(emoji)}
+                    className="flex items-center justify-center p-1 rounded-full select-none active:scale-90"
+                    style={{
+                      transform: quickHovered === emoji
+                        ? "scale(1.5) translateY(-4px)"
+                        : "scale(1) translateY(0)",
+                      transition: "transform 140ms cubic-bezier(0.34,1.56,0.64,1)",
+                    }}
+                  >
+                    <EmojiChar emoji={emoji} size={22} />
+                  </button>
+                ))}
+
+                {/* Plus Button to open full categorised list */}
+                <button
+                  type="button"
+                  onClick={() => setShowFullPicker(true)}
+                  className="
+                    w-8 h-8 rounded-full flex items-center justify-center
+                    bg-gray-100 hover:bg-gray-200 text-gray-500 font-semibold text-lg
+                    transition-all duration-100 active:scale-90
+                  "
+                  title="More emojis"
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              /* ── Full Expanded Emoji Picker ── */
+              <div
+                className="
+                  absolute bottom-full left-0 mb-2 z-50
+                  bg-white border border-gray-100 rounded-2xl
+                  flex flex-col overflow-hidden
+                "
+                style={{
+                  width: 312,
+                  boxShadow: "0 16px 56px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)",
+                }}
+              >
+                {/* Quick reactions row at top */}
+                <div className="flex items-end justify-center gap-1 px-3 pt-3 pb-0">
+                  {QUICK_REACTIONS.map(({ emoji }) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onMouseEnter={() => setQuickHovered(emoji)}
+                      onMouseLeave={() => setQuickHovered(null)}
+                      onClick={() => handlePick(emoji)}
+                      className="flex items-center justify-center p-1 rounded-xl select-none active:scale-90"
+                      style={{
+                        transform: quickHovered === emoji
+                          ? "scale(1.6) translateY(-6px)"
+                          : "scale(1) translateY(0)",
+                        transition: "transform 140ms cubic-bezier(0.34,1.56,0.64,1)",
+                      }}
+                    >
+                      <EmojiChar emoji={emoji} size={24} />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick label */}
+                <div className="h-5 flex items-center justify-center mb-1.5">
+                  {quickHovered ? (
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        color: EMOJI_META[quickHovered]?.color ?? "#374151",
+                        backgroundColor: EMOJI_META[quickHovered]?.bg ?? "#f3f4f6",
+                      }}
+                    >
+                      {EMOJI_META[quickHovered]?.label ?? quickHovered}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-300">Quick reactions</span>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-100" />
+
+                {/* EmojiPicker library component */}
+                <EmojiPicker
+                  onEmojiClick={(emojiData) => handlePick(emojiData.emoji)}
+                  autoFocusSearch={false}
+                  emojiStyle={EmojiStyle.NATIVE}
+                  width="100%"
+                  height={320}
+                  previewConfig={{ showPreview: false }}
+                  skinTonesDisabled={true}
+                />
+              </div>
+            )
+          )}
         </div>
 
         {/* Right Action Buttons */}
@@ -167,17 +562,19 @@ function CommentEditor({
               className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
               title="Cancel"
             >
-              <FiX size={15} />
+               <XMarkIcon className="w-3.5 h-3.5" />
             </button>
           )}
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!value.trim()}
-            className={`p-1.5 rounded-full transition ${value.trim() ? "text-purple-800" : "text-gray-300 cursor-not-allowed"}`}
+            className={`p-1.5 rounded-full transition ${
+              value.trim() ? "text-purple-800" : "text-gray-300 cursor-not-allowed"
+            }`}
             title="Send"
           >
-            <IoSend size={15} />
+             <PaperAirplaneIcon className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -185,12 +582,13 @@ function CommentEditor({
   );
 }
 
-//  Comment Item
+
+// ──────────── Comment Item ────────────
 
 /**
  * Component hiển thị một bình luận đơn lẻ trong phần thảo luận.
  * Hỗ trợ hiển thị phân cấp (reply lồng nhau), sửa bình luận, xóa bình luận,
- * và hiển thị hộp thoại trả lời nhanh cho bình luận cấp 0.
+ * hiển thị reaction badges và emoji picker.
  */
 function CommentItem({
   comment,
@@ -199,6 +597,8 @@ function CommentItem({
   onEdit,
   onDelete,
   onReply,
+  onReact,
+  onOpenWhoReacted,
 }: {
   comment: CommentResponse;
   depth?: number;
@@ -206,9 +606,12 @@ function CommentItem({
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
   onReply: (parentId: string, content: string) => void;
+  onReact: (commentId: string, reactionType: string) => void;
+  onOpenWhoReacted: (comment: CommentResponse) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showReplyBox, setShowReplyBox] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState(false);
 
   const isOwn = comment.user?.id === currentUserId;
   const isReply = depth > 0;
@@ -253,19 +656,54 @@ function CommentItem({
           ) : (
             <>
               <div
-                className={`inline-block bg-gray-200 rounded-xl rounded-tl px-3 py-1 ${isReply ? "text-xs" : "text-sm"} text-gray-700 wrap-break-word leading-relaxed`}
+                className={`inline-block bg-gray-200 rounded-xl rounded-tl px-3 py-1 ${isReply ? "text-xs" : "text-sm"} text-gray-700 break-words break-all max-w-full leading-relaxed`}
               >
                 {comment.content}
               </div>
-              <div className="flex gap-3 mt-1 items-center">
-                {depth === 0 && (
-                  <button
-                    onClick={() => setShowReplyBox((v) => !v)}
-                    className="text-[11px] text-gray-400 hover:text-purple-800 transition"
-                  >
-                    {showReplyBox ? "Cancel" : "Reply"}
-                  </button>
-                )}
+
+              {/* Top 3 Reactions Summary Bubble */}
+              {(() => {
+                const validReactions = (comment.reactions ?? []).filter((r) => r.count > 0);
+                if (validReactions.length === 0) return null;
+
+                const top3 = [...validReactions]
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 3);
+                const totalCount = validReactions.reduce((sum, r) => sum + r.count, 0);
+
+                return (
+                  <div className="mt-1 flex">
+                    <button
+                      onClick={() => onOpenWhoReacted(comment)}
+                      className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200/70 border border-gray-200/60 rounded-full px-2 py-0.5 transition select-none shadow-sm cursor-pointer"
+                    >
+                      <div className="flex -space-x-1 items-center">
+                        {top3.map((r) => (
+                          <EmojiChar key={r.reactionType} emoji={r.reactionType} size={13} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-500 pl-0.5 leading-none">
+                        {totalCount}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-3 mt-1.5 items-center">
+                {/* Like Button with Hover Reactions */}
+                <LikeButtonWithReactions
+                  reactions={comment.reactions ?? []}
+                  currentUserId={currentUserId}
+                  onReact={(reactionType) => onReact(comment.id, reactionType)}
+                />
+
+                <button
+                  onClick={() => setShowReplyBox((v) => !v)}
+                  className="text-[11px] text-gray-400 hover:text-purple-800 transition"
+                >
+                  {showReplyBox ? "Cancel" : "Reply"}
+                </button>
                 {isOwn && (
                   <>
                     <button
@@ -290,7 +728,8 @@ function CommentItem({
                     <CommentEditor
                       placeholder={`Reply to ${comment.user?.profileName}...`}
                       onSubmit={(val) => {
-                        onReply(comment.id, val);
+                        const targetParentId = comment.parentCommentId || comment.id;
+                        onReply(targetParentId, val);
                         setShowReplyBox(false);
                       }}
                       onCancel={() => setShowReplyBox(false)}
@@ -302,21 +741,51 @@ function CommentItem({
             </>
           )}
 
-          {(comment.replies ?? []).length > 0 && (
-            <div className="mt-2 space-y-2.5 pl-2">
-              {(comment.replies ?? []).map((reply) => (
-                <CommentItem
-                  key={reply.id}
-                  comment={reply}
-                  depth={depth + 1}
-                  currentUserId={currentUserId}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onReply={onReply}
-                />
-              ))}
-            </div>
-          )}
+          {(() => {
+            const replies = comment.replies ?? [];
+            if (replies.length === 0) return null;
+
+            const hasManyReplies = replies.length > 2;
+            const displayedReplies = (hasManyReplies && !expandedReplies)
+              ? replies.slice(replies.length - 2)
+              : replies;
+
+            return (
+              <div className="mt-2 space-y-2.5 pl-2 border-l border-gray-100">
+                {displayedReplies.map((reply) => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    depth={depth + 1}
+                    currentUserId={currentUserId}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onReply={onReply}
+                    onReact={onReact}
+                    onOpenWhoReacted={onOpenWhoReacted}
+                  />
+                ))}
+
+                {hasManyReplies && !expandedReplies && (
+                  <button
+                    onClick={() => setExpandedReplies(true)}
+                    className="text-[11px] font-semibold text-gray-400 hover:text-purple-800 hover:underline transition cursor-pointer select-none block mt-1"
+                  >
+                    View {replies.length - 2} previous replies...
+                  </button>
+                )}
+
+                {hasManyReplies && expandedReplies && (
+                  <button
+                    onClick={() => setExpandedReplies(false)}
+                    className="text-[11px] font-semibold text-gray-400 hover:text-purple-800 hover:underline transition cursor-pointer select-none block mt-1"
+                  >
+                    Hide replies
+                  </button>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -337,7 +806,7 @@ function ActivityLogItem({ log }: { log: ActivityResponse }) {
         alt=""
       />
       <div className="flex-1 min-w-0 ">
-        <p className="text-xs text-gray-600 leading-relaxed">
+        <p className="text-xs text-gray-600 leading-relaxed break-words break-all whitespace-normal">
           <span className="font-medium text-gray-800">{log.actorName}</span>{" "}
           {actionLabel(log)}
         </p>
@@ -351,11 +820,11 @@ function ActivityLogItem({ log }: { log: ActivityResponse }) {
 
 //  Main Section
 
-type Tab = "all" | "comments" | "history";
+type Tab = "comments" | "history";
 
 /**
  * Component chính hiển thị toàn bộ phần hoạt động của một sự vụ (Issue).
- * Bao gồm form gửi bình luận mới, chuyển đổi các tab (Tất cả / Bình luận / Lịch sử hoạt động),
+ * Bao gồm form gửi bình luận mới, chuyển đổi các tab (Bình luận / Lịch sử hoạt động),
  * tích hợp lắng nghe sự kiện WebSocket để cập nhật danh sách bình luận thời gian thực.
  */
 export function ActivitySection({
@@ -369,7 +838,8 @@ export function ActivitySection({
   const projectId = projectIdProp ?? contextProjectId;
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
-  const [tab, setTab] = useState<Tab>("all");
+  const [tab, setTab] = useState<Tab>("comments");
+  const [modalComment, setModalComment] = useState<CommentResponse | null>(null);
 
   const currentUserId = tokenStorage.getUserId();
 
@@ -421,7 +891,7 @@ export function ActivitySection({
               : p,
           );
         }
-        return [...prev, { ...c, replies: [] }];
+        return [...prev, { ...c, replies: [], reactions: [] }];
       });
     } else if (payload.type === "UPDATED_COMMENT" && payload.comment) {
       const c = payload.comment as CommentResponse;
@@ -443,6 +913,21 @@ export function ActivitySection({
             ...p,
             replies: (p.replies ?? []).filter((r) => r.id !== id),
           })),
+      );
+    } else if (payload.type === "COMMENT_REACTION_UPDATED" && payload.commentId) {
+      // Cập nhật reactions cho bình luận tương ứng
+      const id = payload.commentId;
+      const reactions = payload.reactions as CommentReactionResponse[];
+      setComments((prev) =>
+        prev.map((p) => {
+          if (p.id === id) return { ...p, reactions };
+          return {
+            ...p,
+            replies: (p.replies ?? []).map((r) =>
+              r.id === id ? { ...r, reactions } : r,
+            ),
+          };
+        }),
       );
     }
   }, []);
@@ -521,6 +1006,27 @@ export function ActivitySection({
     }
   }
 
+  async function handleReact(commentId: string, reactionType: string) {
+    if (!projectId) return;
+    try {
+      // Optimistic update: cập nhật reactions ngay lập tức trước khi WS trả về
+      const updatedReactions = await commentApi.react(projectId, issueUuid, commentId, reactionType);
+      setComments((prev) =>
+        prev.map((p) => {
+          if (p.id === commentId) return { ...p, reactions: updatedReactions };
+          return {
+            ...p,
+            replies: (p.replies ?? []).map((r) =>
+              r.id === commentId ? { ...r, reactions: updatedReactions } : r,
+            ),
+          };
+        }),
+      );
+    } catch (err) {
+      console.error("Failed to react to comment", err);
+    }
+  }
+
   const nestedComments = comments.filter((c) => !c.parentCommentId);
   const totalCommentCount = comments.reduce(
     (sum, c) => sum + 1 + (c.replies?.length ?? 0),
@@ -528,7 +1034,6 @@ export function ActivitySection({
   );
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "all", label: "All" },
     {
       key: "comments",
       label: `Comments${totalCommentCount ? ` (${totalCommentCount})` : ""}`,
@@ -563,30 +1068,6 @@ export function ActivitySection({
       )}
 
       <div className="space-y-4">
-        {tab === "all" && (
-          <>
-            {activities.length === 0 && nestedComments.length === 0 && (
-              <p className="text-xs text-gray-300 italic">No activity yet.</p>
-            )}
-            {activities.map((log) => (
-              <ActivityLogItem key={log.id} log={log} />
-            ))}
-            {activities.length > 0 && nestedComments.length > 0 && (
-              <div className="border-t border-gray-100" />
-            )}
-            {nestedComments.map((c) => (
-              <CommentItem
-                key={c.id}
-                comment={c}
-                depth={0}
-                currentUserId={currentUserId}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onReply={(parentId, content) => handleSubmit(content, parentId)}
-              />
-            ))}
-          </>
-        )}
 
         {tab === "comments" &&
           (nestedComments.length === 0 ? (
@@ -601,6 +1082,8 @@ export function ActivitySection({
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onReply={(parentId, content) => handleSubmit(content, parentId)}
+                onReact={handleReact}
+                onOpenWhoReacted={(comment) => setModalComment(comment)}
               />
             ))
           ))}
@@ -616,6 +1099,13 @@ export function ActivitySection({
             </div>
           ))}
       </div>
+
+      {modalComment && (
+        <WhoReactedModal
+          comment={modalComment}
+          onClose={() => setModalComment(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-body: "Inter", sans-serif;
-  --font-heading: "Inter", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-heading: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 }
 
 body {
@@ -17,10 +18,37 @@ body {
   -webkit-app-region: no-drag;
 }
 
-/* hidden scrollbar */
+/* hidden scrollbar (global) */
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+/* Kanban board horizontal scrollbar — visible, thin, styled */
+.board-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.board-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.board-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 99px;
+}
+
+.board-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 99px;
+}
+
+.board-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 body {
@@ -155,7 +183,7 @@ body {
   margin: 0;
 }
 
-.tiptap-content ul[data-type="taskList"] li > label {
+.tiptap-content ul[data-type="taskList"] li>label {
   flex: 0 0 auto;
   margin-right: 0.5rem;
   user-select: none;
@@ -164,7 +192,7 @@ body {
   padding-top: 0.25rem;
 }
 
-.tiptap-content ul[data-type="taskList"] li > div {
+.tiptap-content ul[data-type="taskList"] li>div {
   flex: 1 1 auto;
 }
 
@@ -197,4 +225,22 @@ body {
 
 .tiptap {
   min-height: 120px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide Microsoft Edge / IE native password reveal/clear buttons */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
 }

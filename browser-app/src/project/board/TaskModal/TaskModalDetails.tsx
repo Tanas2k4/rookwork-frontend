@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { IoClose } from "react-icons/io5";
-import { MdOutlineExpandMore, MdCheck } from "react-icons/md";
-import type { Task, Status, Priority, User } from "../../../types/project";
+import { XMarkIcon, ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
+import type { Task, TaskWithMeta, Priority, User } from "../../../types/project";
 import {
-  statuses,
   statusMap,
   priorities,
   priorityColorMap,
@@ -12,13 +10,17 @@ import {
 import { useProject } from "../../../hooks/useProject";
 import { formatDeadline } from "../../shared/dropdownConstants";
 import { avatarUrl } from "../../../utils/avatar";
+import type { ProjectStatusResponse } from "../../../api/contracts/projectStatus";
+import { toDatetimeLocal } from "../../../utils/date";
 
 interface Props {
   task: Task;
-  onChangeStatus: (s: Status) => void;
+  onChangeStatus: (statusId: string) => void;
   onChangePriority: (p: Priority) => void;
   onChangeAssignee: (users: User[]) => void;
   onSaveDeadline: (val: string) => void;
+  onSaveStartDate: (val: string) => void;
+  projectStatuses: ProjectStatusResponse[];
 }
 
 export function TaskModalDetails({
@@ -27,14 +29,18 @@ export function TaskModalDetails({
   onChangePriority,
   onChangeAssignee,
   onSaveDeadline,
+  onSaveStartDate,
+  projectStatuses,
 }: Props) {
-  const { members } = useProject();
+  const { members, isTransitionAllowed } = useProject();
 
   const [showStatusDd,    setShowStatusDd]    = useState(false);
   const [showPriorityDd,  setShowPriorityDd]  = useState(false);
   const [showAssigneeDd,  setShowAssigneeDd]  = useState(false);
   const [editingDeadline, setEditingDeadline] = useState(false);
   const [deadlineValue,   setDeadlineValue]   = useState(task.deadline ?? "");
+  const [editingStartDate, setEditingStartDate] = useState(false);
+  const [startDateValue,   setStartDateValue]   = useState(task.startDate ?? "");
   const assigneeDdRef = useRef<HTMLDivElement>(null);
 
   // Close assignee dropdown on outside click
@@ -97,22 +103,42 @@ export function TaskModalDetails({
             onClick={() => { setShowStatusDd((p) => !p); setShowPriorityDd(false); setShowAssigneeDd(false); }}
             className="flex items-center gap-1.5 text-sm text-gray-700 px-2 py-1 transition"
           >
-            <span className={`w-2 h-2 rounded-full ${statusMap[task.status].dotColor}`} />
-            {statusMap[task.status].label}
-            <MdOutlineExpandMore size={16} className="text-gray-400" />
+            {(() => {
+              const currentStatus = projectStatuses.find((ps) => ps.id === (task as TaskWithMeta)._statusId) ||
+                projectStatuses.find((ps) => ps.statusCategory === (task.status === "to_do" ? "TO_DO" : task.status === "in_progress" ? "IN_PROGRESS" : "DONE"));
+              const color = currentStatus?.color ?? "#94a3b8";
+              const label = currentStatus?.statusName ?? statusMap[task.status].label;
+              return (
+                <>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <span>{label}</span>
+                </>
+              );
+            })()}
+            <ChevronDownIcon className="w-4 h-4 text-gray-400" />
           </button>
           {showStatusDd && (
-            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-40">
-              {statuses.map((s) => (
-                <button key={s}
-                  onClick={() => { onChangeStatus(s); closeAll(); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                    task.status === s ? "text-purple-700 font-medium" : "text-gray-700"
-                  }`}>
-                  <span className={`w-2 h-2 rounded-full ${statusMap[s].dotColor}`} />
-                  {statusMap[s].label}
-                </button>
-              ))}
+            <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-48 max-h-60 overflow-y-auto">
+              {(() => {
+                const currentStatusId = (task as TaskWithMeta)._statusId || projectStatuses.find((ps) =>
+                  ps.statusCategory === (task.status === "to_do" ? "TO_DO" : task.status === "in_progress" ? "IN_PROGRESS" : "DONE")
+                )?.id;
+
+                const allowedStatuses = projectStatuses.filter((s) =>
+                  s.id === currentStatusId || isTransitionAllowed(currentStatusId, s.id)
+                );
+
+                return allowedStatuses.map((s) => (
+                  <button key={s.id}
+                    onClick={() => { onChangeStatus(s.id); closeAll(); }}
+                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${
+                      (task as TaskWithMeta)._statusId === s.id ? "text-purple-700 font-medium bg-purple-50/50" : "text-gray-700"
+                    }`}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                    <span className="truncate">{s.statusName}</span>
+                  </button>
+                ));
+              })()}
             </div>
           )}
         </div>
@@ -136,7 +162,7 @@ export function TaskModalDetails({
                 }`} />
               ))}
             </div>
-            <MdOutlineExpandMore size={16} className="text-gray-400" />
+            <ChevronDownIcon className="w-4 h-4 text-gray-400" />
           </button>
           {showPriorityDd && (
             <div className="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 w-40">
@@ -155,6 +181,44 @@ export function TaskModalDetails({
         </div>
       </div>
 
+      {/* Start Date */}
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+          Start Date
+        </p>
+        {editingStartDate ? (
+          <input
+            autoFocus
+            type="datetime-local"
+            value={(() => {
+              if (!startDateValue) return "";
+              const d = new Date(startDateValue);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            max={(() => {
+              if (!task.deadline) return "";
+              const d = new Date(task.deadline);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            onChange={(e) => setStartDateValue(e.target.value)}
+            onBlur={() => { onSaveStartDate(startDateValue); setEditingStartDate(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setEditingStartDate(false);
+              if (e.key === "Enter") { onSaveStartDate(startDateValue); setEditingStartDate(false); }
+            }}
+            className="text-sm text-gray-700 outline-none border-b border-gray-400 bg-transparent"
+          />
+        ) : (
+          <p
+            onDoubleClick={() => { setStartDateValue(task.startDate ?? ""); setEditingStartDate(true); }}
+            className="text-sm text-gray-700 cursor-default hover:bg-gray-50 rounded px-2 py-1 -ml-2 transition inline-block"
+            title="Double-click to edit"
+          >
+            {task.startDate ? formatDeadline(task.startDate) : "None"}
+          </p>
+        )}
+      </div>
+
       {/* Deadline */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
@@ -164,7 +228,16 @@ export function TaskModalDetails({
           <input
             autoFocus
             type="datetime-local"
-            value={deadlineValue ? deadlineValue.slice(0, 16) : ""}
+            value={(() => {
+              if (!deadlineValue) return "";
+              const d = new Date(deadlineValue);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
+            min={(() => {
+              if (!task.startDate) return "";
+              const d = new Date(task.startDate);
+              return isNaN(d.getTime()) ? "" : toDatetimeLocal(d);
+            })()}
             onChange={(e) => setDeadlineValue(e.target.value)}
             onBlur={() => { onSaveDeadline(deadlineValue); setEditingDeadline(false); }}
             onKeyDown={(e) => {
@@ -222,7 +295,7 @@ export function TaskModalDetails({
               <span className="italic text-gray-400">
                 Unassigned</span>
             )}
-            <MdOutlineExpandMore size={16} className="text-gray-400 shrink-0 ml-auto" />
+            <ChevronDownIcon className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
           </button>
 
           {showAssigneeDd && (
@@ -233,7 +306,7 @@ export function TaskModalDetails({
                 className="w-full text-left pl-3 py-1.5 text-sm text-gray-500 italic hover:bg-gray-50 flex items-center"
               >
                 <div className="p-1.5 bg-gray-200 rounded-full ml-1">
-                  <IoClose size={14} className=" text-gray-500" />
+                  <XMarkIcon className="w-3.5 h-3.5 text-gray-500" />
                 </div>
                 <span className="w-3 h-4" />
                 Unassigned (clear all)
@@ -257,7 +330,7 @@ export function TaskModalDetails({
                           ? "bg-purple-900 border-purple-900"
                           : "border-gray-300"
                       }`}>
-                        {isSelected && <MdCheck size={11} className="text-white" />}
+                        {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
                       </span>
                       <img src={u.avt} className="w-5 h-5 rounded-full object-cover shrink-0" />
                       <span className="truncate">{u.display_name}</span>
@@ -269,6 +342,7 @@ export function TaskModalDetails({
           )}
         </div>
       </div>
+
     </div>
   );
 }

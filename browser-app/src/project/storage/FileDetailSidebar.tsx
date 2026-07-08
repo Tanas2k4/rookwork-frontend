@@ -1,5 +1,5 @@
 import React from "react";
-import { RiDownload2Line, RiAttachment2 } from "react-icons/ri";
+import { ArrowDownTrayIcon, PaperClipIcon } from "@heroicons/react/24/outline";
 import type { FlatFile } from "./DriveFileCard";
 import { getFileIcon, formatBytes } from "./storageUtils";
 
@@ -85,7 +85,7 @@ export function FileDetailSidebar({
               rel="noopener noreferrer"
               className="flex-1 bg-purple-900 hover:bg-purple-800 text-gray-200 text-sm py-2 mt-4 rounded-md flex items-center justify-center gap-1.5 transition"
             >
-              <RiDownload2Line size={14} />
+              <ArrowDownTrayIcon className="w-3.5 h-3.5" />
               <span>Download</span>
             </a>
           </div>
@@ -93,7 +93,7 @@ export function FileDetailSidebar({
       ) : (
         <div className=" p-5 text-center flex flex-col items-center justify-center h-75">
           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2 ">
-            <RiAttachment2 size={18} />
+            <PaperClipIcon className="w-[18px] h-[18px]" />
           </div>
           <p className="text-[11px] text-gray-400 italic">
             Select an attachment to view details.

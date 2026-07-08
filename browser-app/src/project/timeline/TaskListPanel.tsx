@@ -1,7 +1,8 @@
 import { ROW_HEIGHT, LEFT_PANEL_W } from "./timelineUtils";
 import type { GanttTask, Assignee } from "./timelineUtils";
-import { typeIconMap } from "../../types/project";
-import type { TaskType } from "../../types/project";
+import { issueTypeIcons } from "../../types/project";
+import { useContext } from "react";
+import { ProjectContext } from "../../context/ProjectContext";
 
 interface TaskListPanelProps {
   groups: string[];
@@ -12,68 +13,26 @@ interface TaskListPanelProps {
   onOpenModal: (uuid: string) => void;
 }
 
-// Helpers for group specific styling
-const getGroupConfig = (group: string) => {
-  const normalized = group.toLowerCase() as TaskType;
-  const Icon = typeIconMap[normalized];
+const getStatusIcon = (task: GanttTask) => {
+  if (task._statusMeta?.color) {
+    return (
+      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task._statusMeta.color }}></div>
+    );
+  }
+  const status = task.status || "todo";
 
-  if (normalized === "story") {
-    return {
-      bg: "bg-gray-100",
-      text: "text-emerald-800 font-bold",
-      badge: "bg-emerald-50 text-emerald-800 border border-emerald-200/50",
-      icon: Icon ? <Icon className="text-emerald-700 shrink-0" size={14} /> : null,
-      borderLeft: "border-l-[3px] border-l-emerald-500",
-      arrowColor: "text-emerald-500",
-      label: "Stories",
-    };
-  }
-  if (normalized === "task") {
-    return {
-      bg: "bg-gray-100",
-      text: "text-blue-600 font-bold",
-      badge: "bg-blue-50 text-blue-800 border border-blue-200/50",
-      icon: Icon ? <Icon className="text-blue-700 shrink-0" size={14} /> : null,
-      borderLeft: "border-l-[3px] border-l-blue-500",
-      arrowColor: "text-blue-500",
-      label: "Tasks",
-    };
-  }
-  if (normalized === "epic") {
-    return {
-      bg: "bg-gray-100",
-      text: "text-purple-800 font-bold",
-      badge: "bg-purple-50 text-purple-800 border border-purple-200/50",
-      icon: Icon ? <Icon className="text-purple-700 shrink-0" size={14} /> : null,
-      borderLeft: "border-l-[3px] border-l-purple-500",
-      arrowColor: "text-purple-500",
-      label: "Epics",
-    };
-  }
-  return {
-    bg: "bg-gray-100 ",
-    text: "text-gray-700 font-bold",
-    badge: "bg-gray-50 text-gray-700 border border-gray-200/50",
-    icon: null,
-    borderLeft: "border-l-[3px] border-l-gray-400",
-    arrowColor: "text-gray-400",
-    label: group,
-  };
-};
-
-const getStatusIcon = (status: "todo" | "in_progress" | "done") => {
   switch (status) {
     case "todo":
       return (
-        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+        <div className="w-2 h-2 rounded-full bg-gray-400 shrink-0"></div>
       );
     case "in_progress":
       return (
-        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+        <div className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></div>
       );
     case "done":
       return (
-        <div className="w-2 h-2 rounded-full bg-green-600"></div>
+        <div className="w-2 h-2 rounded-full bg-green-600 shrink-0"></div>
       );
   }
 };
@@ -84,7 +43,6 @@ const AvatarGroup = ({ assignees }: { assignees: Assignee[] }) => {
   return (
     <div className="flex items-center shrink-0 -space-x-1.5 ml-2">
       {assignees.slice(0, 2).map((a, idx) => {
-        // Fallback initials
         const initials = a.name
           ? a.name
               .split(" ")
@@ -156,6 +114,64 @@ export function TaskListPanel({
   onToggleGroup,
   onOpenModal,
 }: TaskListPanelProps) {
+  const { issueTypes } = useContext(ProjectContext);
+
+  const getGroupConfig = (group: string) => {
+    const normalized = group.toLowerCase();
+    const foundType = issueTypes.find((t) => t.name.toLowerCase() === normalized);
+    const Icon = issueTypeIcons[foundType?.iconKey || "task"] || issueTypeIcons.task;
+    const color = foundType?.color || "#64748B";
+
+    if (normalized === "story") {
+      return {
+        bg: "bg-gray-100",
+        text: "text-emerald-800 font-bold",
+        badge: "bg-emerald-50 text-emerald-800 border border-emerald-200/50",
+        icon: <Icon className="text-emerald-700 shrink-0" size={14} />,
+        borderLeft: "border-l-[3px] border-l-emerald-500",
+        arrowColor: "text-emerald-500",
+        label: "Stories",
+        style: {},
+      };
+    }
+    if (normalized === "task") {
+      return {
+        bg: "bg-gray-100",
+        text: "text-blue-600 font-bold",
+        badge: "bg-blue-50 text-blue-800 border border-blue-200/50",
+        icon: <Icon className="text-blue-700 shrink-0" size={14} />,
+        borderLeft: "border-l-[3px] border-l-blue-500",
+        arrowColor: "text-blue-500",
+        label: "Tasks",
+        style: {},
+      };
+    }
+    if (normalized === "epic") {
+      return {
+        bg: "bg-gray-100",
+        text: "text-purple-800 font-bold",
+        badge: "bg-purple-50 text-purple-800 border border-purple-200/50",
+        icon: <Icon className="text-purple-700 shrink-0" size={14} />,
+        borderLeft: "border-l-[3px] border-l-purple-500",
+        arrowColor: "text-purple-500",
+        label: "Epics",
+        style: {},
+      };
+    }
+    return {
+      bg: "bg-gray-100",
+      text: "font-bold",
+      badge: "border",
+      icon: <Icon className="shrink-0" style={{ color }} size={14} />,
+      borderLeft: "border-l-[3px]",
+      style: {
+        borderLeftColor: color,
+      },
+      arrowColor: "text-gray-400",
+      label: foundType ? foundType.name : group,
+    };
+  };
+
   return (
     <div
       style={{ width: LEFT_PANEL_W, minWidth: LEFT_PANEL_W }}
@@ -185,7 +201,10 @@ export function TaskListPanel({
             <div key={group}>
               {/* Group header */}
               <div
-                style={{ height: ROW_HEIGHT }}
+                style={{
+                  height: ROW_HEIGHT,
+                  ...config.style
+                }}
                 className={`flex items-center gap-2 px-4 cursor-pointer transition-all duration-200 border-b border-gray-200/70 ${config.bg} ${config.borderLeft}`}
                 onClick={() => onToggleGroup(group)}
               >
@@ -206,6 +225,7 @@ export function TaskListPanel({
                   {config.icon}
                   <span
                     className="text-[11px] uppercase tracking-wider font-bold truncate"
+                    style={{ color: config.style?.borderLeftColor }}
                   >
                     {config.label}
                   </span>
@@ -228,7 +248,7 @@ export function TaskListPanel({
                       title={`${task.name}\nClick để xem chi tiết`}
                       className="flex items-center gap-2.5 px-4 pl-8 cursor-pointer transition-all duration-150 border-b border-gray-100 bg-white hover:bg-gray-50/50 group"
                     >
-                      {getStatusIcon(task.status || "todo")}
+                      {getStatusIcon(task)}
                       <span className="text-[13px] font-medium text-gray-600 truncate flex-1 leading-normal group-hover:text-purple-600 transition-colors">
                         {task.name}
                       </span>

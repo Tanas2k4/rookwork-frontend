@@ -10,13 +10,14 @@ import { useEffect, useCallback, useContext, useRef } from "react";
 import { useBoard } from "../../hooks/useBoard";
 import { ProjectContext } from "../../context/ProjectContext";
 import { TaskModal } from "../board/TaskModal";
-import type { Task, Status, Priority, User } from "../../types/project";
+import type { Task, Priority, User } from "../../types/project";
 import { issueApi } from "../../api/services/issueApi";
 import { issueToTask, uuidToId } from "../../utils/issueMapper";
 import type { AttachmentResponse } from "../../api/contracts/attachment";
+import { ToastContainer } from "../../components/common/ToastContainer";
 
 export function SharedIssueModal() {
-  const { projectId, setOpenIssueModal, notifyIssueUpdated } = useContext(ProjectContext);
+  const { projectId, setOpenIssueModal, notifyIssueUpdated, projectStatuses } = useContext(ProjectContext);
   const board = useBoard(projectId);
   const boardRef = useRef(board);
   useEffect(() => {
@@ -67,8 +68,8 @@ export function SharedIssueModal() {
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 
-  const changeStatus = useCallback((s: Status) => {
-    board.changeStatus(s);
+  const changeStatus = useCallback((statusId: string) => {
+    board.changeStatus(statusId);
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 
@@ -87,6 +88,16 @@ export function SharedIssueModal() {
     notifyIssueUpdated();
   }, [board, notifyIssueUpdated]);
 
+  const saveStartDate = useCallback((val: string) => {
+    board.saveStartDate(val);
+    notifyIssueUpdated();
+  }, [board, notifyIssueUpdated]);
+
+  const saveDependencies = useCallback((dependencyIds: string[]) => {
+    board.saveDependencies(dependencyIds);
+    notifyIssueUpdated();
+  }, [board, notifyIssueUpdated]);
+
   const deleteTask = useCallback((task: Task) => {
     board.deleteTask(task);
     notifyIssueUpdated();
@@ -100,25 +111,31 @@ export function SharedIssueModal() {
   }, [board, notifyIssueUpdated]);
 
   return (
-    <TaskModal
-      task={board.selectedTask}
-      open={board.panelOpen}
-      allTasks={board.tasks}
-      onClose={board.closePanel}
-      onOpenTask={board.openTask}
-      onSaveTitle={saveTitle}
-      onSaveDescription={saveDescription}
-      onChangeStatus={changeStatus}
-      onChangePriority={changePriority}
-      onChangeAssignee={changeAssignee}
-      onSaveDeadline={saveDeadline}
-      onDeleteTask={deleteTask}
-      onLink={board.linkChild}
-      onUnlink={board.unlinkChild}
-      onToggleSubtask={board.toggleSubtask}
-      onAddSubtask={board.addSubtask}
-      onDeleteSubtask={board.deleteSubtask}
-      onUpdateAttachments={updateAttachments}
-    />
+    <>
+      <TaskModal
+        task={board.selectedTask}
+        open={board.panelOpen}
+        allTasks={board.tasks}
+        onClose={board.closePanel}
+        onOpenTask={board.openTask}
+        onSaveTitle={saveTitle}
+        onSaveDescription={saveDescription}
+        onChangeStatus={changeStatus}
+        onChangePriority={changePriority}
+        onChangeAssignee={changeAssignee}
+        onSaveDeadline={saveDeadline}
+        onSaveStartDate={saveStartDate}
+        onSaveDependencies={saveDependencies}
+        onDeleteTask={deleteTask}
+        onLink={board.linkChild}
+        onUnlink={board.unlinkChild}
+        onToggleSubtask={board.toggleSubtask}
+        onAddSubtask={board.addSubtask}
+        onDeleteSubtask={board.deleteSubtask}
+        onUpdateAttachments={updateAttachments}
+        projectStatuses={projectStatuses}
+      />
+      <ToastContainer toasts={board.toasts} onRemove={board.removeToast} />
+    </>
   );
 }

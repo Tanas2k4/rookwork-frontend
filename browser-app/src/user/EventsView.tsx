@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { HiChevronDown } from "react-icons/hi";
 import {
-  IoVideocamOutline,
-  IoLocationOutline,
-  IoTimeOutline,
-} from "react-icons/io5";
-import { FiPlus } from "react-icons/fi";
-import { BsCalendar2Event } from "react-icons/bs";
-import { TfiTrash } from "react-icons/tfi";
+  ChevronDownIcon,
+  VideoCameraIcon,
+  MapPinIcon,
+  ClockIcon,
+  PlusIcon,
+  CalendarDaysIcon,
+  TrashIcon,
+  UserGroupIcon,
+} from "@heroicons/react/24/outline";
 
 import type { CalendarEvent } from "../types/calendar";
 import {
@@ -23,7 +24,7 @@ import { ToastContainer } from "../components/common/ToastContainer";
 import type { Toast } from "../types/project";
 import { avatarUrl } from "../utils/avatar";
 import { useProject } from "../hooks/useProject";
-import { MdOutlineGroup } from "react-icons/md";
+
 
 export default function EventsView() {
   const today = new Date();
@@ -144,7 +145,7 @@ export default function EventsView() {
       {/* Top Header bar if global, else rendered inside project Outlet */}
       <div className="pt-4 pl-8">
         {!contextProjectId && (
-          <div className="flex items-center gap-3 text-[55px] text-gray-800 font-semibold tracking-wide">
+          <div className="flex items-center gap-3 pb-2 text-5xl text-gray-800 font-semibold tracking-wide">
             Events
           </div>
         )}
@@ -154,7 +155,7 @@ export default function EventsView() {
             className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-900 hover:bg-purple-800 text-gray-200 rounded-md text-sm transition cursor-pointer"
           >
             New Event
-            <FiPlus size={15} />
+            <PlusIcon className="w-4 h-4" />
           </button>
 
           {/* Filter dropdown */}
@@ -164,9 +165,8 @@ export default function EventsView() {
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-500 rounded-md text-sm text-gray-700 outline-none hover:bg-gray-50 transition-all cursor-pointer"
             >
               <span> {filterMode === "All" ? "All Events" : filterMode}</span>
-              <HiChevronDown
-                size={14}
-                className={`text-gray-500 transition-transform duration-200 ${
+              <ChevronDownIcon
+                className={`text-gray-500 w-3.5 h-3.5 transition-transform duration-200 ${
                   showFilterDropdown ? "rotate-180" : ""
                 }`}
               />
@@ -201,7 +201,7 @@ export default function EventsView() {
         <div className="flex-1 overflow-y-auto px-8 py-4 flex flex-col gap-6">
           {groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 ">
-              <BsCalendar2Event size={48} className="text-gray-300 mb-3" />
+              <CalendarDaysIcon className="text-gray-300 mb-3 w-12 h-12" />
               <p className="text-lg font-semibold text-gray-400">
                 No events found
               </p>
@@ -228,7 +228,7 @@ export default function EventsView() {
                 </div>
 
                 {/* Right Column: Event Cards List */}
-                <div className="flex flex-col w-full gap-2">
+                <div className="flex flex-col w-full gap-2 min-w-0">
                   {group.items.map((ev) => {
                     const organizer = ev.guests.find(
                       (g) => g.role === "organizer",
@@ -240,19 +240,19 @@ export default function EventsView() {
                         className="relative flex items-center justify-between 
                         bg-white hover:bg-neutral-100 border border-gray-200 hover:border-gray-300 rounded-lg transition-all duration-300 p-4"
                       >
-                        <div className="flex items-stretch gap-3 flex-1">
+                        <div className="flex items-stretch gap-3 flex-1 min-w-0">
                           {/* Color bar */}
                           <div
                             className={`w-1 rounded-full shrink-0 ${colorStyles.barClass}`}
                             style={colorStyles.barStyle}
                           ></div>
 
-                          <div className="flex flex-col gap-1 flex-1">
-                            <h3 className="text-[15px] font-semibold text-gray-800">
+                          <div className="flex flex-col gap-1 flex-1 min-w-0">
+                            <h3 className="text-[15px] font-semibold text-gray-800 break-words break-all">
                               {ev.title}
                             </h3>
                             {ev.note && (
-                              <div className="text-[13px] text-gray-500 italic">
+                              <div className="text-[13px] text-gray-500 italic break-words break-all">
                                 {ev.note}
                               </div>
                             )}
@@ -278,28 +278,25 @@ export default function EventsView() {
 
                               {/* Time */}
                               <div className="flex items-center gap-1">
-                                <IoTimeOutline
-                                  className="text-gray-400"
-                                  size={13}
-                                />
+                                <ClockIcon
+                                  className="text-gray-400 w-3.5 h-3.5"
+                                 animate-pulse />
                                 <span>{formatTime12h(ev.time)}</span>
                               </div>
 
                               {/* Location */}
                               {ev.location && (
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 min-w-0 flex-1">
                                   {ev.location.toLowerCase() === "online" ? (
-                                    <IoVideocamOutline
-                                      className="text-gray-400"
-                                      size={13}
+                                    <VideoCameraIcon
+                                      className="text-gray-400 w-3.5 h-3.5 shrink-0"
                                     />
                                   ) : (
-                                    <IoLocationOutline
-                                      className="text-gray-400"
-                                      size={13}
+                                    <MapPinIcon
+                                      className="text-gray-400 w-3.5 h-3.5 shrink-0"
                                     />
                                   )}
-                                  <span>{ev.location}</span>
+                                  <span className="break-words break-all">{ev.location}</span>
                                 </div>
                               )}
 
@@ -313,9 +310,8 @@ export default function EventsView() {
                                   );
                                   return (
                                     <div className="flex items-center gap-1">
-                                      <MdOutlineGroup
-                                        className="text-gray-400"
-                                        size={13}
+                                      <UserGroupIcon
+                                        className="text-gray-400 w-3.5 h-3.5"
                                       />
                                       <div className="flex -space-x-1">
                                         {guestAttendees
@@ -349,7 +345,7 @@ export default function EventsView() {
                           className="p-2 rounded-lg text-gray-300 hover:text-red-600 hover:bg-red-55 transition shrink-0 cursor-pointer"
                           title="Delete event"
                         >
-                          <TfiTrash size={16} />
+                          <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
                     );

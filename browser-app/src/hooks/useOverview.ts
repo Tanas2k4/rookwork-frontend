@@ -12,6 +12,8 @@ import type { IssueResponse } from "../api/contracts/issue";
 import type { ActivityResponse } from "../api/contracts/activity";
 import { apiStatusToUI } from "../utils/issueMapper";
 import { avatarUrl } from "../utils/avatar";
+import { computeAllProgress } from "../utils/progress";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 
 //  Helpers 
 
@@ -107,16 +109,16 @@ export interface OverviewData {
 
   // Recent activity
   activities: ActivityItem[];
+  statusDistribution: {
+    statusId: string;
+    statusName: string;
+    color: string;
+    count: number;
+  }[];
+  issues: IssueResponse[];
 }
 
-/**
- * Tính toán tỷ lệ phần trăm hoàn thành cơ bản của một issue.
- */
-function computeProgress(issue: IssueResponse): number {
-  if (issue.status === "DONE") return 100;
-  if (issue.status === "IN_PROGRESS") return 40;
-  return 0;
-}
+// computeProgress removed as unused
 
 /**
  * Xử lý chuỗi nhãn hành động hiển thị cho nhật ký hoạt động.
@@ -129,50 +131,65 @@ function actionLabel(a: ActivityResponse): string {
   if (a.entityType === "COMMENT") {
     switch (a.actionType) {
       case "COMMENTED": return `commented on issue "${a.entityName}"`;
-      case "DELETED":   return `deleted a comment on issue "${a.entityName}"`;
-      default:          return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
+      case "DELETED": return `deleted a comment on issue "${a.entityName}"`;
+      default: return `${a.actionType.toLowerCase()} a comment on issue "${a.entityName}"`;
     }
   }
 
   if (a.entityType === "SUBTASK") {
     switch (a.actionType) {
-      case "CREATED":   return `created subtask "${a.entityName}"`;
+      case "CREATED": return `created subtask "${a.entityName}"`;
       case "COMPLETED": return `completed subtask "${a.entityName}"`;
-      case "UPDATED":   return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
-      case "DELETED":   return `deleted subtask "${a.entityName}"`;
-      default:          return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
+      case "UPDATED": return `updated subtask "${a.entityName}" (${meta.field ?? "details"})`;
+      case "DELETED": return `deleted subtask "${a.entityName}"`;
+      default: return `${a.actionType.toLowerCase()} subtask "${a.entityName}"`;
     }
   }
 
   const typeLabel = a.entityType === "ISSUE" ? "issue" : a.entityType.toLowerCase();
   switch (a.actionType) {
-    case "CREATED":   return `created ${typeLabel} "${a.entityName}"`;
+    case "CREATED": return `created ${typeLabel} "${a.entityName}"`;
     case "COMPLETED": return `completed ${typeLabel} "${a.entityName}"`;
-    case "MOVED":     return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
-    case "ASSIGNED":  return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
-    case "UPDATED":   return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
-    case "DELETED":   return `deleted ${typeLabel} "${a.entityName}"`;
-    default:          return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
+    case "MOVED": return `moved ${typeLabel} "${a.entityName}" from ${meta.from ?? "?"} to ${meta.to ?? "?"}`;
+    case "ASSIGNED": return `assigned ${typeLabel} "${a.entityName}" to ${meta.assigned_to_name ?? "someone"}`;
+    case "UPDATED": return `updated ${meta.field ?? "field"} of ${typeLabel} "${a.entityName}"`;
+    case "DELETED": return `deleted ${typeLabel} "${a.entityName}"`;
+    default: return `${a.actionType.toLowerCase()} ${typeLabel} "${a.entityName}"`;
   }
 }
+
+// computeAllProgress imported from progress utils
 
 /**
  * Hàm phân tích và tổng hợp dữ liệu tổng quan (Overview) từ danh sách công việc và lịch sử hoạt động.
  */
-function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[]): OverviewData {
+function deriveOverview(
+  issues: IssueResponse[],
+  activities: ActivityResponse[],
+  projectStatuses: ProjectStatusResponse[]
+): OverviewData {
   const total = issues.length;
-  const done = issues.filter((i) => i.status === "DONE").length;
-  const inProgress  = issues.filter((i) => i.status === "IN_PROGRESS").length; 
+  const statusDistribution = projectStatuses.map((status) => {
+    const count = issues.filter((i) => i.status?.id === status.id).length;
+    return {
+      statusId: status.id,
+      statusName: status.statusName,
+      color: status.color,
+      count,
+    };
+  });
+  const done = issues.filter((i) => i.status?.statusCategory === "DONE").length;
+  const inProgress = issues.filter((i) => i.status?.statusCategory === "IN_PROGRESS").length;
 
   const overdue = issues.filter(
-    (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status !== "DONE",
+    (i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE",
   ).length;
   const dueSoon = issues.filter(
     (i) =>
       i.deadline &&
       getDaysLeft(i.deadline) >= 0 &&
       getDaysLeft(i.deadline) <= 7 &&
-      i.status !== "DONE",
+      i.status?.statusCategory !== "DONE",
   ).length;
   const progress = total === 0 ? 0 : Math.round((done / total) * 100);
 
@@ -188,8 +205,8 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
 
   // Attention — overdue first, then due soon, top 5
   const attentionTasks: OverviewIssue[] = [
-    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status !== "DONE"),
-    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) >= 0 && i.status !== "DONE"),
+    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) < 0 && i.status?.statusCategory !== "DONE"),
+    ...issues.filter((i) => i.deadline && getDaysLeft(i.deadline) >= 0 && i.status?.statusCategory !== "DONE"),
   ]
     .slice(0, 5)
     .map((i) => ({
@@ -198,18 +215,19 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
       deadlineLabel: fmtDeadline(i.deadline!),
     }));
 
+  const progressMap = computeAllProgress(issues);
+
   // Milestones — use EPICs
-  const epics = issues.filter((i) => i.issueType === "EPIC");
+  const epics = issues.filter((i) => i.issueType.name.toUpperCase() === "EPIC");
   const milestones: MilestoneItem[] = epics.map((epic) => {
     const children = issues.filter((i) => i.parentId === epic.id);
     const all = [epic, ...children];
-    const prog = Math.round(all.reduce((s, i) => s + computeProgress(i), 0) / all.length);
     return {
       id: epic.id,
       name: epic.issueName,
       deadline: epic.deadline ? fmtDeadline(epic.deadline) : "No deadline",
       status: apiStatusToUI(epic.status),
-      progress: prog,
+      progress: progressMap[epic.id] || 0,
       taskCount: all.length,
     };
   });
@@ -247,16 +265,18 @@ function deriveOverview(issues: IssueResponse[], activities: ActivityResponse[])
   return {
     totalTasks: total,
     doneTasks: done,
-    inProgressTasks: inProgress, 
+    inProgressTasks: inProgress,
     overdueCount: overdue,
     dueSoonCount: dueSoon,
     overallProgress: progress,
+    statusDistribution,
     timelineTasks,
     attentionTasks,
     milestones,
     workload,
     maxWorkload,
     activities: activityItems,
+    issues,
   };
 }
 
@@ -273,7 +293,7 @@ export interface UseOverviewReturn {
  * quá hạn, sắp tới hạn, biểu đồ tải công việc thành viên và luồng hoạt động gần đây.
  */
 export function useOverview(): UseOverviewReturn {
-  const { projectId } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick, projectStatuses } = useContext(ProjectContext);
   const [data, setData] = useState<OverviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -297,7 +317,7 @@ export function useOverview(): UseOverviewReturn {
       activityApi.getByProject(projectId, 20),
     ])
       .then(([issues, activities]) => {
-        if (!cancelled) setData(deriveOverview(issues, activities));
+        if (!cancelled) setData(deriveOverview(issues, activities, projectStatuses));
       })
       .catch((err) => {
         console.error("useOverview: failed to load", err);
@@ -305,7 +325,7 @@ export function useOverview(): UseOverviewReturn {
       });
 
     return () => { cancelled = true; };
-  }, [projectId, tick]);
+  }, [projectId, tick, issueUpdateTick, projectStatuses]);
 
   const reload = () => setTick((n) => n + 1);
 

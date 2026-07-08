@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { invitationApi } from "../api/services/invitationApi";
 import WorkingHoursChart from "../dashboard/WorkingHoursChart";
 import ActiveProjects from "../dashboard/ActiveProjects";
 import { type ProjectUI } from "../api/contracts/projectUI";
-import { RiCheckLine } from "react-icons/ri";
+import { CheckIcon } from "@heroicons/react/24/solid";
 import Image from "../assets/image.png";
 import type { TaskPriority, TaskStatus } from "../types/project";
 import MiniCalendar from "../calendar/MiniCalendar";
 import { issueApi } from "../api/services/issueApi";
 import type { IssueResponse } from "../api/contracts/issue";
+import type { ProjectStatusResponse } from "../api/contracts/projectStatus";
 import { avatarUrl } from "../utils/avatar";
 import { isOverdue } from "../utils/date";
 import { priorityColorMap } from "../types/project";
@@ -46,11 +48,12 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
   to_do: "#94a3b8", in_progress: "#7c3aed", done: "#22c55e",
 };
 
-function toTaskStatus(s: string | null): TaskStatus {
+function toTaskStatus(s: ProjectStatusResponse | null | undefined): TaskStatus {
+  const category = s?.statusCategory;
   const map: Record<string, TaskStatus> = {
     TO_DO: "to_do", IN_PROGRESS: "in_progress", DONE: "done",
   };
-  return map[s ?? ""] ?? "to_do";
+  return map[category ?? ""] ?? "to_do";
 }
 
 function toTaskPriority(p: string | null): TaskPriority {
@@ -170,7 +173,22 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
 
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   useEffect(() => {
+    const acceptId = searchParams.get("acceptInvitationId");
+    if (acceptId) {
+      invitationApi.respond(acceptId, true)
+        .then(() => {
+          navigate("/dashboard");
+        })
+        .catch((err) => {
+          console.error("Failed to accept invitation from email link:", err);
+          navigate("/dashboard");
+        });
+    }
+
     issueApi.getAssigned()
       .then(setIssues)
       .catch(console.error);
@@ -180,10 +198,10 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
         setEvents(res.map(mapToCalendarEvent));
       })
       .catch(console.error);
-  }, []);
+  }, [searchParams]);
 
   const totalIssues = issues.length;
-  const doneIssues = issues.filter((i) => i.status === "DONE").length;
+  const doneIssues = issues.filter((i) => i.status?.statusCategory === "DONE").length;
   const overdueIssues = issues.filter(
     (i) => i.deadline && isOverdue(i.deadline, i.status),
   ).length;
@@ -212,12 +230,12 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
 
     // 2. Get tasks due today, fallback to general active tasks if none
     let filteredTasks = issues.filter((i) => {
-      if (i.status === "DONE" || !i.deadline) return false;
+      if (i.status?.statusCategory === "DONE" || !i.deadline) return false;
       return i.deadline.split("T")[0] === todayStr;
     });
     
     if (filteredTasks.length === 0) {
-      filteredTasks = issues.filter((i) => i.status !== "DONE").slice(0, 4);
+      filteredTasks = issues.filter((i) => i.status?.statusCategory !== "DONE").slice(0, 4);
     }
 
     const items = [
@@ -251,7 +269,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
 
     // Add issue deadline dots
     issues
-      .filter((i) => i.deadline && i.status !== "DONE")
+      .filter((i) => i.deadline && i.status?.statusCategory !== "DONE")
       .forEach((i) => {
         const dateKey = i.deadline!.split("T")[0];
         if (!dates[dateKey]) dates[dateKey] = [];
@@ -384,7 +402,7 @@ export default function DashboardPage({ projects, profileName }: DashboardPagePr
                         className="relative z-10 mt-1 w-3.5 h-3.5 -ml-4 rounded-full border-2 shrink-0 flex items-center justify-center"
                         style={{ borderColor: isDone ? accentColor : "#e5e7eb", background: isDone ? accentColor : "white" }}
                       >
-                        {isDone && <RiCheckLine size={8} color="white" />}
+                        {isDone && <CheckIcon className="w-2 h-2 text-white" />}
                       </div>
                       <Link
                         to={`/projects/${issue.projectId}/issues/${issue.id}`}

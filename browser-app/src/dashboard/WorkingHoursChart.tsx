@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { RiCheckLine, RiArrowDownSLine } from "react-icons/ri";
+import { CheckIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { workLogApi } from "../api/services/workLogApi";
 import type { DailyHours } from "../api/contracts/worklog";
 import { useClickOutside } from "../hooks/useClickOutside";
@@ -30,9 +30,8 @@ function PeriodDropdown({ value, onChange }: {
         className="inline-flex items-center gap-2 text-xs font-medium text-gray-700 border border-gray-500 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-all"
       >
         {value}
-        <RiArrowDownSLine
-          size={14}
-          className="transition-transform duration-200"
+        <ChevronDownIcon
+          className="transition-transform duration-200 w-3.5 h-3.5"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         />
       </button>
@@ -49,7 +48,7 @@ function PeriodDropdown({ value, onChange }: {
               style={{ color: value === opt.value ? "#7c3aed" : "#4b5563" }}
             >
               {opt.label}
-              {value === opt.value && <RiCheckLine size={13} className="text-purple-500" />}
+              {value === opt.value && <CheckIcon className="w-3.5 h-3.5 text-purple-500" />}
             </button>
           ))}
         </div>
@@ -139,8 +138,9 @@ export default function WorkingHoursChart() {
   }>({ data: [], loading: true });
 
   useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     workLogApi
-      .getStats(period === "Weekly" ? "weekly" : "monthly")
+      .getStats(period === "Weekly" ? "weekly" : "monthly", tz)
       .then((res) =>
         setChartState({
           data: buildChartData(res.thisWeek, res.lastWeek),

@@ -6,15 +6,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useContext } from "react";
-import type { Task, Status, TaskType, User } from "../types/project";
+import type { TaskWithMeta, User } from "../types/project";
 import type { UpdateIssueRequest } from "../api/contracts/issue";
 import { issueApi } from "../api/services/issueApi";
 import { ProjectContext } from "../context/ProjectContext";
 import {
   apiUserToUI,
   issueToTask,
-  uiStatusToApi,
-  uiTypeToApi,
+  categoryToUIStatus,
 } from "../utils/issueMapper";
 import { useToast } from "./useToast";
 import { useClickOutside } from "./useClickOutside";
@@ -34,9 +33,9 @@ export interface DropdownState {
  * của màn hình xem dạng danh sách (List View).
  */
 export function useListView() {
-  const { projectId, issueUpdateTick } = useContext(ProjectContext);
+  const { projectId, issueUpdateTick, notifyIssueUpdated, issueTypes, projectStatuses } = useContext(ProjectContext);
 
-  const [tasks, setTasks] = useState<(Task & { _uuid: string; _assigneeUuids: string[] })[]>([]);
+  const [tasks, setTasks] = useState<(TaskWithMeta & { _uuid: string; _assigneeUuids: string[] })[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -49,8 +48,17 @@ export function useListView() {
   const PAGE_SIZE = 25;
   const { toasts, addToast, removeToast } = useToast();
 
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+  const assigneeTimeoutRefs = useRef<{ [taskId: string]: any }>({});
+
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(assigneeTimeoutRefs.current).forEach(clearTimeout);
+    };
+  }, []);
 
   //  Fetch issues 
 
@@ -80,7 +88,7 @@ export function useListView() {
       .catch((err) => addToast(err instanceof Error ? err.message : "Failed to load issues", "error"));
 
     return () => { cancelled = true; };
-  // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
+    // issueUpdateTick: khi SharedIssueModal cập nhật issue → tự reload list
   }, [projectId, tick, issueUpdateTick, addToast]);
 
   //  Close on outside click 
@@ -95,9 +103,14 @@ export function useListView() {
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
     const matchesUser =
       selectedUsers.length === 0 ||
-      task.assigned_to.some((u) => {
-        const typedU = u as User & { _uuid?: string; uuid?: string };
-        return selectedUsers.includes(typedU._uuid ?? typedU.uuid ?? typedU.avt);
+      selectedUsers.every((selUuid) => {
+        const hasDirectUuid = task._assigneeUuids && task._assigneeUuids.includes(selUuid);
+        if (hasDirectUuid) return true;
+        return task.assigned_to.some((u) => {
+          const typedU = u as User & { _uuid?: string; uuid?: string };
+          const key = typedU.uuid ?? typedU._uuid ?? typedU.avt;
+          return key === selUuid;
+        });
       });
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(task.type);
     return matchesSearch && matchesStatus && matchesUser && matchesType;
@@ -144,7 +157,12 @@ export function useListView() {
     if (!projectId) return;
     try {
       await issueApi.update(projectId, taskId, data);
-      addToast(successMsg, "success");
+      if (successMsg) {
+        addToast(successMsg, "success");
+      }
+      if (notifyIssueUpdated) {
+        notifyIssueUpdated();
+      }
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Update failed. Please try again.", "error");
       // Rollback: reload from server
@@ -189,55 +207,97 @@ export function useListView() {
       ),
     );
 
-    updateIssue(
-      taskId,
-      { assigneeIds: newUuids },
+    addToast(
       newUsers.length > 0
         ? `Assigned to ${newUsers.map((u) => u.display_name).join(", ")}`
         : "Assignee removed",
+      "success"
     );
+
+    if (assigneeTimeoutRefs.current[taskId]) {
+      clearTimeout(assigneeTimeoutRefs.current[taskId]);
+    }
+
+    assigneeTimeoutRefs.current[taskId] = setTimeout(() => {
+      updateIssue(
+        taskId,
+        { assigneeIds: newUuids },
+        ""
+      );
+      delete assigneeTimeoutRefs.current[taskId];
+    }, 5000);
   }
 
-  function handleStatusChange(taskId: string, status: Status) {
+  function handleStatusChange(taskId: string, statusId: string) {
     const task = tasks.find((t) => t._uuid === taskId);
     if (!task) return;
-    if (task.status === status) {
+    const targetStatus = projectStatuses.find((ps) => ps.id === statusId);
+    if (!targetStatus) return;
+
+    if ((task as TaskWithMeta)._statusId === statusId) {
       closeDropdown();
       return;
     }
 
+    const uiStatus = categoryToUIStatus(targetStatus.statusCategory);
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, status } : t));
+    setTasks((p) =>
+      p.map((t) =>
+        t._uuid === taskId
+          ? {
+            ...t,
+            status: uiStatus,
+            _statusId: statusId,
+            _statusMeta: targetStatus,
+          }
+          : t,
+      ),
+    );
     closeDropdown();
 
-    updateIssue(taskId, { status: uiStatusToApi(status) }, `Status → ${status.replace("_", " ")}`);
+    updateIssue(taskId, { statusId }, `Status → ${targetStatus.statusName}`);
   }
 
-  function handleTypeChange(taskId: string, type: TaskType) {
+  function handleTypeChange(taskId: string, issueTypeId: string) {
+    const foundType = issueTypes.find((t) => t.id === issueTypeId);
+    if (!foundType) return;
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, type } : t));
+    setTasks((p) =>
+      p.map((t) =>
+        t._uuid === taskId
+          ? { ...t, type: foundType.name.toLowerCase(), issueType: foundType }
+          : t,
+      ),
+    );
     closeDropdown();
 
-    updateIssue(taskId, { issueType: uiTypeToApi(type) }, `Type → ${type}`);
+    updateIssue(taskId, { issueTypeId }, `Type → ${foundType.name}`);
   }
 
   function handleDeadlineChange(taskId: string, deadline: string) {
     const task = tasks.find((t) => t._uuid === taskId);
     if (!task) return;
-    const currentDeadline = task.deadline ? task.deadline.split("T")[0] : "";
-    const newDeadline = deadline ? deadline.split("T")[0] : "";
-    if (currentDeadline === newDeadline) {
+    const isoString = deadline ? new Date(deadline).toISOString() : null;
+    if (task.deadline === isoString) {
       closeDropdown();
       return;
     }
 
+    if (isoString && task.startDate) {
+      if (new Date(isoString) < new Date(task.startDate)) {
+        addToast("Deadline cannot be before start date", "error");
+        closeDropdown();
+        return;
+      }
+    }
+
     // Optimistic
-    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: deadline || null } : t));
+    setTasks((p) => p.map((t) => t._uuid === taskId ? { ...t, deadline: isoString } : t));
     closeDropdown();
 
-    // UpdateIssueRequest.deadline is LocalDate → send "YYYY-MM-DD" only
-    const formatted = deadline ? deadline.split("T")[0] : undefined;
-    updateIssue(taskId, { deadline: formatted },
+    updateIssue(taskId, { deadline: isoString ?? undefined },
       deadline ? "Deadline updated" : "Deadline cleared"
     );
   }
@@ -310,5 +370,6 @@ export function useListView() {
     goToPrevPage,
     goToNextPage,
     PAGE_SIZE,
+    projectStatuses,
   };
 }

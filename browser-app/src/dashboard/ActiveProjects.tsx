@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDrag, useDrop, useDragLayer, DndProvider } from "react-dnd";
 import { HTML5Backend, getEmptyImage } from "react-dnd-html5-backend";
-import { RiArrowRightSLine, RiCloseLine, RiDraggable } from "react-icons/ri";
+import { ChevronRightIcon, XMarkIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import type { ProjectUI } from "../api/contracts/projectUI";
 
 function AnimatedProgressBar({
@@ -162,7 +162,7 @@ function RowDragPreview({ project }: { project: ProjectUI }) {
           "0 16px 40px rgba(124,58,237,0.15), 0 4px 12px rgba(0,0,0,0.08)",
       }}
     >
-      <RiDraggable size={16} className="text-violet-400 shrink-0" />
+      <Bars3Icon className="text-violet-400 shrink-0 w-4 h-4" />
       <div
         className="w-2.5 h-2.5 rounded-full shrink-0"
         style={{ background: project.accentColor }}
@@ -317,9 +317,8 @@ function DraggableProjectCard({
               year: "numeric",
             })}
           </p>
-          <RiDraggable
-            size={15}
-            className="text-gray-200 group-hover:text-gray-400 transition-colors"
+          <Bars3Icon
+            className="text-gray-200 group-hover:text-gray-400 transition-colors w-3.5 h-3.5"
           />
         </div>
         <h3
@@ -423,9 +422,8 @@ function DraggableRow({
         }}
         className="flex items-center gap-4 px-4 py-3"
       >
-        <RiDraggable
-          size={16}
-          className="text-gray-200 group-hover:text-gray-400 transition-colors shrink-0"
+        <Bars3Icon
+          className="text-gray-200 group-hover:text-gray-400 transition-colors shrink-0 w-4 h-4"
         />
         <div
           className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -525,7 +523,7 @@ function ViewAllModal({
             onClick={onClose}
             className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"
           >
-            <RiCloseLine size={16} />
+            <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
         <div className="overflow-y-auto flex-1 p-4 space-y-2">
@@ -581,7 +579,7 @@ export default function ActiveProjects({
             onClick={() => setShowModal(true)}
             className="text-xs text-violet-600 font-medium flex items-center gap-0.5 hover:text-violet-800 transition"
           >
-            View all <RiArrowRightSLine size={13} />
+            View all <ChevronRightIcon className="w-3 h-3" />
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

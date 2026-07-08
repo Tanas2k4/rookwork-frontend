@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { MdClose } from "react-icons/md";
-import { FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import { XMarkIcon, EllipsisVerticalIcon, TrashIcon } from "@heroicons/react/24/outline";
 import type { Task } from "../../../types/project";
 import {
-  typeIconMap,
-  typeColorMap,
   typeLabelMap,
+  issueTypeIcons,
 } from "../../../types/project";
 
 interface Props {
@@ -29,7 +27,10 @@ export function TaskModalHeader({
   const [value, setValue] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const Icon = typeIconMap[task.type];
+
+  const it = task.issueType;
+  const Icon = issueTypeIcons[it?.iconKey || "task"] || issueTypeIcons.task;
+  const typeColor = it?.color || "#64748B";
 
   const parent = task.parentId
     ? allTasks.find((t) => t.id === task.parentId)
@@ -42,14 +43,16 @@ export function TaskModalHeader({
 
   return (
     <div className="shrink-0 border-b border-gray-200 px-6 py-4 flex items-start gap-3 bg-white rounded-t-2xl">
-      <Icon className={`${typeColorMap[task.type]} text-lg mt-1.5 shrink-0`} />
+      <Icon style={{ color: typeColor }} className="text-lg mt-1.5 shrink-0" />
       <div className="flex-1 min-w-0">
         {/* Parent breadcrumb */}
         {parent && (
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
             {(() => {
-              const PI = typeIconMap[parent.type];
-              return <PI className={typeColorMap[parent.type]} size={11} />;
+              const pit = parent.issueType;
+              const PI = issueTypeIcons[pit?.iconKey || "task"] || issueTypeIcons.task;
+              const parentColor = pit?.color || "#64748B";
+              return <PI style={{ color: parentColor }} size={11} />;
             })()}
             <button
               onClick={() => onOpenTask(parent)}
@@ -72,6 +75,7 @@ export function TaskModalHeader({
               if (e.key === "Escape") setEditing(false);
             }}
             className="text-lg font-bold text-gray-800 w-full outline-none border-b border-gray-400 bg-transparent pb-0.5"
+            maxLength={200}
           />
         ) : (
           <h2
@@ -79,7 +83,7 @@ export function TaskModalHeader({
               setEditing(true);
               setValue(task.title);
             }}
-            className="text-xl font-bold text-gray-800 cursor-default rounded px-1 -mx-1 hover:bg-gray-50 transition leading-snug"
+            className="text-xl font-bold text-gray-800 cursor-default rounded px-1 -mx-1 hover:bg-gray-50 transition leading-snug break-words break-all"
             title="Double-click to edit"
           >
             {task.title}
@@ -98,7 +102,7 @@ export function TaskModalHeader({
             }`}
             title="Actions"
           >
-            <FiMoreVertical size={15} />
+            <EllipsisVerticalIcon className="w-4 h-4" />
           </button>
           {menuOpen && (
             <>
@@ -114,7 +118,7 @@ export function TaskModalHeader({
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition flex items-center gap-2"
                 >
-                  <FiTrash2 size={15} />
+                  <TrashIcon className="w-4 h-4" />
                   Delete issue
                 </button>
               </div>
@@ -125,7 +129,7 @@ export function TaskModalHeader({
           onClick={onClose}
           className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition shrink-0"
         >
-          <MdClose size={20} />
+          <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
 
