@@ -133,27 +133,6 @@ export default function NotificationSettings({
             </button>
           </div>
 
-          <div className="border-t border-gray-100" />
-
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-800">
-                Comments on my Issues/Tasks
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Receive email alerts when someone posts comments or replies on your issues.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleToggle("notifyComment")}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out  ${notifications.notifyComment ? "bg-purple-700" : "bg-gray-200"}`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${notifications.notifyComment ? "translate-x-5" : "translate-x-0"}`}
-              />
-            </button>
-          </div>
 
           <div className="border-t border-gray-100" />
 
